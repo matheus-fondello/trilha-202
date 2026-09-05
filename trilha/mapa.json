@@ -1,0 +1,151 @@
+{
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Só M0 e M1 por enquanto; 1.1 e 1.3 são as aulas escritas. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova.",
+  "versao": "0.1.0",
+  "aulas": [
+    {
+      "id": "0.1",
+      "modulo": 0,
+      "tipo": "aula",
+      "titulo": "Terminal, git mínimo e as duas janelas",
+      "skill": "aula-0-1",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "0.2",
+      "modulo": 0,
+      "tipo": "aula",
+      "titulo": "Como se estuda aqui",
+      "skill": "aula-0-2",
+      "fluencia": false,
+      "milestones": null
+    },
+    {
+      "id": "1.1",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Vibe coding e engenharia agêntica",
+      "skill": "aula-1-1",
+      "fluencia": false,
+      "milestones": [
+        { "id": "vibe-coding", "titulo": "O que é vibe coding e por que funciona" },
+        { "id": "engenharia-agentica", "titulo": "A diferença para engenharia agêntica" },
+        { "id": "o-que-a-trilha-faz", "titulo": "O que a trilha faz com você" }
+      ]
+    },
+    {
+      "id": "P0",
+      "modulo": 1,
+      "tipo": "pratica",
+      "titulo": "Landing page livre",
+      "skill": "pratica-p0",
+      "fluencia": false,
+      "milestones": null
+    },
+    {
+      "id": "1.2",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Claude Code por dentro",
+      "skill": "aula-1-2",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.3",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Verificar, não ler",
+      "skill": "aula-1-3",
+      "fluencia": true,
+      "milestones": [
+        { "id": "parece-pronto", "titulo": "O agente para quando parece pronto" },
+        { "id": "check-executavel", "titulo": "Dê um check executável" },
+        { "id": "evidencia", "titulo": "Evidência, não afirmação" },
+        { "id": "fechar-o-loop", "titulo": "Fechar o loop" },
+        { "id": "revisor-separado", "titulo": "Revisor separado do autor" }
+      ]
+    },
+    {
+      "id": "1.4",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Onde o LLM erra",
+      "skill": "aula-1-4",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.5",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "O prompt como interface",
+      "skill": "aula-1-5",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.6",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Modos, permissões e modelo",
+      "skill": "aula-1-6",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.7",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Higiene de contexto",
+      "skill": "aula-1-7",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.8",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Skills, hooks e guardrails",
+      "skill": "aula-1-8",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.9",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Uma página que vende",
+      "skill": "aula-1-9",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "1.10",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Design e deploy",
+      "skill": "aula-1-10",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "P1",
+      "modulo": 1,
+      "tipo": "pratica",
+      "titulo": "Landing page para o cliente",
+      "skill": "pratica-p1",
+      "fluencia": false,
+      "milestones": null
+    },
+    {
+      "id": "Q1",
+      "modulo": 1,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 1",
+      "skill": "quiz-m1",
+      "fluencia": false,
+      "milestones": null
+    }
+  ]
+}

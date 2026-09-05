@@ -1,0 +1,53 @@
+{
+  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Nenhum hook bloqueia nada: se falhar, a aula segue.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/inicio.js",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/atividade.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/fim.js",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(node .claude/scripts/trilha.js:*)",
+      "Read(./trilha/**)",
+      "Write(./trilha/tmp/**)"
+    ],
+    "deny": [
+      "Write(./trilha/estado.json)",
+      "Write(./trilha/fila.jsonl)",
+      "Write(./trilha/mapa.json)",
+      "Edit(./trilha/estado.json)",
+      "Edit(./trilha/fila.jsonl)",
+      "Edit(./trilha/mapa.json)"
+    ]
+  }
+}
