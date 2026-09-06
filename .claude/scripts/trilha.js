@@ -13,7 +13,7 @@
 //   node .claude/scripts/trilha.js pratica <id> [url=...] [pasta=...]
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
-//   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>
+//   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>
 
 const fs = require('fs');
 const path = require('path');
@@ -23,9 +23,13 @@ const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
 const { enviar } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
-const { agora, minutosEntre } = require('./lib/util');
+const referencias = require('./lib/referencias');
+const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
+
+// Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
+const MINUTOS_VIVA = 30;
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -180,9 +184,14 @@ const comandos = {
   dev([sub, ...resto]) {
     const e = estadoLib.carregar();
     if (sub === 'reset') {
-      // Zerar com sessão aberta apaga a aula de alguém no meio. Só com --forcar.
-      if (e.sessao_atual && !resto.includes('--forcar')) {
-        falhar(`há uma sessão aberta na aula ${e.sessao_atual.aula} (desde ${e.sessao_atual.inicio}). Feche o chat antes, ou rode "dev reset --forcar" se tiver certeza.`);
+      // Zerar com aula acontecendo apaga o trabalho de alguém no meio. Só com --forcar.
+      // Sessão sem sinal de vida há mais de MINUTOS_VIVA está morta, não aberta: quem
+      // fecha o terminal na marra (o TESTE.md manda fazer isso) deixa uma pendurada, e
+      // uma trava que dispara sempre vira --forcar por hábito, que é não ter trava.
+      const s = e.sessao_atual;
+      const paradaHa = s ? minutosEntre(s.ultima_atividade || s.inicio, agora()) : Infinity;
+      if (s && paradaHa < MINUTOS_VIVA && !resto.includes('--forcar')) {
+        falhar(`há uma aula acontecendo agora (${s.aula}, ativa ${relativo(s.ultima_atividade || s.inicio)}). Feche o chat antes, ou rode "dev reset --forcar" se tiver certeza.`);
       }
       for (const f of [paths.ESTADO, paths.FILA]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
       fs.rmSync(paths.TMP, { recursive: true, force: true });
@@ -203,6 +212,15 @@ const comandos = {
         console.log(`\n=== Avaliação da aula ${ev.aula || ev.dados.aula} (${ev.ts}) ===`);
         console.log(JSON.stringify(JSON.parse(Buffer.from(ev.dados.payload, 'base64').toString('utf8')), null, 2));
       }
+    } else if (sub === 'referencias') {
+      // Gera o REFERENCIAS.md da raiz a partir dos referencias.md das aulas.
+      // É comando de quem escreve conteúdo, não do aluno nem do tutor.
+      const { arquivo, lista } = referencias.gerar();
+      const total = lista.reduce((t, x) => t + x.itens.length, 0);
+      console.log(`${path.relative(paths.RAIZ, arquivo)} gerado: ${total} item(ns) de ${lista.filter((x) => x.itens.length).length} aula(s).`);
+      for (const x of lista) {
+        if (!x.itens.length) console.log(`  aviso: ${path.relative(paths.RAIZ, x.arquivo)} não rendeu nenhum item; confira o formato do bullet de três linhas.`);
+      }
     } else if (sub === 'fechar-tudo') {
       // Atalho de teste: fecha milestones e fluência de uma aula sem passar pela conversa.
       const a = mapa.aula(resto[0]);
@@ -213,7 +231,7 @@ const comandos = {
       estadoLib.salvar(e);
       console.log(`Milestones e fluência da ${a.id} marcados (teste). Falta só a avaliação.`);
     } else {
-      falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>');
+      falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>');
     }
   },
 };

@@ -24,3 +24,4 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 - `.claude/hooks/` início, atividade e fim de sessão.
 - `.claude/scripts/trilha.js` o CLI do progresso.
 - `trilha/` estado do aluno, fila de eventos, mapa das aulas, configuração.
+- `REFERENCIAS.md` bibliografia da trilha, gerada a partir dos `referencias.md` das aulas. Não edite à mão.

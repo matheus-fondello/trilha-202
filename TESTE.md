@@ -21,6 +21,16 @@ Abra o Claude Code nesta pasta com `claude`. Para a 1.3, crie antes uma pasta ir
 | Retomada | No meio da aula, feche o terminal (não `/exit`). Reabra depois. O tutor deve cumprimentar em uma linha e seguir do primeiro milestone pendente. |
 | Fim de aula | `concluir` só deve passar depois de fluência e avaliação. `dev fila` mostra os eventos; `dev avaliacoes` decodifica e imprime a avaliação que o tutor registrou (notas, justificativa, evidências). |
 
+## Referências
+
+Se você mexeu num `referencias.md` de aula, regenere a bibliografia e confira o resultado:
+
+```
+node .claude/scripts/trilha.js dev referencias
+```
+
+Ele avisa se algum `referencias.md` não rendeu item nenhum, que quase sempre é bullet fora do formato de três linhas (título, URL, porquê).
+
 ## Rede fora e servidor
 
 ```
