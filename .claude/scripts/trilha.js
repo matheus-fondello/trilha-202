@@ -13,7 +13,7 @@
 //   node .claude/scripts/trilha.js pratica <id> [url=...] [pasta=...]
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
-//   node .claude/scripts/trilha.js dev reset | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>
+//   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>
 
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +23,7 @@ const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
 const { enviar } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
-const { agora } = require('./lib/util');
+const { agora, minutosEntre } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
 
@@ -180,6 +180,10 @@ const comandos = {
   dev([sub, ...resto]) {
     const e = estadoLib.carregar();
     if (sub === 'reset') {
+      // Zerar com sessão aberta apaga a aula de alguém no meio. Só com --forcar.
+      if (e.sessao_atual && !resto.includes('--forcar')) {
+        falhar(`há uma sessão aberta na aula ${e.sessao_atual.aula} (desde ${e.sessao_atual.inicio}). Feche o chat antes, ou rode "dev reset --forcar" se tiver certeza.`);
+      }
       for (const f of [paths.ESTADO, paths.FILA]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
       fs.rmSync(paths.TMP, { recursive: true, force: true });
       estadoLib.carregar();
@@ -209,13 +213,17 @@ const comandos = {
       estadoLib.salvar(e);
       console.log(`Milestones e fluência da ${a.id} marcados (teste). Falta só a avaliação.`);
     } else {
-      falhar('Uso: dev reset | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>');
+      falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev fechar-tudo <aula>');
     }
   },
 };
 
 function minutosNaAula(e, idAula) {
-  return e.sessoes.filter((s) => s.aula === idAula).reduce((t, s) => t + (s.minutos || 0), 0);
+  // A conclusão acontece com a sessão ainda aberta; sem contar sessao_atual o total sai zero.
+  const fechadas = e.sessoes.filter((s) => s.aula === idAula).reduce((t, s) => t + (s.minutos || 0), 0);
+  const s = e.sessao_atual;
+  const aberta = s && s.aula === idAula ? Math.max(0, minutosEntre(s.inicio, s.ultima_atividade || agora())) : 0;
+  return fechadas + aberta;
 }
 
 function validarAvaliacao(av, idAula) {

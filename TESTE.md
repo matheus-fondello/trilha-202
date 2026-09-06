@@ -5,7 +5,7 @@ Para quem for testar o harness. O objetivo não é fazer o curso, é provar o de
 ## Preparar
 
 ```
-node .claude/scripts/trilha.js dev reset        zera estado e fila
+node .claude/scripts/trilha.js dev reset        zera estado e fila (recusa se há sessão aberta; --forcar para insistir)
 node .claude/scripts/trilha.js dev ir 1.1       ou 1.3
 ```
 

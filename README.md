@@ -15,7 +15,7 @@ Para atualizar o conteúdo ao longo da trilha: `git pull` dentro da pasta. Seu p
 ## Como funciona
 
 - **Sala e oficina.** Esta pasta é a sala: aqui você tem aula. Você pratica numa pasta irmã, a oficina, aberta em outra janela do Claude Code.
-- **Uma aula por chat.** Cada aula dura de 45 a 60 minutos e termina com um teste de fluência. Ao fechar, abra um chat novo para a próxima.
+- **Uma aula por chat.** Cada aula é uma conversa de cerca de uma hora e, na maioria, termina com um teste de fluência. Ao fechar, abra um chat novo para a próxima.
 - **Progresso registrado.** O Claude registra cada conceito fechado por script. Você pode fechar o terminal a qualquer hora e retomar depois do ponto onde parou.
 - **A 202 acompanha.** Sobem metadados e avaliações estruturadas, nunca a conversa inteira. Você recebe o feedback; a nota fica com a 202.
 
