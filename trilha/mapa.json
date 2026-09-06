@@ -1,6 +1,6 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Só M0 e M1 por enquanto; as práticas P0 e P1 e o quiz Q1 ainda não têm skill escrita. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova.",
-  "versao": "0.2.0",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. M0, M1 e a P0 estão escritos; a P1 e o quiz Q1 ainda não. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado.",
+  "versao": "0.3.0",
   "aulas": [
     {
       "id": "0.1",
@@ -79,7 +79,24 @@
       "titulo": "Landing page livre",
       "skill": "pratica-p0",
       "fluencia": false,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "oficina-pronta",
+          "titulo": "A oficina de pé na segunda janela"
+        },
+        {
+          "id": "briefing",
+          "titulo": "O que construir e as regras do jogo"
+        },
+        {
+          "id": "entrega-vista",
+          "titulo": "A página aberta no painel e comentada"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Pasta e URL no estado"
+        }
+      ]
     },
     {
       "id": "1.2",

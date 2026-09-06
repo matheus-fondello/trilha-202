@@ -15,5 +15,6 @@ module.exports = {
   FILA: path.join(TRILHA, 'fila.jsonl'),
   CONFIG: path.join(TRILHA, 'config.json'),
   MAPA: path.join(TRILHA, 'mapa.json'),
+  ALUNO: path.join(TRILHA, 'aluno.md'),
   TMP: path.join(TRILHA, 'tmp'),
 };

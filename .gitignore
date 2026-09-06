@@ -1,6 +1,7 @@
 # Estado do aluno: nasce na primeira sessão, não vai para o repositório.
 trilha/estado.json
 trilha/fila.jsonl
+trilha/aluno.md
 trilha/tmp/
 *.tmp
 .DS_Store

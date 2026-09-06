@@ -2,6 +2,7 @@
 // Monta o texto que o hook de início injeta no contexto e que `status` imprime.
 // É a memória entre sessões: curto, factual, com a instrução de qual skill carregar.
 const mapa = require('./mapa');
+const notas = require('./notas');
 const { relativo } = require('./util');
 
 function resumo(e, { fonte = 'startup' } = {}) {
@@ -30,19 +31,24 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`Milestones: ${fechados.length} de ${a.milestones.length} fechados.`);
     if (fechados.length) linhas.push('  Fechados: ' + fechados.map((m) => `${m.id} (${m.titulo})`).join('; '));
     if (pendentes.length) linhas.push('  Pendentes: ' + pendentes.map((m) => `${m.id} (${m.titulo})`).join('; '));
-    if (a.fluencia) {
-      linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : `ainda não passou (${reg.fluencia.tentativas} tentativa(s))`) : 'não feita'}.`);
+    if (a.tipo === 'pratica') {
+      linhas.push('Prática: sem fluência e sem avaliação. Fecha com o artefato registrado (pasta, e URL se houver).');
     } else {
-      linhas.push('Fluência: esta aula não tem.');
+      if (a.fluencia) {
+        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : `ainda não passou (${reg.fluencia.tentativas} tentativa(s))`) : 'não feita'}.`);
+      } else {
+        linhas.push('Fluência: esta aula não tem.');
+      }
+      linhas.push(`Avaliação de fim de aula: ${reg.avaliada_em ? 'registrada' : 'não registrada'}.`);
     }
-    linhas.push(`Avaliação de fim de aula: ${reg.avaliada_em ? 'registrada' : 'não registrada'}.`);
   }
 
   if (e.oficina) linhas.push(`Oficina (pasta de prática do aluno): ${e.oficina}`);
   else linhas.push('Oficina: pasta ainda não registrada.');
 
   const p0 = e.praticas.P0;
-  if (p0) linhas.push(`P0 registrada: ${p0.url || 'sem URL'}${p0.pasta ? ' em ' + p0.pasta : ''}`);
+  if (p0 && p0.pasta) linhas.push(`P0: ${p0.pasta}${p0.url ? ' — no ar em ' + p0.url : ' (ainda não está no ar)'}`);
+  else if (p0) linhas.push('P0: registro incompleto, sem a pasta. Pergunte onde a página mora e rode `pratica P0 pasta=<caminho>`; as fluências do módulo precisam dela.');
 
   const ultima = e.sessoes.length ? e.sessoes[e.sessoes.length - 1] : null;
   if (ultima) {
@@ -53,6 +59,11 @@ function resumo(e, { fonte = 'startup' } = {}) {
 
   const concluidas = Object.entries(e.aulas).filter(([, r]) => r.status === 'concluida').map(([id]) => id);
   if (concluidas.length) linhas.push(`Aulas concluídas: ${concluidas.join(', ')}.`);
+
+  // A memória do aluno entra inteira: são no máximo sete linhas e é o que
+  // permite retomar o fio pessoal entre aulas separadas por dias.
+  const memoria = notas.paraContexto();
+  if (memoria) { linhas.push(''); linhas.push(memoria); }
 
   linhas.push('');
   if (fonte === 'compact') {
