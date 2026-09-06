@@ -14,7 +14,7 @@ Só conversa, aqui na sala. Sem fluência. Fica para outras aulas: como o Claude
 
 ## Onboarding
 
-Esta aula é a exceção: começa com onboarding em mensagens curtas, uma coisa por vez. Apresente-se em duas linhas, peça e-mail e primeiro nome, registre com `identificar`, pergunte o que ele já fez com IA. Só depois que isso fechou, a aula corre no ritmo normal.
+O onboarding normalmente já aconteceu na 0.1. Se o estado tiver aluno identificado, cumprimente pelo nome em uma linha e entre na matéria. Se não tiver — porque ele começou por aqui —, faça o onboarding antes: apresente-se em duas linhas, peça e-mail e primeiro nome, registre com `identificar`, pergunte o que ele já fez com IA, e só então a aula corre no ritmo normal.
 
 ## Marcos
 

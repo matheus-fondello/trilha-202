@@ -6,10 +6,12 @@ Para quem for testar o harness. O objetivo não é fazer o curso, é provar o de
 
 ```
 node .claude/scripts/trilha.js dev reset        zera estado e fila (recusa se há sessão aberta; --forcar para insistir)
-node .claude/scripts/trilha.js dev ir 1.1       ou 1.3
+node .claude/scripts/trilha.js dev ir 0.1       qualquer aula de 0.1 a 1.10
 ```
 
-Abra o Claude Code nesta pasta com `claude`. Para a 1.3, crie antes uma pasta irmã (por exemplo `../oficina-teste`) com qualquer página HTML pequena dentro; ela faz o papel da P0. Abra essa pasta numa segunda janela do Claude Code com Sonnet.
+Abra o Claude Code nesta pasta com `claude`. As doze aulas do M0 e do M1 estão escritas; a P0, a P1 e o quiz ainda não. Para qualquer aula de 1.2 em diante, crie antes uma pasta irmã (por exemplo `../oficina-teste`) com qualquer página HTML pequena dentro; ela faz o papel da P0. Abra essa pasta numa segunda janela do Claude Code com Sonnet. A 0.1 e a 0.2 não precisam de oficina pronta — a 0.1 é justamente quem a monta.
+
+Das doze, só a 1.1 e a 1.3 foram rodadas com gente. As que mais interessa cronometrar são a **0.1** (primeira aula, carrega o onboarding e monta a oficina), a **0.2** (quinze minutos, formato atípico) e a **1.8** (oficina pesada).
 
 ## O que cronometrar e anotar
 

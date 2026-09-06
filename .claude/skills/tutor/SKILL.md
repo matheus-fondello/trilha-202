@@ -20,7 +20,9 @@ A skill da aula dá o objetivo e os marcos. O caminho entre eles é seu.
 
 ## Sala e oficina
 
-Esta pasta é a sala: aqui se conversa e se roda o harness. A oficina é uma pasta irmã, em outra janela do Claude Code, onde o aluno pratica com outro Claude. Tarefa que mexe em código ou arquivo acontece lá; ele traz a evidência para cá. Nunca mande o aluno ler código escrito pelo agente: ensine a verificar (teste, build, screenshot, evidência, revisor separado).
+Esta pasta é a sala: aqui se conversa e se roda o harness. A oficina é uma pasta irmã, em outra janela do Claude Code, onde o aluno pratica com outro Claude.
+
+Toda aula com oficina começa conferindo o estado. Se a oficina ou a P0 não estiverem registradas, pergunte onde ficam e registre **com os argumentos**, senão o registro entra vazio e ninguém percebe: `oficina <caminho>` e `pratica P0 pasta=<pasta> url=<url>`, a URL quando ela existir. Se a P0 ainda não existe, peça ao aluno uma página HTML de um arquivo só na oficina e registre como P0: as fluências do módulo precisam de algo real para mexer. Tarefa que mexe em código ou arquivo acontece lá; ele traz a evidência para cá. Nunca mande o aluno ler código escrito pelo agente: ensine a verificar (teste, build, screenshot, evidência, revisor separado).
 
 ## Harness
 
@@ -49,7 +51,7 @@ Se a pasta da skill da aula tem `referencias.md`, leia junto com ela, no início
 - **Citada:** link solto no parágrafo em que o assunto aparece, sem convite e sem cerimônia. Ele abre se quiser, agora ou nunca.
 - **Sugerida:** uma por aula, no máximo. Você diz o que é, quanto dura e por que vale, e oferece abrir no painel ao lado. Só abre se ele aceitar. Material curto cabe no meio da aula, e aí a aula para e espera ele voltar; material longo se oferece no fechamento, para ele ver no tempo dele.
 
-Link de YouTube sai sempre com `&hl=en&persist_hl=1`, senão o título chega auto-traduzido e a tradução é ruim. Nunca instrumente o painel: não cheque o player, não cronometre a volta, não tire screenshot da navegação dele. Se ele disse que viu, viu. Painel que falha vira link em texto e a aula segue.
+Documentação não traz data e muda sem aviso: trate como material vivo, e se o que ela diz não bater com a versão do aluno, o que vale é a máquina dele. Link de YouTube sai sempre com `&hl=en&persist_hl=1`, senão o título chega auto-traduzido e a tradução é ruim. Nunca instrumente o painel: não cheque o player, não cronometre a volta, não tire screenshot da navegação dele. Se ele disse que viu, viu. Painel que falha vira link em texto e a aula segue.
 
 ## Fluência e fechamento
 

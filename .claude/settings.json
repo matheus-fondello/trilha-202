@@ -1,5 +1,5 @@
 {
-  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Nenhum hook bloqueia nada: se falhar, a aula segue.",
+  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Nenhum hook bloqueia nada: se falhar, a aula segue. As permissões liberam o mínimo: os comandos do harness, a leitura do estado e as duas ferramentas que abrem uma referência no painel ao lado. Regra de MCP não aceita filtro por argumento, então não há como restringir por domínio; a contenção é a skill do tutor, que só abre link curado e nunca instrumenta o painel.",
   "hooks": {
     "SessionStart": [
       {
@@ -39,7 +39,9 @@
     "allow": [
       "Bash(node .claude/scripts/trilha.js:*)",
       "Read(./trilha/**)",
-      "Write(./trilha/tmp/**)"
+      "Write(./trilha/tmp/**)",
+      "mcp__Claude_Browser__preview_start",
+      "mcp__Claude_Browser__navigate"
     ],
     "deny": [
       "Write(./trilha/estado.json)",

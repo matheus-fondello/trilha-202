@@ -16,7 +16,7 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 
 **marco `engenharia-agentica`**
 
-- **Simon Willison, *Not all AI-assisted programming is vibe coding*** — simonwillison.net, mar/2025 · 5 min de leitura
+- **Simon Willison, *Not all AI-assisted programming is vibe coding (but vibe coding rocks)*** — simonwillison.net, mar/2025 · 5 min de leitura
   https://simonwillison.net/2025/Mar/19/vibe-coding/
   A separação dos dois modos que esta aula usa, feita por quem a fez primeiro.
 
@@ -34,4 +34,4 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 
 São 30 minutos, então **não ofereça no meio da aula** — estoura o relógio e corta a explicação ao meio. Ofereça depois de fechar o último marco: "acabamos; quer que eu abra aqui do lado?". Se ele aceitar, abra no painel e encerre a aula normalmente — ele assiste no tempo dele, sem você esperando.
 
-Se ele quiser só o trecho do vibe coding, é a partir de 16:50: acrescente `&t=1010s` à URL.
+Se ele quiser só o trecho do vibe coding, é a partir de 15:46: acrescente `&t=946s` à URL.

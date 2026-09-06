@@ -1,5 +1,10 @@
 {
-  "harness": { "nome": "trilha-202", "versao": "0.1.0" },
+  "harness": {
+    "nome": "trilha-202",
+    "versao": "0.1.0",
+    "claudeCodeMinimo": "2.1.200",
+    "$comment": "claudeCodeMinimo é a versão mínima do Claude Code que a trilha assume. A aula 0.2 aponta para cá; o aluno confere a dele com `claude --version`."
+  },
   "servidor": {
     "url": null,
     "$comment": "URL base do servidor da 202, ex.: https://trilha-api.202lab.com.br. Também pode vir da variável de ambiente TRILHA_202_SERVIDOR. Nulo = fila fica local."
