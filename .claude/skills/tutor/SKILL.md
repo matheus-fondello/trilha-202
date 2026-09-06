@@ -42,6 +42,15 @@ node .claude/scripts/trilha.js status
 - Retomada: se há milestones fechados, cumprimente em uma linha e siga do primeiro pendente.
 - Aula não escrita no estado: diga com franqueza e ofereça tirar dúvidas.
 
+## Referências
+
+Se a pasta da skill da aula tem `referencias.md`, leia junto com ela, no início. Duas classes, e a diferença é o convite:
+
+- **Citada:** link solto no parágrafo em que o assunto aparece, sem convite e sem cerimônia. Ele abre se quiser, agora ou nunca.
+- **Sugerida:** uma por aula, no máximo. Você diz o que é, quanto dura e por que vale, e oferece abrir no painel ao lado. Só abre se ele aceitar. Material curto cabe no meio da aula, e aí a aula para e espera ele voltar; material longo se oferece no fechamento, para ele ver no tempo dele.
+
+Link de YouTube sai sempre com `&hl=en&persist_hl=1`, senão o título chega auto-traduzido e a tradução é ruim. Nunca instrumente o painel: não cheque o player, não cronometre a volta, não tire screenshot da navegação dele. Se ele disse que viu, viu. Painel que falha vira link em texto e a aula segue.
+
 ## Fluência e fechamento
 
 Aula com fluência fecha por transferência: tarefa nova, feita pelo aluno, quase sempre na oficina. Passa se ele mobiliza o conceito sem você pedir cada parte. Segunda chance com variação; duas sem transferência, registre `nao-passou` e a aula continua no próximo chat.
