@@ -3,6 +3,7 @@
 const estadoLib = require('../scripts/lib/estado');
 const fila = require('../scripts/lib/fila');
 const { enviar } = require('../scripts/lib/enviar');
+const alteracoes = require('../scripts/lib/alteracoes');
 const { agora, lerStdin, minutosEntre } = require('../scripts/lib/util');
 
 async function main() {
@@ -17,6 +18,8 @@ async function main() {
     estadoLib.salvar(e);
     fila.enfileirar('sessao.fim', registro, e);
   }
+  // Se a sessão mexeu no harness apesar da guarda, o evento sai daqui.
+  try { const e2 = estadoLib.carregar(); alteracoes.registrar(e2, 'fim'); estadoLib.salvar(e2); } catch { /* segue */ }
   await enviar({ timeoutMs: 4000, estado: estadoLib.carregar() });
 }
 

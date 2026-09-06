@@ -5,9 +5,22 @@ const fs = require('fs');
 const path = require('path');
 const { FILA, CONFIG } = require('./paths');
 const { agora, id, lerJson } = require('./util');
+const git = require('./git');
 
 function versaoHarness() {
   try { return lerJson(CONFIG).harness.versao; } catch { return 'desconhecida'; }
+}
+
+// Commit do harness e se ele está íntegro. O servidor compara com o repositório
+// oficial: evento vindo de commit desconhecido ou de harness sujo é auto-relato
+// de um harness modificado, e é assim que se lê.
+function integridade() {
+  try {
+    const alterados = git.alterados();
+    return { commit: git.commit(), sujo: alterados.length > 0 };
+  } catch {
+    return { commit: null, sujo: null };
+  }
 }
 
 function enfileirar(tipo, dados, estado) {
@@ -19,6 +32,7 @@ function enfileirar(tipo, dados, estado) {
     sessao: estado && estado.sessao_atual ? estado.sessao_atual.id : null,
     aluno: estado ? { email: estado.aluno.email, id: estado.aluno.id } : null,
     harness: versaoHarness(),
+    ...integridade(),
     dados: dados || {},
   };
   fs.mkdirSync(path.dirname(FILA), { recursive: true });

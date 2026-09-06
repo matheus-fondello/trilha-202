@@ -3,11 +3,14 @@
 // retoma uma sessão (resume), limpa o chat (clear) ou o contexto compacta.
 // Injeta o estado no contexto do tutor e tenta subir a fila. Nunca falha:
 // qualquer erro vira uma linha de aviso e a aula segue.
+const fs = require('fs');
+const paths = require('../scripts/lib/paths');
 const estadoLib = require('../scripts/lib/estado');
 const mapa = require('../scripts/lib/mapa');
 const fila = require('../scripts/lib/fila');
 const { enviar } = require('../scripts/lib/enviar');
 const { resumo } = require('../scripts/lib/resumo');
+const alteracoes = require('../scripts/lib/alteracoes');
 const { agora, lerStdin, minutosEntre } = require('../scripts/lib/util');
 
 async function main() {
@@ -33,14 +36,24 @@ async function main() {
       fila.enfileirar('sessao.inicio', { fonte, aula: e.aula_atual }, e);
     }
     estadoLib.salvar(e);
+    // O rascunho da avaliação vive em trilha/tmp só até o `avaliar` consumir. Se
+    // ficou para trás (validação falhou, terminal fechou), não pode ser lido por
+    // uma sessão seguinte: some no início de todo chat.
+    try { fs.rmSync(paths.TMP, { recursive: true, force: true }); } catch { /* segue */ }
   }
+
+  // Rede de segurança da guarda: harness diferente do commit vira evento (uma
+  // vez por mudança) e uma linha para o tutor. Não reverte nada.
+  let sujo = [];
+  try { sujo = alteracoes.registrar(e, 'inicio'); estadoLib.salvar(e); } catch { /* sem git: segue */ }
 
   const texto = resumo(e, { fonte });
   const envio = await enviar({ timeoutMs: 2500, estado: e });
   const aviso = envio.ok ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
 
   process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso },
+    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso + avisoHarness },
   }));
 }
 

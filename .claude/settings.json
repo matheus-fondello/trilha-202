@@ -1,5 +1,5 @@
 {
-  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Nenhum hook bloqueia nada: se falhar, a aula segue. As permissões liberam o mínimo: os comandos do harness, a leitura do estado e as duas ferramentas que abrem uma referência no painel ao lado. Regra de MCP não aceita filtro por argumento, então não há como restringir por domínio; a contenção é a skill do tutor, que só abre link curado e nunca instrumenta o painel.",
+  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Início, atividade e fim nunca bloqueiam nada: se falharem, a aula segue. A guarda (PreToolUse) é a exceção: bloqueia escrita no harness a partir do chat; se ela mesma quebrar, libera. As permissões liberam o mínimo: os comandos do harness, a leitura do estado, o rascunho em trilha/tmp e as duas ferramentas que abrem uma referência no painel ao lado. Regra de caminho só é consultada para Edit e Read (uma regra Write é aceita e ignorada), por isso a lista de deny é toda em Edit; ela cobre Write, MultiEdit, NotebookEdit e redirecionamento de shell, vale em todo modo, inclusive bypass, e o bypass está desligado. A fila não se lê do chat (é onde mora a avaliação) e a memória automática do Claude Code está desligada: a única memória do tutor é trilha/aluno.md. Código do harness (scripts e hooks) não se lê do chat: o tutor não é engenheiro dele. Web aberta (WebFetch, WebSearch) e o Chrome de verdade do aluno estão negados; do painel só ficam preview_start e navigate, e como regra de MCP não filtra por argumento, a guarda confere a URL: só domínio dos referencias.md das aulas, a entrega registrada do aluno e localhost. As demais ferramentas do painel (ler página, clicar, screenshot, batch) estão negadas: o tutor nunca instrumenta o painel, e página lida entra no contexto.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,18 @@
             "type": "command",
             "command": "node .claude/hooks/inicio.js",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|mcp__Claude_Browser__navigate|mcp__Claude_Browser__preview_start",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/guarda.js",
+            "timeout": 5
           }
         ]
       }
@@ -35,21 +47,47 @@
       }
     ]
   },
+  "autoMemoryEnabled": false,
   "permissions": {
+    "disableBypassPermissionsMode": true,
     "allow": [
       "Bash(node .claude/scripts/trilha.js:*)",
       "Read(./trilha/**)",
-      "Write(./trilha/tmp/**)",
+      "Edit(./trilha/tmp/**)",
       "mcp__Claude_Browser__preview_start",
       "mcp__Claude_Browser__navigate"
     ],
     "deny": [
-      "Write(./trilha/estado.json)",
-      "Write(./trilha/fila.jsonl)",
-      "Write(./trilha/mapa.json)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__claude-in-chrome",
+      "mcp__Claude_Browser__browser_batch",
+      "mcp__Claude_Browser__computer",
+      "mcp__Claude_Browser__find",
+      "mcp__Claude_Browser__form_input",
+      "mcp__Claude_Browser__get_page_text",
+      "mcp__Claude_Browser__read_page",
+      "mcp__Claude_Browser__javascript_tool",
+      "mcp__Claude_Browser__read_console_messages",
+      "mcp__Claude_Browser__read_network_requests",
+      "mcp__Claude_Browser__resize_window",
+      "mcp__Claude_Browser__tabs_create",
+      "mcp__Claude_Browser__preview_logs",
+      "mcp__Claude_Browser__preview_stop",
+      "Read(./trilha/fila.jsonl)",
+      "Read(./.claude/scripts/**)",
+      "Read(./.claude/hooks/**)",
+      "Edit(./.claude/**)",
+      "Edit(./CLAUDE.md)",
+      "Edit(./REFERENCIAS.md)",
+      "Edit(./README.md)",
+      "Edit(./TESTE.md)",
+      "Edit(./.gitignore)",
+      "Edit(./trilha/mapa.json)",
+      "Edit(./trilha/config.json)",
       "Edit(./trilha/estado.json)",
       "Edit(./trilha/fila.jsonl)",
-      "Edit(./trilha/mapa.json)"
+      "Edit(./trilha/aluno.md)"
     ]
   }
 }
