@@ -21,8 +21,8 @@ Esta aula abre a trilha, então começa com onboarding em mensagens curtas, uma 
 `node .claude/scripts/trilha.js milestone 0.1 <id>`:
 
 - `a-sala`: ele entendeu que esta pasta é a sala, que você é o professor, que o progresso fica registrado aqui, que aula nova chega com `git pull` e que a pasta `trilha/` é do harness e não se edita à mão.
-- `terminal`: ele abriu o terminal e se moveu sozinho — onde estou, entra, lista, cria.
-- `git-minimo`: ele entende repositório, commit e clone, e sabe que o agente faz git por ele.
+- `terminal`: ele abriu o terminal e se moveu sozinho — onde estou, entra, lista, cria. *Aplicação:* ele está numa pasta, digita `cd` para a oficina e o terminal diz que ela não existe, mas ela existe. O que aconteceu? Caça quem ainda não separou caminho relativo de absoluto.
+- `git-minimo`: ele entende repositório, commit e clone, e sabe que o agente faz git por ele. *Conceito:* o agente quebra a página amanhã; o commit de hoje devolve o quê, e não devolve o quê? Caça quem acha que commit é "salvar" ou backup de um arquivo.
 - `oficina`: a pasta irmã existe e está aberta numa segunda janela do Claude Code.
 
 Registre a oficina com `node .claude/scripts/trilha.js oficina <caminho>` assim que ela existir.

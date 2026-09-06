@@ -21,9 +21,9 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 `node .claude/scripts/trilha.js milestone 1.5 <id>`:
 
 - `instrucao-clara`: ele escreve pedido com verbo, objeto, formato e público, e enxerga a ambiguidade que sobrou.
-- `contexto-e-moldura`: ele escolhe o contexto certo e sabe por que mais nem sempre é melhor.
+- `contexto-e-moldura`: ele escolhe o contexto certo e sabe por que mais nem sempre é melhor. *Conceito:* o que muda na resposta quando o pedido vem com contexto demais? Caça quem acha que contexto só ajuda.
 - `exemplos-e-forma`: ele usou exemplo ou formato explícito onde descrever não bastava.
-- `iteracao`: ele diagnostica o que falhou em vez de repetir o pedido com outras palavras.
+- `iteracao`: ele diagnostica o que falhou em vez de repetir o pedido com outras palavras. *Aplicação:* o agente entregou a seção errada. Qual é o primeiro movimento dele? Caça quem repete o pedido "mais claro" sem saber o que faltou.
 
 ## Fluência
 

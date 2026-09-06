@@ -21,7 +21,7 @@ O onboarding normalmente já aconteceu na 0.1. Se o estado tiver aluno identific
 `node .claude/scripts/trilha.js milestone 1.1 <id>`:
 
 - `vibe-coding`: ele entendeu o que é e por que funciona hoje.
-- `engenharia-agentica`: ele entendeu a diferença e por que a trilha não termina no vibe coding.
-- `o-que-a-trilha-faz`: ele sabe que a P0 vem agora, na oficina, e o que a trilha entrega no fim.
+- `engenharia-agentica`: ele entendeu a diferença e por que a trilha não termina no vibe coding. *Previsão, antes:* onde ele acha que o vibe coding quebra? Caça quem acha que o problema é o código ficar feio, quando o problema é ninguém saber se está certo.
+- `o-que-a-trilha-faz`: ele sabe que a P0 vem agora, na oficina, e o que a trilha entrega no fim. *Aplicação:* um amigo fez o site da empresa numa tarde, no Lovable, e está no ar funcionando. É vibe coding? O que ele perguntaria ao amigo para saber? Caça quem separa os dois pela ferramenta ou pelo resultado, e não pelo que se verificou.
 
 Fechamento da `tutor`, com `"fluencia": null`. Despedida: próximo passo é a P0, em chat novo aqui na sala.

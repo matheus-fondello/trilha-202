@@ -20,9 +20,9 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.6 <id>`:
 
-- `auto-mode`: ele sabe o que o classificador aprova por ele e o que ele barra.
+- `auto-mode`: ele sabe o que o classificador aprova por ele e o que ele barra. *Previsão, antes:* ele usa auto mode desde a primeira aula; o que ele acha que está sendo aprovado por ele e o que está sendo barrado? Caça quem acha que aprova tudo, ou que barra por "perigo" genérico.
 - `manual-e-allowlist`: ele sabe quando descer para aprovação manual e como.
-- `plan-mode`: ele entendeu que plano não é permissão, e sabe quando pular.
+- `plan-mode`: ele entendeu que plano não é permissão, e sabe quando pular. *Conceito:* plano aprovado, e no meio da execução o agente encontra algo que o plano não previu. O que acontece? Caça quem acha que plano é contrato.
 - `modelo-e-custo`: ele escolhe modelo por tarefa e sabe medir o contexto.
 
 ## Fluência

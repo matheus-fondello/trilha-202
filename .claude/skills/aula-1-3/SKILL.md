@@ -20,11 +20,11 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.3 <id>`:
 
-- `parece-pronto`: ele viu, na própria página, que o agente para quando parece pronto e quem ficou com o trabalho de conferir.
+- `parece-pronto`: ele viu, na própria página, que o agente para quando parece pronto e quem ficou com o trabalho de conferir. *Previsão, antes:* como ele acha que o agente decide que terminou? Caça quem imagina que ele testa ou olha o resultado por conta própria.
 - `check-executavel`: ele fez um pedido na oficina com um critério que uma máquina confirma.
-- `evidencia`: ele exigiu evidência e sabe o que ela prova e o que não prova.
+- `evidencia`: ele exigiu evidência e sabe o que ela prova e o que não prova. *Conceito:* um screenshot da página prova o quê, e não prova o quê? Caça quem trata qualquer evidência como prova de tudo.
 - `fechar-o-loop`: ele pôs o agente para rodar até passar sem ser cutucado a cada turno, e escreveu uma condição que a saída do agente consegue demonstrar.
-- `revisor-separado`: ele rodou um revisor em contexto limpo e separou lacuna de preferência.
+- `revisor-separado`: ele rodou um revisor em contexto limpo e separou lacuna de preferência. *Conceito:* por que o mesmo Claude que escreveu não serve para revisar, se é o mesmo modelo? Caça quem acha que a diferença é de capacidade, quando é de contexto.
 
 ## Fluência
 

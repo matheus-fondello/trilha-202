@@ -20,8 +20,8 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.2 <id>`:
 
-- `agente`: ele entendeu o loop — modelo, ferramenta, ação, observação — e por que isso permite ao agente rodar o próprio teste.
-- `o-que-ele-ve`: ele sabe o alcance e os limites do que o agente enxerga.
+- `agente`: ele entendeu o loop — modelo, ferramenta, ação, observação — e por que isso permite ao agente rodar o próprio teste. *Previsão, antes:* quando ele pede uma mudança no Claude Code, o que ele acha que acontece entre o Enter e a resposta? Caça quem imagina um chat que escreve arquivo de uma vez, sem loop.
+- `o-que-ele-ve`: ele sabe o alcance e os limites do que o agente enxerga. *Aplicação:* ontem ele conversou na oficina sobre a página; hoje abre um chat novo lá e escreve "continua". O que o agente sabe? Caça quem acha que o chat lembra.
 - `disco-como-memoria`: ele entendeu por que o CLAUDE.md existe e por que curto vence completo.
 - `superficies`: ele sabe onde o Claude Code roda e usou `/context` e o Esc.
 

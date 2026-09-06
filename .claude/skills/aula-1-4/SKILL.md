@@ -17,8 +17,8 @@ Só conversa, aqui na sala. Fica para outras aulas: como escrever o prompt, higi
 `node .claude/scripts/trilha.js milestone 1.4 <id>`:
 
 - `mecanica-minima`: ele sabe que o modelo prevê o próximo pedaço, que a janela é finita e que o treino tem data.
-- `alucinacao`: ele sabe por que acontece e em que terreno é mais provável.
-- `nao-determinismo-e-sicofania`: ele reconhece os dois e sabe fazer a pergunta neutra.
+- `alucinacao`: ele sabe por que acontece e em que terreno é mais provável. *Previsão, antes:* por que ele acha que o modelo inventa uma biblioteca que não existe? Caça quem acha que é bug ou falta de dado, quando é o mecanismo funcionando como sempre.
+- `nao-determinismo-e-sicofania`: ele reconhece os dois e sabe fazer a pergunta neutra. *Aplicação:* ele pergunta "esse código está bom, né?" e o agente diz que sim. O que ele faz com essa resposta? Caça quem trata concordância como confirmação.
 - `faz-bem-faz-mal`: ele consegue classificar uma tarefa nova nos dois lados.
 
 ## Fluência

@@ -20,10 +20,10 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.9 <id>`:
 
-- `maquina-de-conversao`: ele sabe qual é a única ação que a página dele pede.
+- `maquina-de-conversao`: ele sabe qual é a única ação que a página dele pede. *Previsão, antes:* o que ele acha que faz uma landing page ser boa? Caça quem julga por bonita ou por completa.
 - `anatomia`: ele reconhece os blocos e o que cada um resolve, olhando a própria página.
 - `copy`: ele sabe para quem está escrevendo e trocou feature por benefício em pelo menos um lugar.
-- `medir`: ele sabe o mínimo que precisa medir e para onde vai o lead.
+- `medir`: ele sabe o mínimo que precisa medir e para onde vai o lead. *Aplicação:* página no ar, duzentas visitas, três leads. O que ele olha primeiro? Caça quem não sabe o que a página deveria estar fazendo com a visita.
 
 ## Fluência
 

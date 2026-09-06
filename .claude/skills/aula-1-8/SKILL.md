@@ -20,9 +20,9 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.8 <id>`:
 
-- `skills`: ele entendeu a anatomia e que a descrição é o que dispara o carregamento.
+- `skills`: ele entendeu a anatomia e que a descrição é o que dispara o carregamento. *Aplicação:* toda aula ele repete o mesmo pedido de screenshot em largura de celular. Isso é skill, hook ou linha no CLAUDE.md? Caça quem não sabe onde cada coisa mora.
 - `hooks`: ele entendeu evento e script determinístico, e sabe dar um caso de uso próprio.
-- `guardrails`: ele entendeu a diferença entre instruir e impedir.
+- `guardrails`: ele entendeu a diferença entre instruir e impedir. *Aplicação:* ele quer que o agente nunca faça deploy sem ele. Escreve no CLAUDE.md, faz skill ou faz hook? Caça quem acha que instruir basta.
 - `dissecar-o-harness`: ele abriu a árvore `.claude/` daqui e reconheceu as peças em funcionamento.
 
 ## Fluência

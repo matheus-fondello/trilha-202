@@ -10,7 +10,8 @@
 //   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
 //   node .claude/scripts/trilha.js avaliar <aula> <arquivo.json>
 //   node .claude/scripts/trilha.js concluir <aula>
-//   node .claude/scripts/trilha.js pratica <id> [url=...] [pasta=...]
+//   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...]
+//   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>
@@ -24,6 +25,7 @@ const fila = require('./lib/fila');
 const { enviar } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
+const notas = require('./lib/notas');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -123,7 +125,10 @@ const comandos = {
     const reg = estadoLib.registroAula(e, idAula);
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
     const b64 = Buffer.from(JSON.stringify(av), 'utf8').toString('base64');
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64 }, e);
+    // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
+    // fechamento). Vale a última; o servidor precisa saber que esta substitui.
+    const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, ...revisao }, e);
     reg.avaliada_em = agora();
     estadoLib.salvar(e);
     try { fs.unlinkSync(arquivo); } catch { /* já foi */ }
@@ -144,7 +149,13 @@ const comandos = {
     }
     if (a.fluencia && !reg.fluencia) problemas.push('fluência não registrada');
     if (a.fluencia && reg.fluencia && !reg.fluencia.passou) problemas.push('fluência registrada como não passou; a aula só fecha com transferência');
-    if (!reg.avaliada_em) problemas.push('avaliação de fim de aula não registrada (skill avaliar-aula)');
+    if (a.tipo === 'pratica') {
+      // Prática não tem avaliação: ela fecha com o artefato registrado, que é o que
+      // as fluências das aulas seguintes vão usar.
+      if (!(e.praticas[idAula] || {}).pasta) problemas.push(`prática sem pasta registrada (pratica ${idAula} pasta=<caminho>)`);
+    } else if (!reg.avaliada_em) {
+      problemas.push('avaliação de fim de aula não registrada (skill avaliar-aula)');
+    }
     if (problemas.length) falhar(`não dá para concluir a aula ${idAula}:\n  - ${problemas.join('\n  - ')}`);
 
     reg.status = 'concluida';
@@ -153,19 +164,48 @@ const comandos = {
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
-    console.log(`Aula ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.'));
+    console.log(`${a.tipo === 'pratica' ? 'Prática' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.'));
   },
 
   pratica([idPratica, ...resto]) {
-    if (!idPratica) falhar('Uso: pratica <id> [url=...] [pasta=...]');
+    if (!idPratica) falhar('Uso: pratica <id> pasta=<caminho> [url=...]');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica') falhar(`${idPratica} não é prática.`);
     const kv = parChaveValor(resto);
+    // Chamar sem argumento gravava um registro vazio e ninguém percebia. A pasta é
+    // o dado que oito fluências do módulo dependem: sem ela, não há registro.
+    const anterior = (estadoLib.carregar().praticas || {})[idPratica] || {};
+    if (!kv.pasta && !anterior.pasta) falhar(`informe onde a prática mora: pratica ${idPratica} pasta=<caminho> [url=...]`);
+    if (kv.pasta) {
+      const abs = path.resolve(kv.pasta);
+      if (!fs.existsSync(abs)) falhar(`pasta não existe: ${abs}`);
+      kv.pasta = abs;
+    }
+    if (kv.url && !/^https?:\/\//.test(kv.url)) falhar('url precisa começar com http:// ou https://. Se a página ainda não está no ar, registre só a pasta.');
     const e = estadoLib.carregar();
     e.praticas[idPratica] = { ...(e.praticas[idPratica] || {}), ...kv, registrada_em: agora() };
     estadoLib.salvar(e);
     fila.enfileirar('pratica.registro', { aula: idPratica, ...kv }, e);
     console.log(`Prática ${idPratica} registrada: ${JSON.stringify(kv)}`);
+  },
+
+  nota([chave, ...resto]) {
+    if (chave === '--listar' || (!chave && !resto.length)) {
+      const lista = notas.ler();
+      if (!lista.length) return console.log('Nenhuma nota sobre o aluno ainda.');
+      for (const n of lista) console.log(`${n.chave} [${n.origem}]\n  ${n.texto}\n`);
+      return console.log(`${lista.length} de ${notas.TETO} notas.`);
+    }
+    if (!chave) falhar('Uso: nota <chave> "<texto>" | nota <chave> --apagar | nota --listar');
+    if (resto[0] === '--apagar') {
+      const { total } = notas.apagar(chave);
+      return console.log(`Nota "${chave}" apagada. Restam ${total} de ${notas.TETO}.`);
+    }
+    const texto = resto.join(' ');
+    if (!texto) falhar(`Uso: nota ${chave} "<texto>" — a observação e o que você vai fazer por causa dela.`);
+    const e = estadoLib.carregar();
+    const { acao, total } = notas.definir(chave, texto, e.aula_atual, agora());
+    console.log(`Nota "${chave}" ${acao}. ${total} de ${notas.TETO} notas. Ela fica em trilha/aluno.md e não sobe para a 202.`);
   },
 
   registrar([tipo, ...resto]) {
@@ -193,7 +233,7 @@ const comandos = {
       if (s && paradaHa < MINUTOS_VIVA && !resto.includes('--forcar')) {
         falhar(`há uma aula acontecendo agora (${s.aula}, ativa ${relativo(s.ultima_atividade || s.inicio)}). Feche o chat antes, ou rode "dev reset --forcar" se tiver certeza.`);
       }
-      for (const f of [paths.ESTADO, paths.FILA]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
+      for (const f of [paths.ESTADO, paths.FILA, paths.ALUNO]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
       fs.rmSync(paths.TMP, { recursive: true, force: true });
       estadoLib.carregar();
       console.log('Estado e fila zerados.');
@@ -248,7 +288,7 @@ function validarAvaliacao(av, idAula) {
   const erros = [];
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
-  const criterios = ['compreensao', 'profundidade_perguntas', 'esforco', 'autonomia'];
+  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia'];
   if (!av.criterios || typeof av.criterios !== 'object') erros.push('falta "criterios"');
   else for (const c of criterios) {
     const v = av.criterios[c];

@@ -46,7 +46,10 @@ Faça parte da aula sem o mock ligado (a fila cresce), ligue o mock, siga a aula
 
 ## O que reportar
 
-- Turnos curtos, perguntas demais, ou pergunta que pede para o aluno discorrer sobre o que ele ainda não aprendeu. A aula tem que ser o tutor explicando com calma; pergunta cabe só depois de ter material sólido na mesa.
+- Turnos curtos, perguntas demais, ou pergunta que pede para o aluno discorrer sobre o que ele ainda não aprendeu. A aula tem que ser o tutor explicando com calma.
+- Pergunta marcada na aula que o tutor pulou, ou fez fora de lugar: a previsão tem que vir antes da explicação, senão vira repetição. E o contrário: pergunta emendada em cima de resposta que já deu sinal, ou aula que virou sabatina.
+- Resposta errada sua que o tutor corrigiu em uma linha e seguiu, em vez de partir dela para explicar.
+- Aula que terminou sem você ter dito nada além de "segue", e a avaliação saiu com nota baixa por isso. Isso agora é falha da aula, não sua.
 - Milestone fechado por pergunta-prova, fechado antes de tratar o bloco, ou fechado atrasado.
 - Qualquer instrução de "ler o código".
 - Comando do Claude Code citado na aula que não existe mais na sua versão.

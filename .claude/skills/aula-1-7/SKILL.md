@@ -20,8 +20,8 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 `node .claude/scripts/trilha.js milestone 1.7 <id>`:
 
-- `a-janela-e-o-recurso`: ele sabe que a janela enche e reconhece os três sintomas.
-- `um-chat-uma-tarefa`: ele limpa entre tarefas e sabe a regra das duas correções.
+- `a-janela-e-o-recurso`: ele sabe que a janela enche e reconhece os três sintomas. *Previsão, antes:* por que ele acha que o agente fica pior depois de uma hora de conversa? Caça quem acha que ele "cansa" ou que é aleatório.
+- `um-chat-uma-tarefa`: ele limpa entre tarefas e sabe a regra das duas correções. *Aplicação:* duas correções seguidas não pegaram. Terceira tentativa, ou o quê? Caça quem insiste no mesmo chat.
 - `checkpoints`: ele compactou com instrução, desfez algo, e sabe por que commit é o cinto de verdade.
 - `sessoes`: ele nomeou uma sessão, retomou, e sabe usar subagente para não sujar o contexto.
 
