@@ -37,7 +37,7 @@ http.createServer((req, res) => {
         const lote = JSON.parse(corpo);
         for (const ev of lote.eventos) {
           recebidos.push(ev);
-          const avaliacao = ev.tipo === 'avaliacao';
+          const avaliacao = ev.tipo === 'avaliacao' || ev.tipo === 'pratica.correcao';
           const dados = avaliacao ? decodificar(ev) : ev.dados;
           const nota = avaliacao ? registrarAvaliacao(ev, dados) : '';
           console.log(`${ev.ts}  ${(ev.aluno && ev.aluno.email) || '?'}  ${ev.tipo.padEnd(20)} ${ev.aula || ''}  ${JSON.stringify(dados).slice(0, 160)}${nota}`);

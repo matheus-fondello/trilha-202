@@ -27,7 +27,7 @@ const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks)[/\\]/;
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b/;
 const CLI = /^node\s+(\.\/)?\.claude[/\\]scripts[/\\]trilha\.js\b/;
 // Comandos de teste (dev reset, dev ir, dev fechar-tudo, dev fila, dev
 // avaliacoes) e o servidor mock são do terminal de quem testa, não do tutor.
@@ -80,7 +80,7 @@ function conferirBash(entrada) {
     }
     if (CLI.test(seg)) continue; // o CLI da trilha é o jeito certo de escrever
     if (SIGILO.test(seg)) {
-      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, e scripts e hooks são o código do harness. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
+      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
     }
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);
@@ -106,15 +106,32 @@ function semWww(host) {
   return String(host || '').toLowerCase().replace(/^www\./, '');
 }
 
-function dominiosCurados() {
-  const hosts = new Set();
+function urlsCuradas() {
+  const urls = [];
   try {
     const referencias = require('../scripts/lib/referencias');
     for (const { itens } of referencias.porAula()) {
-      for (const it of itens) { try { hosts.add(semWww(new URL(it.url).hostname)); } catch { /* url torta */ } }
+      for (const it of itens) { try { urls.push(new URL(it.url)); } catch { /* url torta */ } }
     }
   } catch { /* sem mapa ou sem referencias: só a entrega do aluno passa */ }
-  return hosts;
+  return urls;
+}
+
+// Curar por host abriria o YouTube, o GitHub e o X inteiros, porque uma aula cita
+// um link de cada um: qualquer vídeo, qualquer repositório, qualquer post. A
+// comparação é por URL. O caminho abre o item e o que está abaixo dele; quando o
+// link curado tem query (é o caso do YouTube, onde o vídeo mora no `v`), ela
+// também precisa bater, senão o path sozinho liberaria o site todo.
+function combina(pedida, curada) {
+  if (semWww(pedida.hostname) !== semWww(curada.hostname)) return false;
+  const p = pedida.pathname.replace(/\/+$/, '');
+  const c = curada.pathname.replace(/\/+$/, '');
+  if (p !== c && !p.startsWith(c + '/')) return false;
+  for (const [k, v] of curada.searchParams) {
+    if (k === 'hl' || k === 'persist_hl') continue; // idioma, não identidade
+    if (pedida.searchParams.get(k) !== v) return false;
+  }
+  return true;
 }
 
 function conferirPainel(entrada) {
@@ -144,9 +161,19 @@ function conferirPainel(entrada) {
   if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return;
   const daPratica = praticas.some((p) => { try { return semWww(new URL(p.url).hostname) === host; } catch { return false; } });
   if (daPratica) return;
-  if (dominiosCurados().has(host)) return;
+  // O repositório da entrega abre por prefixo, não por host: quem corrige precisa
+  // ver o repositório daquele aluno, e liberar o host inteiro seria abrir o GitHub
+  // todo — página arbitrária, que é o vetor de injeção que a sala não aceita.
+  const alvo = url.href.replace(/\/+$/, '');
+  const doRepo = praticas.some((p) => {
+    if (!p.repo) return false;
+    const base = String(p.repo).replace(/\/+$/, '');
+    return alvo === base || alvo.startsWith(base + '/');
+  });
+  if (doRepo) return;
+  if (urlsCuradas().some((c) => combina(url, c))) return;
 
-  bloquear(`\`${bruto}\` não está no material curado da trilha nem é a entrega registrada do aluno. O painel só abre o que está nos referencias.md das aulas, a prática dele e localhost.`, 'Se o aluno quer ver esse link, mande em texto; ele abre no navegador dele. Se é a entrega dele no ar, registre a URL antes (`pratica <id> pasta=<caminho> url=<url>`) e abra de novo.');
+  bloquear(`\`${bruto}\` não está no material curado da trilha nem é a entrega registrada do aluno. O painel só abre os links que estão nos referencias.md das aulas, a entrega dele e localhost.`, 'Se o aluno quer ver esse link, mande em texto; ele abre no navegador dele. Se é a entrega dele no ar, registre a URL antes (`pratica <id> pasta=<caminho> url=<url>`) e abra de novo.');
 }
 
 async function main() {

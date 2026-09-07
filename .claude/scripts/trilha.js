@@ -10,7 +10,9 @@
 //   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
 //   node .claude/scripts/trilha.js avaliar <aula> <arquivo.json>
 //   node .claude/scripts/trilha.js concluir <aula>
-//   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...]
+//   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
+//   node .claude/scripts/trilha.js criterios <pratica>
+//   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
@@ -151,7 +153,13 @@ const comandos = {
     if (a.tipo === 'pratica') {
       // Prática não tem avaliação: ela fecha com o artefato registrado, que é o que
       // as fluências das aulas seguintes vão usar.
-      if (!(e.praticas[idAula] || {}).pasta) problemas.push(`prática sem pasta registrada (pratica ${idAula} pasta=<caminho>)`);
+      const p = e.praticas[idAula] || {};
+      if (!p.pasta) problemas.push(`prática sem pasta registrada (pratica ${idAula} pasta=<caminho>)`);
+      if (a.correcao) {
+        if (!p.url) problemas.push(`prática sem URL da página no ar (pratica ${idAula} url=...)`);
+        if (!p.repo) problemas.push(`prática sem repositório público (pratica ${idAula} repo=...)`);
+        if (!p.corrigida_em) problemas.push('correção não registrada (skill corrigir, em chat separado do da prática)');
+      }
     } else if (!reg.avaliada_em) {
       problemas.push('avaliação de fim de aula não registrada (skill avaliar-aula)');
     }
@@ -167,10 +175,14 @@ const comandos = {
   },
 
   pratica([idPratica, ...resto]) {
-    if (!idPratica) falhar('Uso: pratica <id> pasta=<caminho> [url=...]');
+    if (!idPratica) falhar('Uso: pratica <id> pasta=<caminho> [url=...] [repo=...]');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica') falhar(`${idPratica} não é prática.`);
     const kv = parChaveValor(resto);
+    // Prática corrigida entrega três coisas: onde ela mora na máquina, onde ela
+    // está no ar e o repositório público. Sem as duas URLs o corretor não tem o
+    // que abrir, e a 202 não tem como conferir nada depois.
+    if (kv.repo && !/^https:\/\/github\.com\/[^/\s]+\/[^/\s]+/.test(kv.repo)) falhar('repo precisa ser a URL do repositório no GitHub (https://github.com/usuario/projeto).');
     // Chamar sem argumento gravava um registro vazio e ninguém percebia. A pasta é
     // o dado que oito fluências do módulo dependem: sem ela, não há registro.
     const anterior = (estadoLib.carregar().praticas || {})[idPratica] || {};
@@ -186,6 +198,47 @@ const comandos = {
     estadoLib.salvar(e);
     fila.enfileirar('pratica.registro', { aula: idPratica, ...kv }, e);
     console.log(`Prática ${idPratica} registrada: ${JSON.stringify(kv)}`);
+  },
+
+  criterios([idPratica]) {
+    if (!idPratica) falhar('Uso: criterios <pratica>');
+    const a = mapa.aula(idPratica);
+    if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
+    const e = estadoLib.carregar();
+    const p = e.praticas[idPratica] || {};
+    // O portão dos critérios é a entrega, não um segredo. Antes de entregar, a
+    // régua fechada é o que faz a prática valer alguma coisa; depois de entregar,
+    // saber por que a nota saiu assim é o próprio aprendizado. Quem abrir isto
+    // fora de hora deixa registro, e é assim que a 202 lê.
+    if (!p.pasta || !p.url) falhar(`os critérios da ${idPratica} abrem depois da entrega registrada. Rode primeiro: pratica ${idPratica} pasta=<caminho> url=<url> repo=<url>`);
+    const arquivo = path.join(paths.PRATICAS, idPratica.toLowerCase(), 'criterios');
+    let texto;
+    try { texto = Buffer.from(fs.readFileSync(arquivo, 'utf8'), 'base64').toString('utf8'); } catch (err) {
+      falhar(`não consegui ler os critérios da ${idPratica} (${err.message}). Corrija pelo brief e pelo que as aulas do módulo ensinaram, e diga isso na justificativa.`);
+    }
+    fila.enfileirar('criterios.abertos', { aula: idPratica }, e);
+    console.log(texto);
+  },
+
+  corrigir([idPratica, arquivo]) {
+    if (!idPratica || !arquivo) falhar('Uso: corrigir <pratica> <arquivo.json>');
+    const a = mapa.aula(idPratica);
+    if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
+    const e = estadoLib.carregar();
+    const p = e.praticas[idPratica];
+    if (!p || !p.pasta) falhar(`não há entrega registrada da ${idPratica}. Corrigir o que não foi entregue não faz sentido.`);
+    let c;
+    try { c = JSON.parse(fs.readFileSync(arquivo, 'utf8')); } catch (err) { falhar(`não consegui ler ${arquivo}: ${err.message}`); }
+    const erros = validarCorrecao(c, idPratica);
+    if (erros.length) falhar('correção inválida:\n  - ' + erros.join('\n  - '));
+    const b64 = Buffer.from(JSON.stringify(c), 'utf8').toString('base64');
+    // Mesma regra da avaliação de aula: recorrigir é legítimo e vale a última.
+    const revisao = p.corrigida_em ? { revisao: true, substitui_de: p.corrigida_em } : {};
+    fila.enfileirar('pratica.correcao', { aula: idPratica, codificado: 'base64', payload: b64, ...revisao }, e);
+    p.corrigida_em = agora();
+    estadoLib.salvar(e);
+    try { fs.unlinkSync(arquivo); } catch { /* já foi */ }
+    console.log(`Correção da ${idPratica} registrada e enfileirada. Arquivo temporário removido. Agora dê o feedback ao aluno, com as suas palavras, e feche com \`concluir ${idPratica}\`.`);
   },
 
   nota([chave, ...resto]) {
@@ -261,10 +314,11 @@ const comandos = {
       anotar = { dados: { eventos: eventos.length } };
     } else if (sub === 'avaliacoes') {
       // Decodifica as avaliações ainda na fila local. Se o mock já consumiu, elas apareceram no terminal dele.
-      const avs = fila.ler().filter((ev) => ev.tipo === 'avaliacao');
-      if (!avs.length) console.log('Nenhuma avaliação na fila local.');
+      const avs = fila.ler().filter((ev) => ev.tipo === 'avaliacao' || ev.tipo === 'pratica.correcao');
+      if (!avs.length) console.log('Nenhuma avaliação nem correção na fila local.');
       for (const ev of avs) {
-        console.log(`\n=== Avaliação da aula ${ev.aula || ev.dados.aula} (${ev.ts}) ===`);
+        const rotulo = ev.tipo === 'avaliacao' ? 'Avaliação da aula' : 'Correção da prática';
+        console.log(`\n=== ${rotulo} ${ev.aula || ev.dados.aula} (${ev.ts}) ===`);
         console.log(JSON.stringify(JSON.parse(Buffer.from(ev.dados.payload, 'base64').toString('utf8')), null, 2));
       }
       anotar = { dados: { avaliacoes: avs.map((ev) => ev.aula || ev.dados.aula) } };
@@ -300,6 +354,25 @@ function minutosNaAula(e, idAula) {
   const s = e.sessao_atual;
   const aberta = s && s.aula === idAula ? Math.max(0, minutosEntre(s.inicio, s.ultima_atividade || agora())) : 0;
   return fechadas + aberta;
+}
+
+function validarCorrecao(c, idPratica) {
+  const erros = [];
+  if (!c || typeof c !== 'object') return ['não é um objeto JSON'];
+  if (c.pratica !== idPratica) erros.push(`campo "pratica" deve ser "${idPratica}"`);
+  for (const k of ['entrega', 'conversao', 'fidelidade', 'execucao', 'metodo']) {
+    const v = c.criterios ? c.criterios[k] : undefined;
+    if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${k} deve ser inteiro de 1 a 5`);
+  }
+  if (typeof c.justificativa !== 'string' || c.justificativa.length < 200 || c.justificativa.length > 2000) erros.push('"justificativa" entre 200 e 2000 caracteres: o que sustenta cada nota fora da média');
+  if (!Array.isArray(c.evidencias) || c.evidencias.length < 2 || c.evidencias.length > 5) erros.push('"evidencias" deve ter de 2 a 5 trechos do que ele entregou');
+  else for (const ev of c.evidencias) if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+  if (typeof c.feedback_aluno !== 'string' || c.feedback_aluno.length < 300 || c.feedback_aluno.length > 3000) erros.push('"feedback_aluno" entre 300 e 3000 caracteres: é o que ele recebe, sem nota');
+  if (typeof c.resumo_qualitativo !== 'string' || c.resumo_qualitativo.length < 40 || c.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
+  if (c.suspeita !== null && c.suspeita !== undefined) {
+    if (typeof c.suspeita.descricao !== 'string' || typeof c.suspeita.evidencia !== 'string') erros.push('suspeita precisa de "descricao" e "evidencia"');
+  }
+  return erros;
 }
 
 function validarAvaliacao(av, idAula) {

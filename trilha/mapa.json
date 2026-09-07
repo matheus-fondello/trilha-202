@@ -1,5 +1,5 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. M0, M1 e a P0 estão escritos; a P1 e o quiz Q1 ainda não. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado.",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. M0, M1, a P0 e a P1 estão escritos; o quiz Q1 ainda não. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado.",
   "versao": "0.3.0",
   "aulas": [
     {
@@ -343,7 +343,25 @@
       "titulo": "Landing page para o cliente",
       "skill": "pratica-p1",
       "fluencia": false,
-      "milestones": null
+      "correcao": true,
+      "milestones": [
+        {
+          "id": "brief-lido",
+          "titulo": "O cliente, quem compra e a ação que a página pede"
+        },
+        {
+          "id": "decisoes",
+          "titulo": "A spec escrita antes de construir, com o que fica de fora"
+        },
+        {
+          "id": "entrega-vista",
+          "titulo": "A página no ar, aberta no painel"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Pasta, URL e repositório no estado"
+        }
+      ]
     },
     {
       "id": "Q1",

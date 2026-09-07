@@ -6,11 +6,13 @@ const path = require('path');
 const RAIZ = path.resolve(__dirname, '..', '..', '..');
 const TRILHA = path.join(RAIZ, 'trilha');
 const SKILLS = path.join(RAIZ, '.claude', 'skills');
+const PRATICAS = path.join(RAIZ, 'praticas');
 
 module.exports = {
   RAIZ,
   TRILHA,
   SKILLS,
+  PRATICAS,
   ESTADO: path.join(TRILHA, 'estado.json'),
   FILA: path.join(TRILHA, 'fila.jsonl'),
   CONFIG: path.join(TRILHA, 'config.json'),
