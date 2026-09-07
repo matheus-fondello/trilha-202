@@ -1,6 +1,6 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. M0, M1, a P0 e a P1 estão escritos; o quiz Q1 ainda não. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado.",
-  "versao": "0.3.0",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: M0, M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Aula com \"tronco\": false é aprofundamento: não entra na sequência padrão, `proxima` a pula, e o roteamento até ela ainda não existe.",
+  "versao": "0.4.0",
   "aulas": [
     {
       "id": "0.1",
@@ -337,6 +337,16 @@
       ]
     },
     {
+      "id": "1.11",
+      "modulo": 1,
+      "tipo": "aula",
+      "titulo": "Subagentes, MCP e plugins",
+      "skill": "aula-1-11",
+      "fluencia": true,
+      "tronco": false,
+      "milestones": null
+    },
+    {
       "id": "P1",
       "modulo": 1,
       "tipo": "pratica",
@@ -369,6 +379,446 @@
       "tipo": "quiz",
       "titulo": "Quiz do módulo 1",
       "skill": "quiz-m1",
+      "fluencia": false,
+      "milestones": null
+    },
+    {
+      "id": "2.1",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "O que significa shippar",
+      "skill": "aula-2-1",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "no-ar-nao-e-shippado",
+          "titulo": "No ar não é em uso"
+        },
+        {
+          "id": "o-ciclo",
+          "titulo": "As seis etapas do ciclo"
+        },
+        {
+          "id": "onde-a-ia-acelera",
+          "titulo": "A fatia que encolheu e as que não"
+        },
+        {
+          "id": "os-oitenta-por-cento",
+          "titulo": "Demo rápida, produto lento"
+        }
+      ]
+    },
+    {
+      "id": "2.2",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Cliente, servidor e API",
+      "skill": "aula-2-2",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "requisicao-e-resposta",
+          "titulo": "O caminho do clique ao servidor e de volta"
+        },
+        {
+          "id": "front-e-back",
+          "titulo": "O que roda onde, e onde um segredo pode viver"
+        },
+        {
+          "id": "a-pagina-ganha-servidor",
+          "titulo": "A página estática vira projeto com rota"
+        },
+        {
+          "id": "api-e-contrato",
+          "titulo": "Endpoint, JSON e o que fazer quando a outra ponta falha"
+        }
+      ]
+    },
+    {
+      "id": "2.3",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Banco, dados e a stack",
+      "skill": "aula-2-3",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "entidades-em-texto",
+          "titulo": "O domínio descrito antes do código"
+        },
+        {
+          "id": "banco",
+          "titulo": "Tabela, chave, relação e consulta"
+        },
+        {
+          "id": "schema-e-tipos",
+          "titulo": "Schema e o custo de mudar depois"
+        },
+        {
+          "id": "auth",
+          "titulo": "Identidade, autorização e o que não se inventa"
+        },
+        {
+          "id": "a-stack",
+          "titulo": "Next, Supabase e Vercel: por que esta e quando fugir"
+        }
+      ]
+    },
+    {
+      "id": "2.4",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Git como rede de segurança",
+      "skill": "aula-2-4",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "por-que-git",
+          "titulo": "O agente erra grande e rápido"
+        },
+        {
+          "id": "modelo-mental",
+          "titulo": "Diretório, staging, commit e HEAD"
+        },
+        {
+          "id": "commit-bem-feito",
+          "titulo": "Atômico, com o porquê na mensagem"
+        },
+        {
+          "id": "desfazer",
+          "titulo": "Voltar sem pânico, e o limite do checkpoint"
+        }
+      ]
+    },
+    {
+      "id": "2.5",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Branches, PRs e o remoto",
+      "skill": "aula-2-5",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "branch-por-tarefa",
+          "titulo": "Uma tarefa, uma branch"
+        },
+        {
+          "id": "pr-como-unidade",
+          "titulo": "O PR como unidade de revisão"
+        },
+        {
+          "id": "o-remoto",
+          "titulo": "Push, pull, público e privado"
+        },
+        {
+          "id": "revisao-no-pr",
+          "titulo": "O revisor adversarial lendo o diff"
+        }
+      ]
+    },
+    {
+      "id": "2.6",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Segredos e ambientes",
+      "skill": "aula-2-6",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "o-que-nunca-commitar",
+          "titulo": "A lista curta e o .gitignore"
+        },
+        {
+          "id": "se-vazou",
+          "titulo": "Rotacionar, não apagar"
+        },
+        {
+          "id": "ambientes",
+          "titulo": "Mesmo código, configuração diferente"
+        },
+        {
+          "id": "preview-por-pr",
+          "titulo": "Cada PR com o seu endereço"
+        }
+      ]
+    },
+    {
+      "id": "2.7",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Projeto que não é seu",
+      "skill": "aula-2-7",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.8",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "O problema bem definido",
+      "skill": "aula-2-8",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.9",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Critérios de aceitação e decomposição",
+      "skill": "aula-2-9",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.10",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Testes e TDD com agentes",
+      "skill": "aula-2-10",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.11",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Debugging sem ler código",
+      "skill": "aula-2-11",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.12",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Revisão adversarial",
+      "skill": "aula-2-12",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.13",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Segurança e dados",
+      "skill": "aula-2-13",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "2.14",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Harness engineering",
+      "skill": "aula-2-14",
+      "fluencia": true,
+      "tronco": false,
+      "milestones": [
+        {
+          "id": "modelo-versus-harness",
+          "titulo": "As cinco peças em volta do modelo"
+        },
+        {
+          "id": "context-engineering",
+          "titulo": "Sob demanda, compactar, o disco como memória"
+        },
+        {
+          "id": "sensores",
+          "titulo": "Sinal executável no lugar de confiança"
+        },
+        {
+          "id": "tarefas-longas",
+          "titulo": "Plano no disco e retomada"
+        },
+        {
+          "id": "os-oitenta-de-verdade",
+          "titulo": "Onde mora o 20 que falta"
+        }
+      ]
+    },
+    {
+      "id": "2.15",
+      "modulo": 2,
+      "tipo": "aula",
+      "titulo": "Orquestração",
+      "skill": "aula-2-15",
+      "fluencia": true,
+      "tronco": false,
+      "milestones": null
+    },
+    {
+      "id": "P2",
+      "modulo": 2,
+      "tipo": "pratica",
+      "titulo": "Sistema para o cliente",
+      "skill": "pratica-p2",
+      "fluencia": false,
+      "correcao": true,
+      "milestones": null
+    },
+    {
+      "id": "Q2",
+      "modulo": 2,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 2",
+      "skill": "quiz-m2",
+      "fluencia": false,
+      "milestones": null
+    },
+    {
+      "id": "3.1",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "O modelo por dentro",
+      "skill": "aula-3-1",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "pre-e-pos-treino",
+          "titulo": "De onde vem o comportamento de assistente"
+        },
+        {
+          "id": "parametrico-versus-recuperado",
+          "titulo": "O que está nos pesos e o que entra pelo contexto"
+        },
+        {
+          "id": "tamanho-custo-latencia",
+          "titulo": "O menor modelo que resolve"
+        },
+        {
+          "id": "thinking",
+          "titulo": "O que é, quando ajuda, o que custa"
+        }
+      ]
+    },
+    {
+      "id": "3.2",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Produto que usa IA",
+      "skill": "aula-3-2",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "duas-coisas-diferentes",
+          "titulo": "IA para construir e produto que usa IA"
+        },
+        {
+          "id": "formatos-de-feature",
+          "titulo": "Transformar, extrair, classificar, gerar, conversar, agir"
+        },
+        {
+          "id": "quando-faz-sentido",
+          "titulo": "Entrada bagunçada, ou regra determinística"
+        },
+        {
+          "id": "o-que-muda-no-produto",
+          "titulo": "Latência, incerteza e custo por uso"
+        }
+      ]
+    },
+    {
+      "id": "3.3",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Chamar um modelo",
+      "skill": "aula-3-3",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "3.4",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Custo, teto e observabilidade",
+      "skill": "aula-3-4",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "3.5",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Saída confiável e experiência",
+      "skill": "aula-3-5",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "3.6",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Segurança de IA",
+      "skill": "aula-3-6",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "3.7",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Evals",
+      "skill": "aula-3-7",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "3.8",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Recuperação e memória",
+      "skill": "aula-3-8",
+      "fluencia": true,
+      "tronco": false,
+      "milestones": null
+    },
+    {
+      "id": "3.9",
+      "modulo": 3,
+      "tipo": "aula",
+      "titulo": "Ferramentas e agentes no produto",
+      "skill": "aula-3-9",
+      "fluencia": true,
+      "tronco": false,
+      "milestones": [
+        {
+          "id": "tool-use",
+          "titulo": "O modelo pede, o servidor executa"
+        },
+        {
+          "id": "workflow-versus-agente",
+          "titulo": "Fluxo fixo contra loop com decisão"
+        },
+        {
+          "id": "padroes",
+          "titulo": "Os cinco padrões de composição"
+        },
+        {
+          "id": "mcp-e-sdk",
+          "titulo": "O que cada um resolve, e quando nenhum"
+        },
+        {
+          "id": "quando-workflow-basta",
+          "titulo": "O que precisa ser verdade para um agente valer"
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "modulo": 3,
+      "tipo": "pratica",
+      "titulo": "Feature de IA",
+      "skill": "pratica-p3",
+      "fluencia": false,
+      "correcao": true,
+      "milestones": null
+    },
+    {
+      "id": "Q3",
+      "modulo": 3,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 3",
+      "skill": "quiz-m3",
       "fluencia": false,
       "milestones": null
     }

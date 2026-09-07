@@ -333,3 +333,267 @@ Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você
 - **Anthropic, *Best practices for Claude Code*, seção "Give Claude a way to verify its work"** — documentação do Claude Code · 3 min a seção
   https://code.claude.com/docs/en/best-practices#give-claude-a-way-to-verify-its-work
   Traz o screenshot como check na forma de prompt copiável: implemente, tire um screenshot do resultado, compare com o original, liste as diferenças e corrija.
+
+## Módulo 2
+
+### 2.1 O que significa shippar
+
+**Sugerida**
+
+- **Martin Fowler, *Continuous Delivery*** — martinfowler.com, mai/2013, atualizado ago/2014 · ~4 min
+  https://martinfowler.com/bliki/ContinuousDelivery.html
+  Quatro minutos que fixam o teste prático de "pronto": o patrocinador pode pedir para colocar a versão atual em produção agora, e ninguém se assusta.
+
+**Citadas na aula**
+
+- **Google, *Appendix E: Launch Coordination Checklist*** — Site Reliability Engineering (O'Reilly, 2016) · leitura de ~3 min
+  https://sre.google/sre-book/launch-checklist/
+  A lista que o Google exigia antes de considerar um serviço lançado: arquitetura, capacidade, o que acontece quando a máquina morre, monitoramento, segurança, dependências. Nada disso é escrever a funcionalidade.
+
+- **Martin Fowler, *Is High Quality Software Worth the Cost?*** — martinfowler.com, mai/2019 · ~16 min
+  https://martinfowler.com/articles/is-quality-worth-cost.html
+  Mostra por que a manutenção domina o custo do ciclo: quase toda programação acontece dentro de código que já existe, então o preço de mudar depois pesa mais que o de construir.
+
+- **Joel Becker, Nate Rush, Beth Barnes e David Rein, *Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity*** — METR, jul/2025 · ~18 min
+  https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/
+  Ensaio randomizado com 16 devs experientes em repositórios que eles já conheciam: com IA levaram 19% mais tempo, e mesmo depois achavam que tinham sido 20% mais rápidos.
+
+- **Addy Osmani, *The 80% Problem in Agentic Coding*** — Elevate (Substack), jan/2026 · ~17 min
+  https://addyo.substack.com/p/the-80-problem-in-agentic-coding
+  O texto que dá nome ao problema: o agente entrega os 80% que funcionam, e o que sobra é dívida de compreensão, código que você aprovou sem saber explicar.
+
+### 2.2 Cliente, servidor e API
+
+**Sugerida**
+
+- **Next.js, *How to use environment variables in Next.js — Bundling Environment Variables for the Browser*** — documentação oficial · ~2 min de leitura
+  https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
+  É onde a fronteira entre front e back vira uma regra que se pode conferir: sem o prefixo `NEXT_PUBLIC_` a variável fica só no servidor, com o prefixo ela é colada dentro do JavaScript que desce para o navegador.
+
+**Citadas na aula**
+
+- **MDN Web Docs, *How the web works — HTTP basics*** — documentação · ~4 min de leitura
+  https://developer.mozilla.org/en-US/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works#http_basics
+  Mostra uma requisição HTTP crua de duas linhas (`GET /en-US/ HTTP/2` e o `Host:`), o `200` da resposta, e logo abaixo destrincha uma URL em protocolo, domínio e caminho.
+
+- **MDN Web Docs, *Introdução ao lado servidor — programação do lado do servidor e do lado cliente são iguais?*** — documentação · ~3 min de leitura
+  https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Extensions/Server-side/First_steps/Introduction#a_programação_do_lado_do_servidor_e_do_lado_cliente_são_iguais
+  Separa as duas responsabilidades sem virar aula de linguagem: o cliente cuida de como a página parece e se comporta, o servidor decide qual conteúdo sai.
+
+- **ViaCEP, *Webservice CEP e IBGE gratuito*** — documentação · ~4 min de leitura
+  https://viacep.com.br/
+  Contrato inteiro numa página só: o formato do endpoint, o JSON que volta, o `400` para CEP malformado e o `"erro": "true"` — string, não booleano — para CEP válido que não existe.
+
+- **Next.js, *Route Handlers — Convention*** — documentação oficial · ~1 min de leitura (a seção)
+  https://nextjs.org/docs/app/getting-started/route-handlers#convention
+  Diz em quatro linhas o que é uma rota de servidor no Next.js: um arquivo `route.ts` dentro de `app/`, uma função exportada por método HTTP, e a regra de que `route.js` e `page.js` não convivem no mesmo caminho.
+
+### 2.3 Banco, dados e a stack
+
+**Sugerida**
+
+- **Fireship, *SQL Explained in 100 Seconds*** — YouTube, abr/2021 · 2 min 23 s
+  https://www.youtube.com/watch?v=zsjvFFKOm3c&hl=en&persist_hl=1
+  Em dois minutos mostra tabela, linha, coluna e uma consulta rodando, que é o que ele precisa reconhecer para conferir o agente.
+
+**Citadas na aula**
+
+- **MDN Web Docs, *JSON*** — glossário, em português · leitura ~2 min
+  https://developer.mozilla.org/pt-BR/docs/Glossary/JSON
+  Duas frases dão o vocabulário exato (objeto, array, aninhamento) e dizem o que JSON *não* representa.
+
+- **Supabase, *Tables and Data*** — documentação, seção "Primary keys" · leitura ~1 min
+  https://supabase.com/docs/guides/database/tables#primary-keys
+  Define chave primária em quatro linhas, e duas seções abaixo mostra de onde vem a palavra "relacional".
+
+- **Supabase, *Database Migrations*** — documentação, seção "Schema migrations" · leitura ~3 min
+  https://supabase.com/docs/guides/deployment/database-migrations#schema-migrations
+  Mostra uma mudança de schema virando arquivo datado e versionado, que é a resposta concreta a "por que dói mudar depois".
+
+- **OWASP Cheat Sheet Series, *Authentication Cheat Sheet*** — documentação, seção "Authentication General Guidelines" · leitura ~15 min
+  https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#authentication-general-guidelines
+  O tamanho da lista é o argumento: ID, senha, recuperação, hash, TLS, reautenticação, mensagem de erro, ataque automatizado.
+
+### 2.4 Git como rede de segurança
+
+**Sugerida**
+
+- **Chris Beams, *How to Write a Git Commit Message*** — cbea.ms, ago/2014 · 12 min de leitura
+  https://cbea.ms/git-commit/
+  As sete regras que viraram o padrão de fato, e a sétima é a aula inteira: use o corpo da mensagem para explicar o quê e o porquê, nunca o como.
+
+**Citadas na aula**
+
+- **Chacon e Straub, *Pro Git*, cap. 1.3 "O que é Git?", seção "Os Três Estados"** — Apress / git-scm.com, 2ª edição · 3 min a seção
+  https://git-scm.com/book/pt-br/v2/Primeiros-Passos-O-que-%C3%A9-Git%3F#_os_tr%C3%AAs_estados
+  Meia página em português que fecha o modelo mental inteiro: modificado, preparado e commitado, e as três áreas correspondentes — diretório de trabalho, área de preparação e diretório .git.
+
+- **Chacon e Straub, *Pro Git*, cap. 5.2 "Contribuindo com um Projeto", seção "Diretrizes de Commit"** — Apress / git-scm.com, 2ª edição · 4 min a seção
+  https://git-scm.com/book/pt-br/v2/Git-Distribu%C3%ADdo-Contribuindo-com-um-Projeto#_commit_guidelines
+  É a régua do próprio projeto Git para commit atômico e mensagem no imperativo, com o critério que interessa aqui: cada commit muda uma coisa só e a mensagem diz por quê.
+
+- **Chacon e Straub, *Pro Git*, cap. 2.4 "Desfazendo Coisas"** — Apress / git-scm.com, 2ª edição · 8 min de leitura
+  https://git-scm.com/book/pt-br/v2/Fundamentos-do-Git-Desfazendo-Coisas
+  Traz `--amend`, tirar da preparação e descartar modificação nas duas formas, a antiga com `reset`/`checkout` e a nova com `restore`, e avisa em que ponto exato o desfazer passa a perder trabalho.
+
+- **Anthropic, *Checkpointing*, seção "Limitations"** — documentação do Claude Code · 2 min a seção
+  https://code.claude.com/docs/en/checkpointing#limitations
+  O contraste que a aula precisa, escrito pela própria Anthropic: o checkpoint não pega o que o bash mexeu, nem o que subagente editou, nem mudança feita fora da sessão, e a página fecha dizendo que ele não substitui controle de versão.
+
+### 2.5 Branches, PRs e o remoto
+
+**Sugerida**
+
+- **GitHub, *How to create a pull request in 4 min | GitHub for Beginners*** — YouTube, ago/2024 · 3 min 44 s
+  https://www.youtube.com/watch?v=nCKdihvneS0&hl=en&persist_hl=1
+  Canal oficial do GitHub: em menos de quatro minutos o aluno vê a tela do PR de verdade — o botão, o diff, o merge — que é o que falta para quem nunca abriu um.
+
+**Citadas na aula**
+
+- **Scott Chacon e Ben Straub, *Ramificação (Branching) e Mesclagem (Merging) Básicas*** — Pro Git, 2ª edição, tradução pt-br · ~10 min de leitura (~4 min só a Ramificação Básica)
+  https://git-scm.com/book/pt-br/v2/Ramifica%C3%A7%C3%A3o-Branching-no-Git-Ramifica%C3%A7%C3%A3o-Branching-e-Mesclagem-Merging-B%C3%A1sicas#_basic_branching
+  Conta a história inteira em um exemplo: você está no meio da tarefa 53, chega um bug urgente, você troca de branch, resolve, volta e o trabalho continua onde estava — e a mesma página termina em conflito de merge, com os marcadores na tela.
+
+- **GitHub, *About pull requests*** — GitHub Docs · ~2 min de leitura
+  https://docs.github.com/en/pull-requests/get-started/about-pull-requests#key-parts-of-a-pull-request
+  Lista o que um PR junta — Conversation, Commits, Checks, Files changed e a merge box — e é exatamente por isso que ele é a unidade de revisão: a conversa, o histórico, os testes e o diff no mesmo lugar.
+
+- **Scott Chacon e Ben Straub, *Branches Remotos (Remote Branches)*** — Pro Git, 2ª edição, tradução pt-br · ~11 min de leitura (~3 min só a seção de push)
+  https://git-scm.com/book/pt-br/v2/Ramifica%C3%A7%C3%A3o-Branching-no-Git-Branches-Remotos-Remote-Branches#_pushing_branches
+  Diz a frase que desfaz a confusão mais comum de quem acabou de aprender git local: branches locais não são sincronizados sozinhos com o remoto, você empurra explicitamente o que quer compartilhar.
+
+- **GitHub, *Reviewing proposed changes in a pull request*** — GitHub Docs · ~9 min de leitura (~2 min a seção Starting a review)
+  https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request#starting-a-review
+  Mostra onde o diff mora (aba Files changed), como alternar entre visão unificada e lado a lado, e como o comentário gruda numa linha específica — que é o que o revisor adversarial precisa apontar.
+
+### 2.6 Segredos e ambientes
+
+**Sugerida**
+
+- **Joe Leon, *Anyone can Access Deleted and Private Repository Data on GitHub*** — Truffle Security, julho/2024 · 9 min de leitura
+  https://trufflesecurity.com/blog/anyone-can-access-deleted-and-private-repo-data-github
+  Demonstra que commit de fork apagado, de repositório apagado e de repositório que virou privado continua acessível pelo hash, e conclui que rotacionar a chave é a única remediação real.
+
+**Citadas na aula**
+
+- **Vercel, *How to use environment variables in Next.js*** — documentação do Next.js · 6 min de leitura
+  https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
+  Explica que o prefixo `NEXT_PUBLIC_` faz o valor ser gravado dentro do JavaScript entregue ao navegador: é a prova, na documentação oficial, de que existe uma diferença dura entre variável do servidor e variável pública.
+
+- **GitHub, *Remover dados confidenciais de um repositório*** — GitHub Docs, em português · 10 min de leitura
+  https://docs.github.com/pt/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository#about-removing-sensitive-data-from-a-repository
+  A própria documentação do GitHub diz que o primeiro passo é revogar ou trocar o segredo, e que reescrever o histórico pode nem ser necessário depois disso — é a ordem invertida do que o aluno imagina.
+
+- **Adam Wiggins, *III. Configurações*, The Twelve-Factor App** — 12factor.net, 2011, revisto em 2017 · 3 min de leitura
+  https://12factor.net/pt_br/config
+  Traz o teste que resolve a dúvida de uma vez: se o repositório pudesse virar público agora mesmo, sem vazar nenhuma credencial, a configuração está no lugar certo.
+
+- **Vercel, *Environments* — seção Preview Environment** — documentação da Vercel · 2 min de leitura
+  https://vercel.com/docs/deployments/environments#preview-environment-pre-production
+  Lista exatamente o que dispara um preview (commit fora da branch de produção, pull request, `vercel` sem `--prod`) e a diferença entre a URL da branch e a URL do commit.
+
+### 2.14 Harness engineering
+
+**Sugerida**
+
+- **Geoffrey Litt, *Understanding is the new bottleneck*** — geoffreylitt.com, jul/2026 · ~11 min de leitura
+  https://www.geoffreylitt.com/2026/07/02/understanding-is-the-new-bottleneck
+  Argumenta que entender o código deixou de ser para conferir e passou a ser para participar: sem modelo mental você não consegue nem propor o próximo passo. Fecha a aula virando o harness do agente para o lado de quem opera.
+
+**Citadas na aula**
+
+- **Birgitta Böckeler, *Harness engineering for coding agent users*** — martinfowler.com, abr/2026 · ~14 min de leitura
+  https://martinfowler.com/articles/harness-engineering.html
+  Define harness como "tudo num agente menos o modelo" e organiza as peças em guias (antes de agir) e sensores (depois de agir), computacionais ou inferenciais — é o vocabulário que a aula inteira usa.
+
+- **Anthropic (Applied AI), *Effective context engineering for AI agents*** — Anthropic Engineering, set/2025 · ~15 min de leitura
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  Explica context rot e as três saídas para tarefa longa — compactação, anotação em disco e subagente —, que é exatamente o que a aula chama de carregar sob demanda e usar o disco como memória.
+
+- **Birgitta Böckeler, *Maintainability sensors for coding agents*** — martinfowler.com, mai/2026 · ~33 min de leitura
+  https://martinfowler.com/articles/sensors-for-coding-agents.html
+  Sensor por sensor com o que ela achou na prática: linter com mensagem escrita para o agente, regra de dependência, dado de acoplamento, revisão de modularidade pelo próprio modelo, suíte de testes como sensor de regressão e teste de mutação.
+
+- **Addy Osmani, *The 70% problem: Hard truths about AI-assisted coding*** — Elevate (newsletter do autor), dez/2024 · ~11 min de leitura
+  https://addyo.substack.com/p/the-70-problem-hard-truths-about
+  Nomeia onde mora o resto: caso de borda, depuração que gera novo defeito, estado de tela inacabado, acessibilidade, desempenho em aparelho lento — e por que quem não tem modelo mental do código fica preso ali.
+
+## Módulo 3
+
+### 3.1 O modelo por dentro
+
+**Sugerida**
+
+- **Andrej Karpathy, *Deep Dive into LLMs like ChatGPT*** — YouTube, fev/2025 · 3h31min
+  https://www.youtube.com/watch?v=7xTGNNLPyMI&hl=en&persist_hl=1
+  O único material geral que percorre a pilha inteira de treino, do dado bruto da internet ao modelo que se comporta como assistente, sem exigir matemática do espectador.
+
+**Citadas na aula**
+
+- **Anthropic, *Claude's Character*** — anthropic.com, jun/2024 · ~8 min de leitura
+  https://www.anthropic.com/research/claude-character
+  O laboratório descrevendo, em primeira pessoa, que traços de comportamento do assistente foram treinados de propósito depois do pré-treino, e não emergiram sozinhos.
+
+- **Anthropic (Applied AI), *Effective context engineering for AI agents*** — Anthropic Engineering, set/2025 · ~15 min de leitura
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  Trata contexto como recurso finito e defende buscar informação no momento do uso, por referência leve, em vez de despejar tudo no prompt.
+
+- **Anthropic, *Models overview*, seção "Compare models"** — platform.claude.com · ~2 min de leitura
+  https://platform.claude.com/docs/en/models/overview#latest-models-comparison
+  A tabela com latência comparativa, preço por milhão de tokens de entrada e de saída e tamanho de janela lado a lado: é a conta que decide qual modelo usar.
+
+- **Anthropic, *Thinking*, seção "How thinking works"** — platform.claude.com · ~2 min de leitura
+  https://platform.claude.com/docs/en/build-with-claude/thinking#how-thinking-works
+  Mostra o raciocínio como blocos de conteúdo que chegam antes da resposta, resumidos e cobrados como saída — thinking é texto gerado e pago, não um modo mágico.
+
+### 3.2 Produto que usa IA
+
+**Sugerida**
+
+- **Maggie Appleton, *Language Model Sketchbook, or Why I Hate Chatbots*** — maggieappleton.com, jun/2023 · ~6 min de leitura
+  https://maggieappleton.com/lm-sketchbook
+  Três esboços de interface que não são chat — sugestões que aparecem enquanto se escreve, cadeias de causa e consequência, menu de botão direito — com o argumento de que o chat é a solução preguiçosa.
+
+**Citadas na aula**
+
+- **Anthropic, *Ticket routing* — seção "Build a strong prompt"** — Claude Platform Docs, sem data · ~5 min de leitura
+  https://platform.claude.com/docs/en/about-claude/use-case-guides/ticket-routing#build-a-strong-prompt
+  Uma feature de classificar inteira, do jeito que ela existe em produção: ticket em texto livre entra, uma categoria de uma lista fechada sai.
+
+- **Google PAIR, *User Needs + Defining Success* — seção "When AI is probably not better"** — People + AI Guidebook, 2019 · ~1 min de leitura (a seção)
+  https://pair.withgoogle.com/chapter/user-needs/#when-ai-is-probably-not-better
+  Seis situações em que a regra ganha do modelo, com exemplo em cada uma: previsibilidade, informação estática, erro caro, transparência, pressa de ir ao mercado, e tarefa que ninguém quer automatizada.
+
+- **Erik S. e Barry Zhang, *Building effective agents* — seção "When (and when not) to use agents"** — Anthropic Engineering, dez/2024 · ~1 min de leitura (a seção)
+  https://www.anthropic.com/engineering/building-effective-agents#when-and-when-not-to-use-agents
+  Cem palavras que dizem para achar a solução mais simples possível e só subir a complexidade quando ela se justifica, incluindo a hipótese de não construir nada agêntico.
+
+- **Anthropic, *Optimizing for cost and intelligence* — seção "Compare models on cost per task"** — Claude Platform Docs, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence#compare-models-on-cost-per-task
+  Números reais de custo por tarefa concluída, e o caso em que o modelo mais caro por token sai mais barato no fim, que é onde a intuição de preço costuma errar.
+
+### 3.9 Ferramentas e agentes no produto
+
+**Sugerida**
+
+- **Barry Zhang, *How We Build Effective Agents*** — AI Engineer, abr/2025 · 15 min
+  https://www.youtube.com/watch?v=D7_ipDqhtwk&hl=en&persist_hl=1
+  Um dos autores do artigo defende, em quinze minutos, que agente é caro e que workflow resolve quase tudo: é a tese do último marco dita por quem escreveu a fonte.
+
+**Citadas na aula**
+
+- **Anthropic, *How tool use works*** — Claude Platform Docs · ~1 min de leitura (a seção)
+  https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works#the-agentic-loop-client-tools
+  A seção escreve o loop como cinco passos em torno do `stop_reason`, que é exatamente o que o aluno precisa ver para entender que o modelo pede e o servidor executa.
+
+- **Anthropic, *How the agent loop works*** — Claude Code Docs, Agent SDK · ~1 min de leitura (a seção)
+  https://code.claude.com/docs/en/agent-sdk/agent-loop#the-loop-at-a-glance
+  Um loop de agente real, em produto que roda, descrito em cinco passos e um diagrama: serve de contraste concreto com o fluxo fixo.
+
+- **Erik S. e Barry Zhang, *Building effective agents*** — Anthropic Engineering, dez/2024 · ~10 min de leitura (a seção)
+  https://www.anthropic.com/engineering/building-effective-agents#building-blocks-workflows-and-agents
+  É a fonte dos cinco padrões que a aula usa, cada um com o diagrama e uma linha de quando aplicar; a ementa da aula é o índice desta seção.
+
+- **Model Context Protocol, *Architecture overview*** — modelcontextprotocol.io · ~2 min de leitura (a seção)
+  https://modelcontextprotocol.io/docs/learn/architecture#primitives
+  Define as três primitivas do servidor — tools, resources, prompts — que é o que separa MCP de "mais um jeito de chamar API".

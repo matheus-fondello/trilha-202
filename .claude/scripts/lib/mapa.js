@@ -24,10 +24,14 @@ function aula(idAula) {
   return a;
 }
 
+// Aula de aprofundamento ("tronco": false) fica fora da sequência padrão: é
+// oferecida a quem está adiantado e nunca é pré-requisito de nada, então quem
+// termina a aula anterior segue para a próxima de tronco, não para ela.
 function proxima(idAula) {
   const lista = todas();
   const i = lista.findIndex((x) => x.id === idAula);
-  return i >= 0 && i + 1 < lista.length ? lista[i + 1] : null;
+  if (i < 0) return null;
+  return lista.slice(i + 1).find((x) => x.tronco !== false) || null;
 }
 
 function skillExiste(a) {

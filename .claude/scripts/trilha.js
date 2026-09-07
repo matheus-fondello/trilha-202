@@ -167,7 +167,11 @@ const comandos = {
 
     reg.status = 'concluida';
     reg.concluida_em = agora();
-    const prox = mapa.proxima(idAula);
+    // Quem fecha um aprofundamento volta para o tronco de onde saiu, que é a
+    // primeira aula de tronco ainda não concluída; `proxima` daria a seguinte no mapa.
+    const prox = a.tronco === false
+      ? mapa.todas().find((x) => x.tronco !== false && (e.aulas[x.id] || {}).status !== 'concluida') || null
+      : mapa.proxima(idAula);
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
