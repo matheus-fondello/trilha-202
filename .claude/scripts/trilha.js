@@ -30,8 +30,7 @@ const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
 
-// Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
-const MINUTOS_VIVA = 30;
+const { MINUTOS_VIVA } = estadoLib;
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -204,7 +203,10 @@ const comandos = {
     const texto = resto.join(' ');
     if (!texto) falhar(`Uso: nota ${chave} "<texto>" — a observação e o que você vai fazer por causa dela.`);
     const e = estadoLib.carregar();
-    const { acao, total } = notas.definir(chave, texto, e.aula_atual, agora());
+    // A nota se escreve no fechamento, quando `concluir` já avançou aula_atual:
+    // a etiqueta é a aula desta sessão, não a próxima, que o aluno nem começou.
+    const aula = (e.sessao_atual && e.sessao_atual.aula) || e.aula_atual;
+    const { acao, total } = notas.definir(chave, texto, aula, agora());
     console.log(`Nota "${chave}" ${acao}. ${total} de ${notas.TETO} notas. Ela fica em trilha/aluno.md e não sobe para a 202.`);
   },
 
@@ -223,27 +225,40 @@ const comandos = {
 
   dev([sub, ...resto]) {
     const e = estadoLib.carregar();
+    // Comando dev manipula o estado por fora da conversa: apagar a fila, saltar
+    // para outra aula, fechar milestone sem ter tratado o bloco. O servidor
+    // precisa saber que isso aconteceu, senão lê o estado resultante como aula
+    // dada. Cada subcomando enfileira dev.<sub> ao terminar. Fica de fora só
+    // `referencias`, que gera conteúdo e não toca em nada do aluno.
+    let anotar = null;
     if (sub === 'reset') {
       // Zerar com aula acontecendo apaga o trabalho de alguém no meio. Só com --forcar.
       // Sessão sem sinal de vida há mais de MINUTOS_VIVA está morta, não aberta: quem
       // fecha o terminal na marra (o TESTE.md manda fazer isso) deixa uma pendurada, e
       // uma trava que dispara sempre vira --forcar por hábito, que é não ter trava.
-      const s = e.sessao_atual;
+      // Sessão sem turno nenhum é janela aberta, não aula: não segura o reset.
+      const s = e.sessao_atual && e.sessao_atual.contada !== false ? e.sessao_atual : null;
       const paradaHa = s ? minutosEntre(s.ultima_atividade || s.inicio, agora()) : Infinity;
       if (s && paradaHa < MINUTOS_VIVA && !resto.includes('--forcar')) {
         falhar(`há uma aula acontecendo agora (${s.aula}, ativa ${relativo(s.ultima_atividade || s.inicio)}). Feche o chat antes, ou rode "dev reset --forcar" se tiver certeza.`);
       }
+      const antes = { aluno: e.aluno.email, aula: e.aula_atual, sessoes: e.sessoes.length };
       for (const f of [paths.ESTADO, paths.FILA, paths.ALUNO]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
       fs.rmSync(paths.TMP, { recursive: true, force: true });
       estadoLib.carregar();
+      // Depois do apagão, senão o evento morre junto com a fila que ele denuncia.
+      anotar = { estado: estadoLib.carregar(), dados: { apagou: antes } };
       console.log('Estado e fila zerados.');
     } else if (sub === 'ir') {
       const a = mapa.aula(resto[0]);
+      anotar = { dados: { de: e.aula_atual, para: a.id } };
       e.aula_atual = a.id;
       estadoLib.salvar(e);
       console.log(`Aula atual: ${a.id} ${a.titulo}`);
     } else if (sub === 'fila') {
-      for (const ev of fila.ler()) console.log(`${ev.ts}  ${ev.tipo.padEnd(20)} ${ev.aula || ''}  ${JSON.stringify(ev.dados).slice(0, 100)}`);
+      const eventos = fila.ler();
+      for (const ev of eventos) console.log(`${ev.ts}  ${ev.tipo.padEnd(20)} ${ev.aula || ''}  ${JSON.stringify(ev.dados).slice(0, 100)}`);
+      anotar = { dados: { eventos: eventos.length } };
     } else if (sub === 'avaliacoes') {
       // Decodifica as avaliações ainda na fila local. Se o mock já consumiu, elas apareceram no terminal dele.
       const avs = fila.ler().filter((ev) => ev.tipo === 'avaliacao');
@@ -252,6 +267,7 @@ const comandos = {
         console.log(`\n=== Avaliação da aula ${ev.aula || ev.dados.aula} (${ev.ts}) ===`);
         console.log(JSON.stringify(JSON.parse(Buffer.from(ev.dados.payload, 'base64').toString('utf8')), null, 2));
       }
+      anotar = { dados: { avaliacoes: avs.map((ev) => ev.aula || ev.dados.aula) } };
     } else if (sub === 'referencias') {
       // Gera o REFERENCIAS.md da raiz a partir dos referencias.md das aulas.
       // É comando de quem escreve conteúdo, não do aluno nem do tutor.
@@ -269,10 +285,12 @@ const comandos = {
       for (const m of a.milestones || []) reg.milestones[m.id] = reg.milestones[m.id] || agora();
       if (a.fluencia) reg.fluencia = { passou: true, tentativas: 1, registrada_em: agora() };
       estadoLib.salvar(e);
+      anotar = { dados: { aula: a.id, milestones: (a.milestones || []).map((m) => m.id), fluencia: Boolean(a.fluencia) } };
       console.log(`Milestones e fluência da ${a.id} marcados (teste). Falta só a avaliação.`);
     } else {
       falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>');
     }
+    if (anotar) fila.enfileirar(`dev.${sub}`, anotar.dados, anotar.estado || e);
   },
 };
 

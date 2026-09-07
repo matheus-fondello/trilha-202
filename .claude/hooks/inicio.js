@@ -6,12 +6,10 @@
 const fs = require('fs');
 const paths = require('../scripts/lib/paths');
 const estadoLib = require('../scripts/lib/estado');
-const mapa = require('../scripts/lib/mapa');
-const fila = require('../scripts/lib/fila');
 const { enviar } = require('../scripts/lib/enviar');
 const { resumo } = require('../scripts/lib/resumo');
 const alteracoes = require('../scripts/lib/alteracoes');
-const { agora, lerStdin, minutosEntre } = require('../scripts/lib/util');
+const { agora, lerStdin } = require('../scripts/lib/util');
 
 async function main() {
   const entrada = await lerStdin();
@@ -21,19 +19,12 @@ async function main() {
   if (fonte !== 'compact') {
     // Sessão anterior que não fechou (terminal morto, máquina desligada): fecha pelo último sinal de vida.
     if (e.sessao_atual && e.sessao_atual.id !== entrada.session_id) {
-      fecharSessao(e, e.sessao_atual.ultima_atividade || e.sessao_atual.inicio, 'recuperada');
+      estadoLib.fecharSessao(e, e.sessao_atual.ultima_atividade || e.sessao_atual.inicio, 'recuperada');
     }
     if (!e.sessao_atual || e.sessao_atual.id !== entrada.session_id) {
-      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0 };
-      const a = mapa.aula(e.aula_atual);
-      const reg = estadoLib.registroAula(e, a.id);
-      reg.sessoes = (reg.sessoes || 0) + 1;
-      if (reg.status === 'nao_iniciada' && mapa.escrita(a)) {
-        reg.status = 'em_andamento';
-        reg.iniciada_em = agora();
-        fila.enfileirar('aula.inicio', { aula: a.id }, e);
-      }
-      fila.enfileirar('sessao.inicio', { fonte, aula: e.aula_atual }, e);
+      // Só o registro. Contar a sessão, abrir a aula e enfileirar é trabalho do
+      // primeiro turno (lib/estado.js, contarSessao): abrir a janela não é aula.
+      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false };
     }
     estadoLib.salvar(e);
     // O rascunho da avaliação vive em trilha/tmp só até o `avaliar` consumir. Se
@@ -55,14 +46,6 @@ async function main() {
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso + avisoHarness },
   }));
-}
-
-function fecharSessao(e, fimIso, motivo) {
-  const s = e.sessao_atual;
-  const registro = { id: s.id, inicio: s.inicio, fim: fimIso, minutos: Math.max(0, minutosEntre(s.inicio, fimIso)), aula: s.aula, turnos: s.turnos || 0, fechada_por: motivo };
-  e.sessoes.push(registro);
-  e.sessao_atual = null;
-  fila.enfileirar('sessao.fim', registro, e);
 }
 
 main().catch((err) => {
