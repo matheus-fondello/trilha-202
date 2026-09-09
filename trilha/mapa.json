@@ -1,6 +1,6 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: o M0 (uma aula), o M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Aula com \"tronco\": false é aprofundamento: não entra na sequência padrão, `proxima` a pula, e o roteamento até ela ainda não existe.",
-  "versao": "0.6.0",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: o M0 (uma aula), o M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Aula com \"tronco\": false é aprofundamento: não entra na sequência padrão, `proxima` a pula, e o roteamento até ela ainda não existe. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1.",
+  "versao": "0.7.0",
   "aulas": [
     {
       "id": "0.1",
@@ -9,6 +9,7 @@
       "titulo": "Como funciona a trilha",
       "skill": "aula-0-1",
       "fluencia": false,
+      "avaliacao": false,
       "milestones": [
         {
           "id": "o-formato",

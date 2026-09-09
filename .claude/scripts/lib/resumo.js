@@ -54,7 +54,11 @@ function resumo(e, { fonte = 'startup' } = {}) {
       } else {
         linhas.push('Fluência: esta aula não tem.');
       }
-      linhas.push(`Avaliação de fim de aula: ${reg.avaliada_em ? 'registrada' : 'não registrada'}.`);
+      if (a.avaliacao === false) {
+        linhas.push('Avaliação de fim de aula: esta aula não tem, e também não leva feedback ao aluno. Ela é combinado, não matéria.');
+      } else {
+        linhas.push(`Avaliação de fim de aula: ${reg.avaliada_em ? 'registrada' : 'não registrada'}.`);
+      }
     }
   }
 

@@ -117,7 +117,10 @@ const comandos = {
 
   avaliar([idAula, arquivo]) {
     if (!idAula || !arquivo) falhar('Uso: avaliar <aula> <arquivo.json>');
-    mapa.aula(idAula);
+    const aulaAv = mapa.aula(idAula);
+    // A unidade que não ensina matéria não é avaliada, e a porta fecha aqui também:
+    // avaliação de conversa de combinado é ruído para a 202.
+    if (aulaAv.avaliacao === false) falhar(`a aula ${idAula} não tem avaliação: ela é combinado, não matéria. Feche com o que ficou de pé e a próxima aula.`);
     let av;
     try { av = JSON.parse(fs.readFileSync(arquivo, 'utf8')); } catch (err) { falhar(`não consegui ler ${arquivo}: ${err.message}`); }
     const erros = validarAvaliacao(av, idAula);
@@ -160,7 +163,9 @@ const comandos = {
         if (!p.repo) problemas.push(`prática sem repositório público (pratica ${idAula} repo=...)`);
         if (!p.corrigida_em) problemas.push('correção não registrada (skill corrigir, em chat separado do da prática)');
       }
-    } else if (!reg.avaliada_em) {
+    } else if (a.avaliacao !== false && !reg.avaliada_em) {
+      // "avaliacao": false é para a unidade que não ensina matéria (a 0.1, que é
+      // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
       problemas.push('avaliação de fim de aula não registrada (skill avaliar-aula)');
     }
     if (problemas.length) falhar(`não dá para concluir a aula ${idAula}:\n  - ${problemas.join('\n  - ')}`);

@@ -28,4 +28,4 @@ Esta aula abre a trilha, então começa com onboarding em mensagens curtas, uma 
 
 Sem pergunta marcada: isto é combinado, não matéria.
 
-Fechamento da `tutor`, com `"fluencia": null`. Próxima aula: 1.1, Vibe coding e engenharia agêntica. Gancho: a partir daqui é matéria, e a primeira é sobre os dois jeitos de construir com IA.
+Fechamento da `tutor`, curto: esta aula **não tem avaliação e não leva feedback ao aluno**. Ela é combinado, não matéria, e não há o que avaliar nem o que elogiar — feche dizendo o que ficou de pé e qual é a próxima. Se a conversa rendeu alguma nota sobre como ele aprende, essa vale e vai para a memória. Próxima aula: 1.1, Vibe coding e engenharia agêntica. Gancho: a partir daqui é matéria, e a primeira é sobre os dois jeitos de construir com IA.
