@@ -14,7 +14,7 @@ Sala e oficina. Fica para outras aulas: banco e schema, segredo em variável de 
 
 ## Antes de começar
 
-Confira no estado a pasta e o repositório da P1. Pergunte cedo se ela é HTML estático ou projeto Next: a resposta muda o tamanho do marco `a-pagina-ganha-servidor`. Antes de pedir a conversão, confira que o trabalho da P1 está commitado e que existe ponto de retorno — a 2.4 explica por que isso vira regra, aqui basta não perder o artefato que sustenta o módulo.
+Confira no estado a pasta e o repositório da P1. Olhe a pasta (`ls`) para saber se ela é HTML estático ou projeto Next em vez de perguntar: a resposta muda o tamanho do marco `a-pagina-ganha-servidor`, e é dado que está na máquina. Antes de pedir a conversão, confira que o trabalho da P1 está commitado e que existe ponto de retorno — a 2.4 explica por que isso vira regra, aqui basta não perder o artefato que sustenta o módulo.
 
 ## Marcos
 

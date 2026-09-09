@@ -19,6 +19,26 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://www.anthropic.com/engineering/building-effective-agents
   A definição de agente sem marketing: o modelo dirige o próprio processo e ganha informação do ambiente a cada passo. É por isso que ele roda o teste.
 
+**marco `terminal`**
+
+- **Anthropic, *Terminal guide for new users*** — documentação do Claude Code · 10 min de leitura
+  https://code.claude.com/docs/en/terminal-guide
+  A página oficial para quem nunca usou terminal, com o que fazer quando o comando `claude` não é reconhecido.
+
+- **Anthropic, *Advanced setup*, seção "Set up on Windows"** — documentação do Claude Code · 4 min de leitura
+  https://code.claude.com/docs/en/setup#set-up-on-windows
+  A tabela de Windows nativo contra WSL, e o aviso de que no WSL o `claude` roda de dentro do WSL, não do PowerShell.
+
+- **Django Girls, *Introdução à linha de comando*** — tutorial.djangogirls.org, em português · 15 min de leitura
+  https://tutorial.djangogirls.org/pt/intro_to_command_line/
+  O único material em português escrito para quem nunca abriu um terminal: os quatro comandos, nos três sistemas, com exercício no fim.
+
+A segunda só interessa se ele estiver no Windows: é lá que o aluno brasileiro trava, e vale
+interromper a aula por três minutos para resolver em vez de seguir com ele perdido. A terceira
+é a rede de segurança do bloco: se ele travar de verdade, mande o link em texto e diga que os
+exercícios do fim resolvem sozinhos. Não ofereça no painel — a sugerida desta aula é o vídeo,
+e o bloco de terminal é curto de propósito.
+
 **marco `disco-como-memoria`**
 
 - **Anthropic, *How Claude remembers your project*** — documentação do Claude Code · consulta, 20 min se lida inteira

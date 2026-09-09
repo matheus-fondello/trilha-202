@@ -4,56 +4,36 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Documentação é material vivo e não traz data: se o que ela diz não bate com a versão
-do aluno, o que vale é a máquina dele. Trocar `/en/` por `/pt/` na URL dá a versão em
-português, que às vezes atrasa em relação à inglesa.
+O formato da trilha, os trilhos e o que a escola vê são desenho da 202: não têm
+referência externa e não deveriam ter. Tudo abaixo cobre o marco `quando-trava`.
 
 ## Citadas
 
 Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, sem parar a aula.
 
-**marco `terminal`**
+**marco `quando-trava`**
 
-- **Anthropic, *Terminal guide for new users*** — documentação do Claude Code · 10 min de leitura
-  https://code.claude.com/docs/en/terminal-guide
-  A página oficial para quem nunca usou terminal, com o que fazer quando o comando `claude` não é reconhecido.
+- **Anthropic, *Models, usage, and limits in Claude Code*** — Central de Ajuda, atualizado em abr/2026 · 10 min de leitura
+  https://support.claude.com/en/articles/14552983-models-usage-and-limits-in-claude-code
+  Saber em que modelo você está, trocar com `/model`, e por que a sessão piora quando o contexto enche.
 
-- **Anthropic, *Advanced setup*, seção "Set up on Windows"** — documentação do Claude Code · 4 min de leitura
-  https://code.claude.com/docs/en/setup#set-up-on-windows
-  A tabela de Windows nativo contra WSL, e o aviso de que no WSL o `claude` roda de dentro do WSL, não do PowerShell.
+- **Anthropic, *Use Claude Code with your Pro or Max plan*** — Central de Ajuda · 7 min de leitura
+  https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-or-max-plan
+  O que o plano cobre e quais são as saídas quando o limite bate: esperar, subir de plano, créditos.
 
-Só ofereça a segunda se ele estiver no Windows. É lá que o aluno brasileiro trava, e é
-onde vale interromper a aula por três minutos para resolver em vez de seguir com ele perdido.
+- **Anthropic, *Commands*** — documentação do Claude Code · consulta
+  https://code.claude.com/docs/en/commands
+  A lista canônica dos comandos. É aqui que ele confere quando um comando que viu num vídeo antigo não existe mais.
 
-**marco `git-minimo`**
-
-- **GitHub, *Sobre o Git*** — GitHub Docs, em português · 10 min de leitura
-  https://docs.github.com/pt/get-started/using-git/about-git
-  Repositório, commit e clone em português e sem drama, que é exatamente o recorte desta aula.
-
-- **Anthropic, *Quickstart*, passo 6** — documentação do Claude Code · 1 min de leitura
-  https://code.claude.com/docs/en/quickstart
-  Confirma na fonte que git aqui é conversa: "commit my changes with a descriptive message" e o agente faz.
-
-**marco `oficina`**
-
-- **Claude, *Your first Claude Code prompt*** — canal oficial no YouTube, mai/2026 · 2 min 27 s
-  https://www.youtube.com/watch?v=gbetp6D7J_Q&hl=en&persist_hl=1
-  Dois minutos e meio mostrando o primeiro prompt num projeto de verdade, e a diferença entre aprovar à mão e deixar correr.
-
-- **Anthropic, *Claude Code 101*** — Claude Academy · curso gratuito, 12 aulas, 1h30
-  https://academy.claude.com/courses
-  De onde saem os vídeos curtos que aparecem nesta aula e na 1.2. Para quem quiser a versão longa, por conta própria.
-
-O curso é em inglês e não é pré-requisito de nada. Ofereça no fechamento, para quem
-terminou animado, e deixe claro que a trilha não depende dele.
+- **Claude Code, *CHANGELOG*** — repositório oficial no GitHub · consulta
+  https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+  A prova de que a ferramenta muda toda semana, num lugar público. Serve para ele saber que não enlouqueceu.
 
 ## Sugerida
 
-- **Django Girls, *Introdução à linha de comando*** — tutorial.djangogirls.org, em português · 15 min de leitura
-  https://tutorial.djangogirls.org/pt/intro_to_command_line/
-  O único material em português escrito para quem nunca abriu um terminal: os quatro comandos, nos três sistemas, com exercício no fim.
+- **Lydia Hallie, *Choosing a Claude model and effort level in Claude Code*** — blog da Anthropic, jul/2026 · 5 min de leitura
+  https://claude.com/blog/claude-model-and-effort-level-in-claude-code
+  Dá o critério de decisão que ele vai usar o resto da trilha: o agente não tentou o bastante, ou não sabia o bastante?
 
-É curto, então cabe no meio da aula. Ofereça logo depois de fechar o marco `terminal`,
-se ele estiver inseguro: "quer que eu abra aqui do lado e você faz os exercícios?".
-Aluno que já se moveu no terminal sem hesitar não precisa disso — não empurre.
+Esta aula é curta e a sugerida tem cinco minutos. Não pause no meio: ofereça no
+fechamento, junto com a despedida.

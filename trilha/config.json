@@ -3,7 +3,7 @@
     "nome": "trilha-202",
     "versao": "0.1.0",
     "claudeCodeMinimo": "2.1.200",
-    "$comment": "claudeCodeMinimo é a versão mínima do Claude Code que a trilha assume. A aula 0.2 aponta para cá; o aluno confere a dele com `claude --version`."
+    "$comment": "claudeCodeMinimo é a versão mínima do Claude Code que a trilha assume. A aula 0.1 aponta para cá; quem confere a versão do aluno é o tutor, com `claude --version`, sem passar a tarefa para ele."
   },
   "servidor": {
     "url": null,
