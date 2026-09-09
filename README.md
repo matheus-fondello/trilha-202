@@ -4,13 +4,13 @@ Repositório da trilha de builders AI-native da 202 Lab. Você clona, abre no Cl
 
 ## Instalar
 
-O manual completo, para Windows, Mac e Linux, está no site da 202. O mínimo:
+O manual completo, para Windows, Mac e Linux, está no site da 202 — é ele que mostra cada passo com imagem, e é por ele que você deve ir se for a sua primeira vez. O mínimo:
 
-1. Instale o [Node.js](https://nodejs.org) (versão 20 ou mais nova) e o [Claude Code](https://code.claude.com).
-2. Clone este repositório e entre na pasta.
-3. Rode `claude`. A primeira aula começa sozinha.
+1. Instale o [Node.js](https://nodejs.org) (versão 20 ou mais nova) e o **aplicativo do [Claude Code](https://code.claude.com)**. A trilha assume o aplicativo de desktop; pelo terminal também funciona, e aí o comando é `claude` dentro da pasta.
+2. Traga este repositório para a sua máquina. O manual mostra como, no seu sistema.
+3. Abra essa pasta no Claude Code. A primeira aula começa sozinha, e você não precisa saber nada além de escrever em português.
 
-Para atualizar o conteúdo ao longo da trilha: `git pull` dentro da pasta. Seu progresso fica em `trilha/estado.json`, fora do controle de versão.
+Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conteúdo recebe aula nova de tempos em tempos; atualizar é uma linha só, e o professor te mostra quando for a hora.
 
 ## Como funciona
 
