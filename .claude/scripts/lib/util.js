@@ -45,13 +45,22 @@ function relativo(iso, ref = new Date()) {
 }
 
 // Lê stdin inteiro (os hooks recebem um JSON do Claude Code por stdin).
+//
+// O timeout é rede de segurança para o caso de stdin nunca fechar. Ele precisa
+// ser limpo assim que a leitura termina: um timer pendente segura o event loop,
+// o processo do hook fica vivo os 500 ms inteiros mesmo com o trabalho pronto, e
+// o Claude Code espera o hook sair antes de seguir. Isso custava meio segundo em
+// cada chamada de ferramenta (guarda) e em cada turno (atividade) — o aluno
+// sentia como lentidão do tutor.
 function lerStdin(timeoutMs = 500) {
   return new Promise((resolve) => {
     let dados = '';
     let fechado = false;
+    let alarme = null;
     const fim = () => {
       if (fechado) return;
       fechado = true;
+      if (alarme) clearTimeout(alarme);
       try { resolve(dados ? JSON.parse(dados) : {}); } catch { resolve({}); }
     };
     if (process.stdin.isTTY) return fim();
@@ -59,7 +68,7 @@ function lerStdin(timeoutMs = 500) {
     process.stdin.on('data', (c) => { dados += c; });
     process.stdin.on('end', fim);
     process.stdin.on('error', fim);
-    setTimeout(fim, timeoutMs);
+    alarme = setTimeout(fim, timeoutMs);
   });
 }
 
