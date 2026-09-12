@@ -8,7 +8,7 @@
 //   node .claude/scripts/trilha.js oficina <caminho>
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
 //   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
-//   node .claude/scripts/trilha.js avaliar <aula> <arquivo.json>
+//   node .claude/scripts/trilha.js avaliar <aula>
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
 //   node .claude/scripts/trilha.js criterios <pratica>
@@ -28,6 +28,8 @@ const { enviar } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
+const transcricao = require('./lib/transcricao');
+const avaliador = require('./lib/avaliador');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -115,28 +117,40 @@ const comandos = {
     console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`);
   },
 
-  avaliar([idAula, arquivo]) {
-    if (!idAula || !arquivo) falhar('Uso: avaliar <aula> <arquivo.json>');
+  // A nota não se forma no chat do aluno. Este comando não recebe JSON nenhum: ele
+  // lê a transcrição da sessão e chama um segundo Claude, que não deu a aula, para
+  // avaliá-la (lib/avaliador.js). O tutor dispara e recebe "registrada" — ele não
+  // tem a nota, então não tem como deixá-la escapar no raciocínio ou numa
+  // ferramenta. Demora de meio minuto a um minuto, e é o último passo da aula.
+  avaliar([idAula]) {
+    if (!idAula) falhar('Uso: avaliar <aula>');
     const aulaAv = mapa.aula(idAula);
     // A unidade que não ensina matéria não é avaliada, e a porta fecha aqui também:
     // avaliação de conversa de combinado é ruído para a 202.
     if (aulaAv.avaliacao === false) falhar(`a aula ${idAula} não tem avaliação: ela é combinado, não matéria. Feche com o que ficou de pé e a próxima aula.`);
-    let av;
-    try { av = JSON.parse(fs.readFileSync(arquivo, 'utf8')); } catch (err) { falhar(`não consegui ler ${arquivo}: ${err.message}`); }
-    const erros = validarAvaliacao(av, idAula);
-    if (erros.length) falhar('avaliação inválida:\n  - ' + erros.join('\n  - '));
     const e = estadoLib.carregar();
     const reg = estadoLib.registroAula(e, idAula);
+
+    const t = transcricao.ler(e, idAula);
+    if (!t.ok) return desistir(e, reg, idAula, t.motivo);
+
+    const r = avaliador.avaliar({
+      contexto: contextoDaAula(e, aulaAv, reg),
+      transcricao: t.texto,
+      validar: (av) => validarAvaliacao(av, idAula),
+    });
+    if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
+
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
-    const b64 = Buffer.from(JSON.stringify(av), 'utf8').toString('base64');
+    const b64 = Buffer.from(JSON.stringify(r.avaliacao), 'utf8').toString('base64');
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, ...revisao }, e);
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, ...revisao }, e);
     reg.avaliada_em = agora();
+    delete reg.avaliacao_falhou;
     estadoLib.salvar(e);
-    try { fs.unlinkSync(arquivo); } catch { /* já foi */ }
-    console.log(`Avaliação da aula ${idAula} registrada e enfileirada. Arquivo temporário removido.`);
+    console.log(`Avaliação da aula ${idAula} registrada e enfileirada.`);
   },
 
   concluir([idAula]) {
@@ -146,6 +160,7 @@ const comandos = {
     const reg = estadoLib.registroAula(e, idAula);
     if (reg.status === 'concluida') falhar(`aula ${idAula} já concluída em ${reg.concluida_em}.`);
     const problemas = [];
+    const avisos = [];
     if (!Array.isArray(a.milestones) || !a.milestones.length) problemas.push('aula sem ementa no mapa');
     else {
       const pend = a.milestones.filter((x) => !reg.milestones[x.id]);
@@ -166,7 +181,10 @@ const comandos = {
     } else if (a.avaliacao !== false && !reg.avaliada_em) {
       // "avaliacao": false é para a unidade que não ensina matéria (a 0.1, que é
       // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
-      problemas.push('avaliação de fim de aula não registrada (skill avaliar-aula)');
+      // Avaliação que o `avaliar` tentou e não conseguiu não segura a aula: o aluno
+      // fez o trabalho dele, a falha é do harness, e ela já virou evento para a 202.
+      if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
+      else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
     }
     if (problemas.length) falhar(`não dá para concluir a aula ${idAula}:\n  - ${problemas.join('\n  - ')}`);
 
@@ -180,7 +198,8 @@ const comandos = {
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
-    console.log(`${a.tipo === 'pratica' ? 'Prática' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.'));
+    console.log(`${a.tipo === 'pratica' ? 'Prática' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.')
+      + (avisos.length ? `\n(${avisos.join('; ')}. Não comente com o aluno.)` : ''));
   },
 
   pratica([idPratica, ...resto]) {
@@ -356,6 +375,34 @@ const comandos = {
     if (anotar) fila.enfileirar(`dev.${sub}`, anotar.dados, anotar.estado || e);
   },
 };
+
+// O contexto que o avaliador não tem como deduzir da transcrição: qual unidade
+// é esta, o que ela se propunha a cobrir e o que ficou registrado como fato.
+function contextoDaAula(e, a, reg) {
+  const fechados = (a.milestones || []).map((m) => `${reg.milestones[m.id] ? 'fechado' : 'PENDENTE'} — ${m.id}: ${m.titulo}`);
+  const fluencia = !a.fluencia
+    ? 'Esta aula não tem teste de fluência (o campo "fluencia" da avaliação vai como null).'
+    : reg.fluencia
+      ? `Fluência registrada: ${reg.fluencia.passou ? 'passou' : 'não passou'} em ${reg.fluencia.tentativas} tentativa(s).`
+      : 'Esta aula tem teste de fluência, mas ele não chegou a ser registrado.';
+  return [
+    `- Unidade: ${a.id} — ${a.titulo}`,
+    a.objetivo ? `- Objetivo: ${a.objetivo}` : null,
+    `- Marcos da aula:\n    ${fechados.join('\n    ')}`,
+    `- ${fluencia}`,
+    `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1}.`,
+  ].filter(Boolean).join('\n');
+}
+
+// Avaliação que não sai não trava a aula: essa é a regra da casa. Fica o registro
+// do motivo, o `concluir` passa com aviso, e a 202 sabe que aquela aula não tem
+// nota e por quê. O tutor lê um recado que não o convida a contornar nada.
+function desistir(e, reg, idAula, motivo, uso) {
+  reg.avaliacao_falhou = { em: agora(), motivo };
+  estadoLib.salvar(e);
+  fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, avaliador: uso || null }, e);
+  console.log(`Não consegui avaliar a aula ${idAula}: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+}
 
 function minutosNaAula(e, idAula) {
   // A conclusão acontece com a sessão ainda aberta; sem contar sessao_atual o total sai zero.

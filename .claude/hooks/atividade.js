@@ -16,6 +16,7 @@ async function main() {
   const e = estadoLib.carregar();
   if (e.sessao_atual && (!entrada.session_id || e.sessao_atual.id === entrada.session_id || !e.sessao_atual.id)) {
     if (!e.sessao_atual.id && entrada.session_id) e.sessao_atual.id = entrada.session_id;
+    if (entrada.transcript_path) e.sessao_atual.transcricao = entrada.transcript_path;
     estadoLib.contarSessao(e);
     e.sessao_atual.ultima_atividade = agora();
     e.sessao_atual.turnos = (e.sessao_atual.turnos || 0) + 1;

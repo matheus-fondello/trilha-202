@@ -27,6 +27,6 @@ Você também não consegue acompanhar as duas horas: só fala quando ele escrev
 
 ## Fechamento
 
-Não há avaliação: a P0 não tem `avaliar-aula`, não tem fluência e não tem nota. O que fica é a memória — se esta sessão mostrou algo que muda como você ensina daqui para a frente, anote (a `tutor` explica o critério). O tema que ele escolheu costuma valer nota: é o gancho de exemplo pelo resto da trilha.
+Não há avaliação: a P0 não tem `avaliar`, não tem fluência e não tem nota. O que fica é a memória — se esta sessão mostrou algo que muda como você ensina daqui para a frente, anote (a `tutor` explica o critério). O tema que ele escolheu costuma valer nota: é o gancho de exemplo pelo resto da trilha.
 
 Depois: `concluir P0` e despedida. Próxima aula: 1.2, Claude Code por dentro. Gancho: ele acabou de usar a ferramenta sem saber o que ela é; agora vai abrir o capô.

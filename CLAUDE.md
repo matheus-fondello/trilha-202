@@ -22,9 +22,10 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 
 ## Pastas
 
-- `.claude/skills/` tutor, aulas, práticas e avaliação. Carregadas sob demanda.
+- `.claude/skills/` tutor, aulas e práticas. Carregadas sob demanda.
 - `.claude/hooks/` início, guarda (bloqueia escrita no harness), atividade e fim de sessão.
 - `.claude/scripts/trilha.js` o CLI do progresso.
+- `.claude/avaliador/` a régua da avaliação de fim de aula, que é lida por um segundo Claude, fora do chat. Não se abre daqui.
 - `trilha/` estado do aluno, fila de eventos, mapa das aulas, configuração.
 - `praticas/` o que cada prática entrega ao aluno: brief e material do cliente. A régua da correção mora aqui codificada e abre pelo comando, depois da entrega.
 - `REFERENCIAS.md` bibliografia da trilha, gerada a partir dos `referencias.md` das aulas. Não edite à mão.

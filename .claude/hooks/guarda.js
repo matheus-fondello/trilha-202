@@ -26,8 +26,9 @@ const TMP = paths.TMP;
 const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
-// engenheiro dele.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b/;
+// engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é
+// ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça.
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b/;
 const CLI = /^node\s+(\.\/)?\.claude[/\\]scripts[/\\]trilha\.js\b/;
 // Comandos de teste (dev reset, dev ir, dev fechar-tudo, dev fila, dev
 // avaliacoes) e o servidor mock são do terminal de quem testa, não do tutor.
@@ -80,7 +81,7 @@ function conferirBash(entrada) {
     }
     if (CLI.test(seg)) continue; // o CLI da trilha é o jeito certo de escrever
     if (SIGILO.test(seg)) {
-      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
+      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
     }
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);

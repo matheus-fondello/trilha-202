@@ -24,7 +24,9 @@ async function main() {
     if (!e.sessao_atual || e.sessao_atual.id !== entrada.session_id) {
       // Só o registro. Contar a sessão, abrir a aula e enfileirar é trabalho do
       // primeiro turno (lib/estado.js, contarSessao): abrir a janela não é aula.
-      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false };
+      // transcricao: o caminho do .jsonl desta sessão, que só o Claude Code sabe.
+      // É o que o avaliador de fim de aula lê — ele não esteve na conversa.
+      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false, transcricao: entrada.transcript_path || null };
     }
     estadoLib.salvar(e);
     // O rascunho da avaliação vive em trilha/tmp só até o `avaliar` consumir. Se
