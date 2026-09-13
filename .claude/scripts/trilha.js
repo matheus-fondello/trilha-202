@@ -590,10 +590,16 @@ function validarCorrecao(c, idPratica) {
   const erros = [];
   if (!c || typeof c !== 'object') return ['não é um objeto JSON'];
   if (c.pratica !== idPratica) erros.push(`campo "pratica" deve ser "${idPratica}"`);
-  for (const k of ['entrega', 'conversao', 'fidelidade', 'execucao', 'metodo']) {
+  // Cada prática corrigida tem as suas chaves, declaradas no mapa: a P1 julga
+  // uma página (entrega, conversão...), a P2 julga um sistema (spec, testes...).
+  // A régua codificada em praticas/<p>/criterios usa os mesmos nomes.
+  const chaves = mapa.aula(idPratica).criterios;
+  if (!Array.isArray(chaves) || !chaves.length) return [`a prática ${idPratica} não declara "criterios" no mapa; a correção não tem forma`];
+  for (const k of chaves) {
     const v = c.criterios ? c.criterios[k] : undefined;
     if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${k} deve ser inteiro de 1 a 5`);
   }
+  for (const k of Object.keys(c.criterios || {})) if (!chaves.includes(k)) erros.push(`criterios.${k} não existe na ${idPratica}; as chaves são ${chaves.join(', ')}`);
   if (typeof c.justificativa !== 'string' || c.justificativa.length < 200 || c.justificativa.length > 2000) erros.push('"justificativa" entre 200 e 2000 caracteres: o que sustenta cada nota fora da média');
   if (!Array.isArray(c.evidencias) || c.evidencias.length < 2 || c.evidencias.length > 5) erros.push('"evidencias" deve ter de 2 a 5 trechos do que ele entregou');
   else for (const ev of c.evidencias) if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');

@@ -24,7 +24,7 @@ Isso muda o seu tom, não a sua pessoa: você continua o professor dele. Não vi
 ```json
 {
   "pratica": "P1",
-  "criterios": { "entrega": 3, "conversao": 3, "fidelidade": 4, "execucao": 2, "metodo": 3 },
+  "criterios": { "<cada critério da régua>": 3 },
   "justificativa": "200 a 2000 caracteres. O que sustenta cada nota fora da média, critério a critério.",
   "evidencias": ["de 2 a 5 trechos literais do que ele entregou: uma linha da página, da spec, do design no disco. Máximo 300 caracteres cada."],
   "feedback_aluno": "300 a 3000 caracteres. O que a página faz bem, o que ela deixa na mesa, e uma coisa para mudar primeiro. Sem nota e sem nome de critério.",
@@ -32,6 +32,8 @@ Isso muda o seu tom, não a sua pessoa: você continua o professor dele. Não vi
   "resumo_qualitativo": "Uma ou duas linhas para acumular no perfil do aluno."
 }
 ```
+
+As chaves de `criterios` são as da régua que o `criterios <P>` imprimiu, com os mesmos nomes e todas presentes, de 1 a 5. O script recusa chave que falta ou que sobra.
 
 `suspeita` é quase sempre `null`. Preencha com `{ "descricao": "...", "evidencia": "..." }` diante de sinal concreto: a página não corresponde ao que foi registrado, o repositório aparece pronto num único commit sem histórico de trabalho, o texto entregue contradiz tudo que ele demonstrou nas aulas. Você sinaliza, um humano decide. Falso positivo é pior que falso negativo.
 
