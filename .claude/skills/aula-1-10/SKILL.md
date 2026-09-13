@@ -22,7 +22,7 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 - `design-sem-ser-designer`: ele consegue apontar hierarquia, espaço, fonte e cor de ação na própria página.
 - `sistema-no-disco`: existe um arquivo de design na pasta da P0, escrito com valores, e o agente o usou. *Conceito:* o que muda no resultado quando o design está num arquivo em vez de no pedido? Caça quem acha que "deixa bonito" e um arquivo de tokens são o mesmo pedido dito de dois jeitos.
-- `stack-e-deploy`: ele sabe por que a trilha usa esta stack e o que preview e produção significam. *Aplicação:* um amigo abriu o link do preview e disse que a página está no ar. Está? Caça quem acha que preview é produção.
+- `stack-e-deploy`: ele sabe por que a trilha usa esta stack e o que preview e produção significam. *Aplicação:* um amigo abriu o link do preview e disse que a página está no ar. Está? Caça quem acha que preview é produção. Com a P0 em produção, registre a URL — e o repositório, se já existir: `pratica P0 url=<url> repo=<url>`. É o que leva o link da P0 à 202, que até aqui só sabia que ela foi concluída.
 - `verificar-visual`: ele usou screenshot como evidência contra o design, não como enfeite.
 
 ## Fluência

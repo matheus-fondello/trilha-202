@@ -3,6 +3,7 @@ const { ESTADO } = require('./paths');
 const { lerJson, gravarJson, agora, minutosEntre } = require('./util');
 const mapa = require('./mapa');
 const fila = require('./fila');
+const acesso = require('./acesso');
 
 // Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
 const MINUTOS_VIVA = 30;
@@ -65,7 +66,10 @@ function contarSessao(e) {
   const reg = registroAula(e, s.aula);
   reg.sessoes = (reg.sessoes || 0) + 1;
   const a = mapa.aula(s.aula);
-  if (reg.status === 'nao_iniciada' && mapa.escrita(a)) {
+  // Sala fechada não abre aula: a conversa em que o aluno ainda está colando o
+  // token não é o começo da aula, e o `aula.inicio` sairia com a hora errada.
+  // A aula abre no primeiro turno depois de conectar, ou no primeiro milestone.
+  if (reg.status === 'nao_iniciada' && mapa.escrita(a) && acesso.conectado(e)) {
     reg.status = 'em_andamento';
     reg.iniciada_em = agora();
     fila.enfileirar('aula.inicio', { aula: a.id }, e);

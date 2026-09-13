@@ -8,7 +8,9 @@ O manual completo, para Windows, Mac e Linux, está no site da 202 — é ele qu
 
 1. Instale o [Node.js](https://nodejs.org) (versão 20 ou mais nova) e o **aplicativo do [Claude Code](https://code.claude.com)**. A trilha assume o aplicativo de desktop; pelo terminal também funciona, e aí o comando é `claude` dentro da pasta.
 2. Traga este repositório para a sua máquina. O manual mostra como, no seu sistema.
-3. Abra essa pasta no Claude Code. A primeira aula começa sozinha, e você não precisa saber nada além de escrever em português.
+3. Abra essa pasta no Claude Code. A primeira coisa que o professor pede é o seu nome e o token de acesso que a 202 te mandou — é só colar o valor na conversa. Sem ele a trilha não começa. Daí em diante você não precisa saber nada além de escrever em português.
+
+O token é pessoal, como uma senha. Ele fica guardado em `~/.trilha-202/credenciais.json`, na sua pasta pessoal e **fora deste repositório**, que é público. Se ele vazar, peça outro à 202.
 
 Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conteúdo recebe aula nova de tempos em tempos; atualizar é uma linha só, e o professor te mostra quando for a hora.
 
@@ -25,4 +27,4 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 
 Em construção. Escritos: o módulo 0 e o módulo 1 (onze aulas, fora a 1.11 de aprofundamento), a prática livre P0, a P1 com correção, e do módulo 2 e do módulo 3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. Faltam os quizzes e o resto do 2 e do 3; a aula que ainda não existe aparece na sequência dizendo isso, em vez de ser pulada em silêncio.
 
-Servidor ainda não existe: os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem quando ele existir. Ver `TESTE.md` para o protocolo de validação.
+Os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem para o CRM da 202 com o seu token; sem rede, esperam e sobem de uma vez quando ela volta. Ver `TESTE.md` para o protocolo de validação.

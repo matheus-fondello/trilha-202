@@ -34,7 +34,8 @@ function ler() {
   const notas = [];
   const blocos = bruto.split(/^## /m).slice(1);
   for (const bloco of blocos) {
-    const linhas = bloco.split('\n');
+    // \r?\n: o aluno pode abrir o arquivo num editor do Windows, que grava CRLF.
+    const linhas = bloco.split(/\r?\n/);
     const chave = (linhas.shift() || '').trim();
     if (!chave) continue;
     let origem = '';

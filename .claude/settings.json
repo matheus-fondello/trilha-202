@@ -1,5 +1,5 @@
 {
-  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Início, atividade e fim nunca bloqueiam nada: se falharem, a aula segue. A guarda (PreToolUse) é a exceção: bloqueia escrita no harness a partir do chat; se ela mesma quebrar, libera. As permissões liberam o mínimo: os comandos do harness, a leitura do estado, o rascunho em trilha/tmp e as duas ferramentas que abrem uma referência no painel ao lado. Regra de caminho só é consultada para Edit e Read (uma regra Write é aceita e ignorada), por isso a lista de deny é toda em Edit; ela cobre Write, MultiEdit, NotebookEdit e redirecionamento de shell, vale em todo modo, inclusive bypass, e o bypass está desligado. A fila não se lê do chat (é onde mora a avaliação), e os critérios das práticas também não: eles abrem pelo comando `criterios`, que só responde depois da entrega registrada e a memória automática do Claude Code está desligada: a única memória do tutor é trilha/aluno.md. Código do harness (scripts e hooks) não se lê do chat: o tutor não é engenheiro dele. Web aberta (WebFetch, WebSearch) e o Chrome de verdade do aluno estão negados; do painel só ficam preview_start e navigate, e como regra de MCP não filtra por argumento, a guarda confere a URL: só os links dos referencias.md das aulas (por URL, não por domínio — uma aula cita o GitHub e outra o YouTube, e curar por host abriria os dois inteiros), a entrega registrada do aluno (a página no ar e, por prefixo, o repositório dela) e localhost. As demais ferramentas do painel (ler página, clicar, screenshot, batch) estão negadas: o tutor nunca instrumenta o painel, e página lida entra no contexto. Do aplicativo, a única coisa liberada é renomear a própria sessão, para o aluno não ficar com uma lista de chats chamados \"oi\"; ler transcrição de outra sessão, falar com outra sessão, trocar a pasta de trabalho e ler o terminal do aluno estão negados — são fuga da sala e entrada de injeção.",
+  "$comment": "Hooks do harness. Scripts em Node para rodar em Windows, Mac e Linux. Início, atividade e fim nunca bloqueiam nada: se falharem, a aula segue. A guarda (PreToolUse) é a exceção: bloqueia escrita no harness a partir do chat; se ela mesma quebrar, libera. As permissões liberam o mínimo: os comandos do harness, a leitura do estado, o rascunho em trilha/tmp e as duas ferramentas que abrem uma referência no painel ao lado. Regra de caminho só é consultada para Edit e Read (uma regra Write é aceita e ignorada), por isso a lista de deny é toda em Edit; ela cobre Write, MultiEdit, NotebookEdit e redirecionamento de shell, vale em todo modo, inclusive bypass, e o bypass está desligado. A fila não se lê do chat (é onde mora a avaliação), e os critérios das práticas também não: eles abrem pelo comando `criterios`, que só responde depois da entrega registrada e a memória automática do Claude Code está desligada: a única memória do tutor é trilha/aluno.md. Código do harness (scripts e hooks) não se lê do chat: o tutor não é engenheiro dele. Web aberta (WebFetch, WebSearch) e o Chrome de verdade do aluno estão negados; do painel só ficam preview_start e navigate, e como regra de MCP não filtra por argumento, a guarda confere a URL: só os links dos referencias.md das aulas (por URL, não por domínio — uma aula cita o GitHub e outra o YouTube, e curar por host abriria os dois inteiros), a entrega registrada do aluno (a página no ar e, por prefixo, o repositório dela) e localhost. As demais ferramentas do painel (ler página, clicar, screenshot, batch) estão negadas: o tutor nunca instrumenta o painel, e página lida entra no contexto. Do aplicativo, a única coisa liberada é renomear a própria sessão, para o aluno não ficar com uma lista de chats chamados \"oi\"; ler transcrição de outra sessão, falar com outra sessão, trocar a pasta de trabalho e ler o terminal do aluno estão negados — são fuga da sala e entrada de injeção. O acesso à 202 (o token do aluno) mora em ~/.trilha-202/credenciais.json, fora do repositório: quem escreve lá é o comando `conectar`, e do chat ele não se lê nem se edita. `disableBypassPermissionsMode` só aceita a string \"disable\": com `true` o Claude Code descartava este arquivo inteiro, hooks incluídos, sem aviso na sala. No Windows o tutor tem a ferramenta PowerShell além do Bash, e por isso ela está no matcher da guarda e no allow do CLI.",
   "hooks": {
     "SessionStart": [
       {
@@ -14,7 +14,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|mcp__Claude_Browser__navigate|mcp__Claude_Browser__preview_start",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|mcp__Claude_Browser__navigate|mcp__Claude_Browser__preview_start",
         "hooks": [
           {
             "type": "command",
@@ -49,9 +49,11 @@
   },
   "autoMemoryEnabled": false,
   "permissions": {
-    "disableBypassPermissionsMode": true,
+    "disableBypassPermissionsMode": "disable",
     "allow": [
       "Bash(node .claude/scripts/trilha.js:*)",
+      "PowerShell(node .claude/scripts/trilha.js *)",
+      "PowerShell(node .\\.claude\\scripts\\trilha.js *)",
       "Read(./trilha/**)",
       "Read(./praticas/**)",
       "Edit(./trilha/tmp/**)",
@@ -99,7 +101,9 @@
       "Edit(./trilha/config.json)",
       "Edit(./trilha/estado.json)",
       "Edit(./trilha/fila.jsonl)",
-      "Edit(./trilha/aluno.md)"
+      "Edit(./trilha/aluno.md)",
+      "Read(~/.trilha-202/**)",
+      "Edit(~/.trilha-202/**)"
     ]
   }
 }

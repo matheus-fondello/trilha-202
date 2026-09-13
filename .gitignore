@@ -3,5 +3,10 @@ trilha/estado.json
 trilha/fila.jsonl
 trilha/aluno.md
 trilha/tmp/
+# O acesso à 202 mora em ~/.trilha-202, fora daqui. Estas linhas são rede de
+# segurança para quem salvar as credenciais dentro da pasta por engano.
+credenciais.json
+.env
+.env.local
 *.tmp
 .DS_Store

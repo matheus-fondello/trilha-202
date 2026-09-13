@@ -25,7 +25,10 @@ function classeDoCabecalho(titulo) {
 }
 
 function extrair(texto) {
-  const linhas = texto.split('\n');
+  // \r?\n: no Windows o git entrega o arquivo com CRLF, e o \r no fim da linha
+  // fazia nenhum bullet casar. A lista curada saía vazia, e a guarda bloqueava
+  // no painel todo link de aula.
+  const linhas = texto.split(/\r?\n/);
   const itens = [];
   let classe = null;
   for (let i = 0; i < linhas.length; i++) {

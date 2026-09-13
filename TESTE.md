@@ -35,12 +35,37 @@ node .claude/scripts/trilha.js dev referencias
 
 Ele avisa se algum `referencias.md` não rendeu item nenhum, que quase sempre é bullet fora do formato de três linhas (título, URL, porquê).
 
+## Acesso à 202
+
+A sala não abre sem o token que a 202 emite no CRM (Trilhas → a trilha → Turmas → a turma → aba Trilha → Liberar o acesso de um aluno). O endereço do CRM já está em `trilha/config.json` (`https://crm-202.vercel.app/api/trilha`), então na primeira mensagem o tutor pede só o nome e o token — o valor, sem `TRILHA_202_TOKEN=` — e roda `conectar`, que confere o token no CRM e o guarda em `~/.trilha-202/credenciais.json`, fora do repositório. Antes disso o CLI recusa registrar progresso, e o tutor não começa aula.
+
+Sem o CRM, o mock faz o papel dele: aceita qualquer token com forma de token (20 caracteres ou mais, letras, números, `-` e `_`) e recusa os que começam com `recusado`. Como o `config.json` aponta para produção, diga ao tutor o servidor junto com o token, colando as duas linhas na conversa (ele passa `servidor=` ao `conectar`, que guarda o endereço):
+
+```
+TRILHA_202_SERVIDOR=http://localhost:4202
+TRILHA_202_TOKEN=token-de-teste-0123456789
+```
+
+Pelo terminal, a variável também serve: `TRILHA_202_SERVIDOR=http://localhost:4202 claude`, e aí basta o token.
+
+O que conferir:
+
+| Situação | Esperado |
+|---|---|
+| Token recusado (`recusado-0123456789abcdef`) | `conectar` recusa, nada é guardado, a sala segue fechada |
+| Mock desligado | `conectar` abre a sala mesmo assim e o token é conferido no envio seguinte |
+| Token revogado depois de conectado | o próximo envio recebe 401 e a sessão seguinte pede um token novo; o progresso fica |
+| `dev reset` | zera a sala e mantém o token na máquina: a sessão seguinte pede só o nome |
+| `dev desconectar` | tira o token da máquina: a sessão seguinte pede nome e token de novo |
+
 ## Rede fora e servidor
 
 ```
 node .claude/scripts/dev/servidor-mock.js                      terminal 1
 TRILHA_202_SERVIDOR=http://localhost:4202 claude               terminal 2
 ```
+
+A variável ganha da URL guardada pelo `conectar`, então dá para apontar uma sala conectada ao CRM de verdade para o mock sem desconectar.
 
 Faça parte da aula sem o mock ligado (a fila cresce), ligue o mock, siga a aula: no próximo hook a fila sobe e o mock imprime os eventos. A avaliação chega codificada e o mock decodifica.
 

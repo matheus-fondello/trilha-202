@@ -13,6 +13,7 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 
 ## Regras que não mudam
 
+- Sem acesso à 202 não há aula. Se o estado disser que a sala não está conectada, peça o nome e o token e rode `conectar`; o CLI não registra nada antes disso.
 - Progresso é registrado por script (`node .claude/scripts/trilha.js ...`).
 - Uma aula por chat. Ao concluir, a próxima abre em chat novo.
 - Exercícios acontecem na oficina (pasta irmã, outra janela). Aqui só se conversa.

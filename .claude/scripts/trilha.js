@@ -4,6 +4,7 @@
 // "fato" sobre o progresso do aluno passa por aqui, nunca por "o Claude achou".
 //
 //   node .claude/scripts/trilha.js status
+//   node .claude/scripts/trilha.js conectar nome="<nome>" token=<token> [servidor=<url>]   (o token também entra solto, só o valor)
 //   node .claude/scripts/trilha.js identificar <email> [nome]
 //   node .claude/scripts/trilha.js oficina <caminho>
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
@@ -16,7 +17,7 @@
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
-//   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>
+//   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
 const path = require('path');
@@ -24,19 +25,32 @@ const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
-const { enviar } = require('./lib/enviar');
+const { enviar, enviarAgora } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
+const acesso = require('./lib/acesso');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
 
 const { MINUTOS_VIVA } = estadoLib;
 
+// Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
+// hora, sem depender dos hooks.
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'corrigir', 'registrar']);
+
 function falhar(msg) {
   console.error('ERRO: ' + msg);
   process.exit(1);
+}
+
+// Sem acesso à 202 nada se registra: é o que faz "sem token não há aula" valer
+// mesmo quando a conversa escorrega. Ficam de fora o que não é progresso:
+// status, conectar, identificar, registrar, enviar e dev.
+function exigirAcesso() {
+  if (acesso.conectado(estadoLib.carregar())) return;
+  falhar('esta sala não está conectada à 202, e nada se registra antes disso. Peça ao aluno o primeiro nome e o token que a 202 mandou, e rode: conectar nome="<nome>" token=<token>');
 }
 
 function parChaveValor(lista) {
@@ -66,7 +80,53 @@ const comandos = {
     console.log(`Aluno identificado: ${e.aluno.nome || ''} <${e.aluno.email}>.`);
   },
 
+  // A porta da trilha. O token confere na hora, contra o CRM: 401 recusa e não
+  // guarda nada; 200 conecta; servidor fora do ar conecta mesmo assim, porque
+  // rede nunca trava a aula, e o envio seguinte confere. O token nunca é impresso,
+  // nunca vai para o estado nem para a fila: só para CREDENCIAIS, fora do repositório.
+  async conectar(args) {
+    const kv = parChaveValor(args);
+    const e = estadoLib.carregar();
+    const uso = 'Uso: conectar nome="<primeiro nome>" token=<token> [servidor=<url>]';
+    const nome = String(kv.nome || '').trim() || e.aluno.nome;
+    // O token entra do jeito que o aluno colar: só o valor, que é o normal;
+    // token=<valor>; ou a linha inteira TRILHA_202_TOKEN=<valor>. Aspas e espaço
+    // em volta saem. Token da 202 é base64url e não tem `=`, então o argumento
+    // solto que tem forma de token é ele.
+    const limpar = (v) => String(v || '').trim().replace(/^["']+|["']+$/g, '').trim();
+    const soltos = args.filter((a) => !a.includes('=')).map(limpar).filter(Boolean);
+    const novoToken = limpar(kv.token || kv.TRILHA_202_TOKEN) || soltos.find(acesso.tokenValido) || soltos[0] || '';
+    const novoServidor = limpar(kv.servidor || kv.TRILHA_202_SERVIDOR).replace(/\/+$/, '');
+    if (!nome) falhar(`falta o primeiro nome do aluno. ${uso}`);
+    const chave = novoToken || acesso.token();
+    if (!chave) falhar(`falta o token. Ele vem na linha TRILHA_202_TOKEN=... que a 202 mandou ao aluno. ${uso}`);
+    if (!acesso.tokenValido(chave)) falhar('isso não tem forma de token da 202. Passe só o que vem depois de TRILHA_202_TOKEN=, inteiro, sem espaço e sem aspas. Se foi isso que ele colou, o token veio cortado: peça que copie de novo.');
+    if (novoServidor && !acesso.servidorValido(novoServidor)) falhar('servidor precisa ser a URL que veio em TRILHA_202_SERVIDOR=..., começando com https://.');
+    const destino = novoServidor || acesso.servidor();
+    if (!destino) falhar(`falta o endereço da 202. Ele vem na outra linha que a 202 mandou, TRILHA_202_SERVIDOR=...: passe como servidor=<url>. ${uso}`);
+
+    e.aluno.nome = nome;
+    estadoLib.salvar(e);
+    // O evento sobe junto com o que já estava na fila, e é esse envio que confere o
+    // token: o CRM responde 401 a um token que não emitiu antes de ler o corpo.
+    const ev = fila.enfileirar('acesso.conexao', { nome }, e);
+    const r = await enviar({ timeoutMs: 5000, estado: e, token: chave, url: destino });
+    if (r.status === 401) {
+      fila.remover([ev.id]);
+      falhar('a 202 recusou este token: ele não existe, foi revogado ou a turma foi encerrada. Confira com o aluno se ele colou a linha inteira; se colou, o acesso novo é com a 202. A sala continua fechada.');
+    }
+    if (novoToken || novoServidor) acesso.guardar({ token: novoToken, servidor: novoServidor });
+    const e2 = estadoLib.carregar();
+    e2.acesso = { conectado_em: agora(), verificado_em: r.ok ? agora() : null };
+    estadoLib.salvar(e2);
+    console.log(r.ok
+      ? `Conectado à 202 como ${nome}. Token conferido pelo servidor.`
+      : `Conectado como ${nome}, mas a 202 não respondeu agora (${r.motivo}). A sala abre mesmo assim: o token é conferido no próximo envio, e se a 202 recusar, a sessão seguinte pede outro. Não comente a falha com o aluno.`);
+    console.log('\n' + resumo(e2));
+  },
+
   oficina([caminho]) {
+    exigirAcesso();
     if (!caminho) falhar('Uso: oficina <caminho da pasta>');
     const abs = path.resolve(caminho);
     if (!fs.existsSync(abs)) falhar(`pasta não existe: ${abs}`);
@@ -78,6 +138,7 @@ const comandos = {
   },
 
   milestone([idAula, idMilestone]) {
+    exigirAcesso();
     if (!idAula || !idMilestone) falhar('Uso: milestone <aula> <id-do-milestone>');
     const a = mapa.aula(idAula);
     if (!Array.isArray(a.milestones)) falhar(`aula ${idAula} não tem ementa no mapa.`);
@@ -99,6 +160,7 @@ const comandos = {
   },
 
   fluencia([idAula, resultado, tentativas]) {
+    exigirAcesso();
     if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas>');
     const a = mapa.aula(idAula);
     if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
@@ -116,6 +178,7 @@ const comandos = {
   },
 
   avaliar([idAula, arquivo]) {
+    exigirAcesso();
     if (!idAula || !arquivo) falhar('Uso: avaliar <aula> <arquivo.json>');
     const aulaAv = mapa.aula(idAula);
     // A unidade que não ensina matéria não é avaliada, e a porta fecha aqui também:
@@ -140,6 +203,7 @@ const comandos = {
   },
 
   concluir([idAula]) {
+    exigirAcesso();
     if (!idAula) falhar('Uso: concluir <aula>');
     const a = mapa.aula(idAula);
     const e = estadoLib.carregar();
@@ -184,6 +248,7 @@ const comandos = {
   },
 
   pratica([idPratica, ...resto]) {
+    exigirAcesso();
     if (!idPratica) falhar('Uso: pratica <id> pasta=<caminho> [url=...] [repo=...]');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica') falhar(`${idPratica} não é prática.`);
@@ -210,6 +275,7 @@ const comandos = {
   },
 
   criterios([idPratica]) {
+    exigirAcesso();
     if (!idPratica) falhar('Uso: criterios <pratica>');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
@@ -230,6 +296,7 @@ const comandos = {
   },
 
   corrigir([idPratica, arquivo]) {
+    exigirAcesso();
     if (!idPratica || !arquivo) falhar('Uso: corrigir <pratica> <arquivo.json>');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
@@ -258,6 +325,7 @@ const comandos = {
       return console.log(`${lista.length} de ${notas.TETO} notas.`);
     }
     if (!chave) falhar('Uso: nota <chave> "<texto>" | nota <chave> --apagar | nota --listar');
+    exigirAcesso();
     if (resto[0] === '--apagar') {
       const { total } = notas.apagar(chave);
       return console.log(`Nota "${chave}" apagada. Restam ${total} de ${notas.TETO}.`);
@@ -350,8 +418,16 @@ const comandos = {
       estadoLib.salvar(e);
       anotar = { dados: { aula: a.id, milestones: (a.milestones || []).map((m) => m.id), fluencia: Boolean(a.fluencia) } };
       console.log(`Milestones e fluência da ${a.id} marcados (teste). Falta só a avaliação.`);
+    } else if (sub === 'desconectar') {
+      // O `dev reset` zera a sala mas deixa o token na máquina, e a sessão seguinte
+      // pede só o nome. Para ver o pedido de token de novo, é este.
+      acesso.apagar();
+      anotar = { dados: { tinha_acesso: Boolean(e.acesso) } };
+      delete e.acesso;
+      estadoLib.salvar(e);
+      console.log('Acesso à 202 removido desta sala e desta máquina. A próxima sessão pede nome e token.' + (process.env.TRILHA_202_TOKEN ? ' A variável TRILHA_202_TOKEN continua definida neste terminal.' : ''));
     } else {
-      falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula>');
+      falhar('Uso: dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar');
     }
     if (anotar) fila.enfileirar(`dev.${sub}`, anotar.dados, anotar.estado || e);
   },
@@ -412,11 +488,14 @@ function validarAvaliacao(av, idAula) {
 
 (async () => {
   if (!comando || !comandos[comando]) {
-    console.log(fs.readFileSync(__filename, 'utf8').split('\n').filter((l) => l.startsWith('//   node')).map((l) => l.slice(3)).join('\n'));
+    console.log(fs.readFileSync(__filename, 'utf8').split(/\r?\n/).filter((l) => l.startsWith('//   node')).map((l) => l.slice(3)).join('\n'));
     process.exit(comando ? 1 : 0);
   }
   try {
     await comandos[comando](args);
+    // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
+    // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
+    if (SOBEM_NA_HORA.has(comando)) await enviarAgora();
   } catch (err) {
     falhar(err.message);
   }

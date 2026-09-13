@@ -9,6 +9,9 @@
 // tutor pode reavaliar depois do `concluir` (o aluno volta a discutir e dá sinal
 // novo), e nem toda segunda avaliação vem marcada — o critério é a ordem, não a
 // marca. GET /avaliacoes devolve as que valem.
+//
+// O token também imita o CRM: POST sem `Authorization: Bearer` é 401, e um token
+// que começa com "recusado" também, para testar a sala fechando. Qualquer outro passa.
 const http = require('http');
 const porta = process.env.PORTA || 4202;
 const recebidos = [];
@@ -30,6 +33,14 @@ function registrarAvaliacao(ev, conteudo) {
 
 http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/eventos') {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    if (!token || token.startsWith('recusado')) {
+      console.log(`401  ${token ? 'token recusado' : 'sem token'}`);
+      res.writeHead(401, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
     let corpo = '';
     req.on('data', (c) => { corpo += c; });
     req.on('end', () => {
