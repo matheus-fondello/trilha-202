@@ -9,6 +9,7 @@ const estadoLib = require('../scripts/lib/estado');
 const { enviar } = require('../scripts/lib/enviar');
 const { resumo } = require('../scripts/lib/resumo');
 const alteracoes = require('../scripts/lib/alteracoes');
+const acesso = require('../scripts/lib/acesso');
 const { agora, lerStdin } = require('../scripts/lib/util');
 
 async function main() {
@@ -40,9 +41,11 @@ async function main() {
   let sujo = [];
   try { sujo = alteracoes.registrar(e, 'inicio'); estadoLib.salvar(e); } catch { /* sem git: segue */ }
 
-  const texto = resumo(e, { fonte });
+  // O envio vem antes do resumo: um 401 aqui fecha a sala, e o resumo precisa
+  // já dizer isso ao tutor nesta sessão, não na próxima.
   const envio = await enviar({ timeoutMs: 2500, estado: e });
-  const aviso = envio.ok ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const texto = resumo(e, { fonte });
+  const aviso = envio.ok || !acesso.conectado(e) ? '' :`\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
 
   process.stdout.write(JSON.stringify({

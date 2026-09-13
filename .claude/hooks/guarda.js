@@ -15,6 +15,7 @@
 // Se o próprio hook quebrar, ele libera: a regra da casa é que nada trava a
 // aula, e o settings.json ainda segura as ferramentas de arquivo por baixo.
 const path = require('path');
+const { fileURLToPath } = require('url');
 const paths = require('../scripts/lib/paths');
 const { lerStdin, lerJson } = require('../scripts/lib/util');
 
@@ -27,15 +28,26 @@ const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é
-// ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b/;
-const CLI = /^node\s+(\.\/)?\.claude[/\\]scripts[/\\]trilha\.js\b/;
+// ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça; e o
+// acesso à 202 é do aluno, e depois de colado não volta ao chat.
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
+// `.\` e `./`: no Windows o tutor usa a ferramenta PowerShell, que escreve o
+// caminho com barra invertida.
+const CLI = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\]trilha\.js\b/;
 // Comandos de teste (dev reset, dev ir, dev fechar-tudo, dev fila, dev
 // avaliacoes) e o servidor mock são do terminal de quem testa, não do tutor.
-const DEV = /^node\s+(\.\/)?\.claude[/\\]scripts[/\\](trilha\.js\s+dev\b|dev[/\\])/;
-const LEITURA = new Set(['cat', 'head', 'tail', 'less', 'more', 'grep', 'rg', 'ls', 'wc', 'find', 'diff', 'stat', 'file', 'type', 'dir']);
+const DEV = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\](trilha\.js\s+dev\b|dev[/\\])/;
+// Comparado em minúsculas. A segunda linha são os cmdlets e apelidos de leitura
+// do PowerShell.
+const LEITURA = new Set([
+  'cat', 'head', 'tail', 'less', 'more', 'grep', 'rg', 'ls', 'wc', 'find', 'diff', 'stat', 'file', 'type', 'dir',
+  'get-content', 'gc', 'select-string', 'sls', 'get-childitem', 'gci', 'get-item', 'gi', 'test-path', 'resolve-path', 'measure-object',
+]);
 const GIT_ESCREVE = /^git\s+(-C\s+\S+\s+)?(checkout|switch|reset|restore|clean|stash|add|rm|mv|commit|push|pull|fetch|merge|rebase|cherry-pick|revert|apply|am|branch\s+(-[dDm]|--delete|--move)|tag|init|remote|config)\b/;
-const REMOVE = /(^|\s)(rm\s+-[a-zA-Z]*[rR]|rmdir\b|rm\s+-[a-zA-Z]*f)/;
+const REMOVE = /(^|\s)(rm\s+-[a-zA-Z]*[rR]|rmdir\b|rm\s+-[a-zA-Z]*f|remove-item\b)/i;
+// Listar as variáveis de ambiente despeja TRILHA_202_TOKEN no chat quando o
+// token vem por variável, sem que o comando cite o nome dela.
+const LISTA_AMBIENTE = /^(env|printenv|set|export(\s+-p)?)\s*$|^(get-childitem|gci|dir|ls|get-item|gi)\s+env:|^\[(system\.)?environment\]::getenvironmentvariables/i;
 
 function comoRegistrar() {
   return 'Se isso é feedback sobre a trilha (de quem está testando ou do aluno), registre em vez de editar: `node .claude/scripts/trilha.js registrar feedback texto="..."`. Se é o aluno pedindo mudança no material, explique em uma linha que ele não muda daqui e siga a aula.';
@@ -75,13 +87,19 @@ function segmentos(comando) {
 function conferirBash(entrada) {
   const comando = String((entrada.tool_input || {}).command || '');
   if (!comando.trim()) return;
-  for (const seg of segmentos(comando)) {
+  for (const bruto of segmentos(comando)) {
+    // `& node ...` é o operador de chamada do PowerShell; sem tirá-lo, o CLI da
+    // trilha não era reconhecido e caía como escrita no harness.
+    const seg = bruto.replace(/^&\s*/, '');
     if (DEV.test(seg)) {
       bloquear(`\`${seg}\` é comando de teste do harness e não existe para o tutor. Quem testa roda no próprio terminal. Não rode, não sugira, não cole para o aluno rodar. Leia .claude/guarda.md.`);
     }
     if (CLI.test(seg)) continue; // o CLI da trilha é o jeito certo de escrever
+    if (LISTA_AMBIENTE.test(seg)) {
+      bloquear(`\`${seg}\` lista as variáveis de ambiente, e o token de acesso à 202 do aluno pode estar entre elas. Ele não volta ao chat. Se precisa de uma variável, peça só ela pelo nome, e nunca a do token.`);
+    }
     if (SIGILO.test(seg)) {
-      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
+      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), o token de acesso à 202 é do aluno e não volta ao chat, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
     }
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);
@@ -92,7 +110,7 @@ function conferirBash(entrada) {
     if (NOMES_PROTEGIDOS.test(seg)) {
       const primeiro = seg.split(/\s+/)[0];
       const redireciona = /(^|[^<])>|\btee\b/.test(seg);
-      if (LEITURA.has(primeiro) && !redireciona) continue;
+      if (LEITURA.has(primeiro.toLowerCase()) && !redireciona) continue;
       bloquear(`\`${seg}\` mexe em um arquivo do harness. O harness não se edita a partir de um chat, por nenhum caminho: nem sed, nem tee, nem node -e, nem redirecionamento.`);
     }
   }
@@ -152,7 +170,10 @@ function conferirPainel(entrada) {
   const praticas = Object.values(estado.praticas || {});
 
   if (url.protocol === 'file:') {
-    const alvo = path.resolve(decodeURIComponent(url.pathname));
+    // fileURLToPath e não o pathname: no Windows `file:///C:/x` tem pathname
+    // `/C:/x`, que o path.resolve virava `C:\C:\x`, fora de qualquer pasta.
+    let alvo;
+    try { alvo = path.resolve(fileURLToPath(url)); } catch { alvo = path.resolve(decodeURIComponent(url.pathname)); }
     const pastas = [estado.oficina, ...praticas.map((p) => p.pasta)].filter(Boolean);
     if (pastas.some((p) => dentro(path.resolve(p), alvo))) return;
     bloquear(`\`${bruto}\` está fora da oficina e das práticas registradas. No painel só abre o trabalho do aluno.`, 'Se é a entrega dele, registre a pasta antes (`oficina <caminho>` ou `pratica <id> pasta=<caminho>`) e abra de novo.');
@@ -180,7 +201,9 @@ function conferirPainel(entrada) {
 async function main() {
   const entrada = await lerStdin();
   const tool = entrada.tool_name || '';
-  if (tool === 'Bash') return conferirBash(entrada);
+  // No Windows o tutor tem a ferramenta PowerShell além do Bash, e um matcher só
+  // de Bash não a intercepta: a guarda não via nenhum comando dele.
+  if (tool === 'Bash' || tool === 'PowerShell') return conferirBash(entrada);
   if (/^(Edit|Write|MultiEdit|NotebookEdit)$/.test(tool)) return conferirArquivo(entrada);
   if (/^mcp__Claude_Browser__(navigate|preview_start)$/.test(tool)) return conferirPainel(entrada);
 }

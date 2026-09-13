@@ -54,10 +54,17 @@ function ler() {
   return eventos;
 }
 
+// Reescreve a fila sem os enviados. Lê o arquivo de novo logo antes de trocar,
+// porque o envio leva segundos e outro processo (um hook, o CLI numa segunda
+// janela) pode ter enfileirado no meio: sem isso o rename apagava esse evento.
+// A janela que sobra, entre a última leitura e o rename, é de microssegundos.
 function remover(ids) {
-  const restantes = ler().filter((e) => !ids.includes(e.id));
+  const saem = new Set(ids);
+  const restantes = ler().filter((e) => !saem.has(e.id));
   const tmp = FILA + '.' + process.pid + '.tmp';
   fs.writeFileSync(tmp, restantes.map((e) => JSON.stringify(e)).join('\n') + (restantes.length ? '\n' : ''), 'utf8');
+  const chegaram = ler().filter((e) => !saem.has(e.id) && !restantes.some((r) => r.id === e.id));
+  if (chegaram.length) fs.appendFileSync(tmp, chegaram.map((e) => JSON.stringify(e)).join('\n') + '\n', 'utf8');
   fs.renameSync(tmp, FILA);
 }
 

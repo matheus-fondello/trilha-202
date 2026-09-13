@@ -6,7 +6,7 @@
     "$comment": "claudeCodeMinimo é a versão mínima do Claude Code que a trilha assume. A aula 0.1 aponta para cá; quem confere a versão do aluno é o tutor, com `claude --version`, sem passar a tarefa para ele."
   },
   "servidor": {
-    "url": null,
-    "$comment": "URL base do servidor da 202, ex.: https://trilha-api.202lab.com.br. Também pode vir da variável de ambiente TRILHA_202_SERVIDOR. Nulo = fila fica local."
+    "url": "https://crm-202.vercel.app/api/trilha",
+    "$comment": "URL base do CRM da 202, terminando em /api/trilha (o enviar acrescenta /eventos). Com ela aqui, o aluno só cola o token. Em ordem de precedência: a variável TRILHA_202_SERVIDOR (é como se testa contra o mock), a URL passada ao `conectar` com servidor=..., que ele guarda em ~/.trilha-202/credenciais.json, e esta."
   }
 }

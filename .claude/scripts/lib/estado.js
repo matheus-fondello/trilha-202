@@ -4,6 +4,7 @@ const { lerJson, gravarJson, agora, minutosEntre } = require('./util');
 const mapa = require('./mapa');
 const { existsSync } = require('fs');
 const fila = require('./fila');
+const acesso = require('./acesso');
 
 // Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
 const MINUTOS_VIVA = 30;
@@ -65,13 +66,23 @@ function contarSessao(e) {
   s.inicio = agora();
   const reg = registroAula(e, s.aula);
   reg.sessoes = (reg.sessoes || 0) + 1;
-  const a = mapa.aula(s.aula);
-  if (reg.status === 'nao_iniciada' && mapa.escrita(a)) {
-    reg.status = 'em_andamento';
-    reg.iniciada_em = agora();
-    fila.enfileirar('aula.inicio', { aula: a.id }, e);
-  }
+  abrirAula(e, s.aula);
   fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula }, e);
+  return true;
+}
+
+// A aula começa a valer aqui, com o `aula.inicio` na fila. Sala fechada não abre
+// aula: a conversa em que o aluno ainda está colando o token não é o começo da
+// aula, e o `aula.inicio` sairia com a hora errada. Chamado no primeiro turno da
+// sessão e, se a sessão já contava quando a sala abriu, pelo `conectar` — senão
+// a aula dada no mesmo chat do token abria pelo primeiro milestone, sem evento.
+function abrirAula(e, idAula) {
+  const reg = registroAula(e, idAula);
+  const a = mapa.aula(idAula);
+  if (reg.status !== 'nao_iniciada' || !mapa.escrita(a) || !acesso.conectado(e)) return false;
+  reg.status = 'em_andamento';
+  reg.iniciada_em = agora();
+  fila.enfileirar('aula.inicio', { aula: a.id }, e);
   return true;
 }
 
@@ -111,4 +122,4 @@ function fecharSessao(e, fimIso, motivo) {
   return registro;
 }
 
-module.exports = { carregar, salvar, registroAula, padrao, contarSessao, fecharSessao, fimEfetivo, MINUTOS_VIVA };
+module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, fecharSessao, fimEfetivo, MINUTOS_VIVA };
