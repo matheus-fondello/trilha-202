@@ -4,7 +4,7 @@
 // usa os mesmos ids de milestone. Se os dois divergem, o script vence.
 const fs = require('fs');
 const path = require('path');
-const { MAPA, SKILLS } = require('./paths');
+const { MAPA, SKILLS, QUIZ } = require('./paths');
 const { lerJson } = require('./util');
 
 let cache = null;
@@ -38,8 +38,10 @@ function skillExiste(a) {
   return !!a.skill && fs.existsSync(path.join(SKILLS, a.skill, 'SKILL.md'));
 }
 
-// Uma aula "escrita" tem skill no disco e ementa (milestones) no mapa.
+// Uma aula "escrita" tem skill no disco e ementa (milestones) no mapa. Para o
+// quiz a ementa é o banco codificado em quiz/<id>/banco: sem ele não há quiz.
 function escrita(a) {
+  if (a.tipo === 'quiz') return skillExiste(a) && fs.existsSync(path.join(QUIZ, String(a.id).toLowerCase(), 'banco'));
   return skillExiste(a) && Array.isArray(a.milestones) && a.milestones.length > 0;
 }
 

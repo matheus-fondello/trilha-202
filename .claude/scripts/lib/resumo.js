@@ -4,6 +4,7 @@
 const mapa = require('./mapa');
 const notas = require('./notas');
 const acesso = require('./acesso');
+const quiz = require('./quiz');
 const { relativo } = require('./util');
 
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
@@ -15,7 +16,7 @@ function portaFechada(e, a, linhas) {
   // token. As duas linhas só se pedem numa sala sem endereço nenhum.
   const temServidor = Boolean(acesso.servidor());
   const comServidor = temServidor ? '' : ' servidor=<url>';
-  linhas.push(`${a.tipo === 'pratica' ? 'Prática atual' : 'Aula atual'}: ${a.id} ${a.titulo}`);
+  linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo}`);
   linhas.push('');
   if (recusado) {
     linhas.push(`Acesso à 202: RECUSADO. A 202 recusou o token desta máquina ${relativo(e.acesso.recusado_em)}: o acesso foi revogado, trocado por outro, ou a turma foi encerrada. A sala fica fechada até ele conectar um token novo. O progresso está guardado e continua de onde parou.`);
@@ -43,6 +44,10 @@ function portaFechada(e, a, linhas) {
   return linhas.join('\n');
 }
 
+function rotuloDe(a) {
+  return a.tipo === 'pratica' ? 'Prática atual' : a.tipo === 'quiz' ? 'Quiz atual' : 'Aula atual';
+}
+
 function resumo(e, { fonte = 'startup' } = {}) {
   const a = mapa.aula(e.aula_atual);
   const reg = e.aulas[a.id] || { status: 'nao_iniciada', milestones: {}, fluencia: null, sessoes: 0 };
@@ -61,11 +66,20 @@ function resumo(e, { fonte = 'startup' } = {}) {
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
 
-  const rotulo = a.tipo === 'pratica' ? 'Prática atual' : 'Aula atual';
-  linhas.push(`${rotulo}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
+  linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
 
   if (!mapa.escrita(a)) {
-    linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
+    linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : a.tipo === 'quiz' ? 'unidade' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
+  } else if (a.tipo === 'quiz') {
+    // O quiz não tem milestones: a ementa é o banco, e o progresso é quantas
+    // perguntas já têm resposta gravada.
+    let banco = null;
+    try { banco = quiz.carregar(a.id); } catch { /* escrita() já conferiu que existe */ }
+    const total = banco ? banco.questoes.length : '?';
+    const feitas = quiz.respondidas(reg);
+    const prox = banco ? quiz.proximaPendente(banco, reg) : null;
+    linhas.push(`Perguntas respondidas: ${feitas} de ${total}.` + (prox ? ` A da vez é a ${prox.n}: \`quiz ${a.id}\` imprime.` : ' Todas respondidas: falta a memória do aluno e o `concluir`.'));
+    linhas.push(`Quiz: sem milestones, sem fluência e sem avaliação de fim de aula. Uma pergunta de cada vez, na ordem, sem refazer; o gabarito só sai do script depois da resposta gravada. Fecha com todas respondidas e \`concluir ${a.id}\`.`);
   } else {
     const fechados = a.milestones.filter((m) => reg.milestones[m.id]);
     const pendentes = a.milestones.filter((m) => !reg.milestones[m.id]);
@@ -98,12 +112,16 @@ function resumo(e, { fonte = 'startup' } = {}) {
     }
   }
 
+  // Aula com fluência precisa da oficina, e no M1 também da P0. A instrução de
+  // resolver isso só aparece quando falta, em vez de morar na `tutor` para sempre.
   if (e.oficina) linhas.push(`Oficina (pasta de prática do aluno): ${e.oficina}`);
+  else if (a.fluencia) linhas.push('Oficina: pasta ainda não registrada, e esta aula precisa dela. Antes de começar, pergunte onde fica e rode `oficina <caminho>`.');
   else linhas.push('Oficina: pasta ainda não registrada.');
 
   const p0 = e.praticas.P0;
   if (p0 && p0.pasta) linhas.push(`P0: ${p0.pasta}${p0.url ? ' — no ar em ' + p0.url : ' (ainda não está no ar)'}`);
   else if (p0) linhas.push('P0: registro incompleto, sem a pasta. Pergunte onde a página mora e rode `pratica P0 pasta=<caminho>`; as fluências do módulo precisam dela.');
+  else if (a.fluencia && a.modulo === 1) linhas.push('P0: não registrada, e as fluências deste módulo precisam de uma página real. Antes de começar, peça ao aluno uma página HTML de um arquivo só na oficina e registre com `pratica P0 pasta=<caminho> url=<url>`, a URL se existir.');
 
   for (const [idP, p] of Object.entries(e.praticas || {})) {
     if (idP === 'P0' || idP === a.id || !p.pasta) continue;
@@ -130,7 +148,9 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push('Contexto foi compactado no meio da sessão. Continue a aula de onde estava, sem reapresentação. Os milestones acima são a verdade sobre o que já foi fechado.');
   } else {
     linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
-    if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
+    if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
+      linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
+    } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
     }
     if (emCorrecao) {

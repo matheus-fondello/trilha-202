@@ -29,8 +29,9 @@ const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é
 // ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça; e o
-// acesso à 202 é do aluno, e depois de colado não volta ao chat.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
+// acesso à 202 é do aluno, e depois de colado não volta ao chat; e o banco do
+// quiz guarda o gabarito, que só sai pelo comando `quiz`, depois da resposta.
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b|quiz[/\\][^/\\]+[/\\]banco\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
 // `.\` e `./`: no Windows o tutor usa a ferramenta PowerShell, que escreve o
 // caminho com barra invertida.
 const CLI = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\]trilha\.js\b/;
@@ -99,7 +100,7 @@ function conferirBash(entrada) {
       bloquear(`\`${seg}\` lista as variáveis de ambiente, e o token de acesso à 202 do aluno pode estar entre elas. Ele não volta ao chat. Se precisa de uma variável, peça só ela pelo nome, e nunca a do token.`);
     }
     if (SIGILO.test(seg)) {
-      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), o token de acesso à 202 é do aluno e não volta ao chat, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
+      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), o token de acesso à 202 é do aluno e não volta ao chat, o banco de um quiz só fala pelo comando \`quiz\` e depois da resposta gravada, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
     }
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);

@@ -29,4 +29,5 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 - `.claude/avaliador/` a régua da avaliação de fim de aula, que é lida por um segundo Claude, fora do chat. Não se abre daqui.
 - `trilha/` estado do aluno, fila de eventos, mapa das aulas, configuração.
 - `praticas/` o que cada prática entrega ao aluno: brief e material do cliente. A régua da correção mora aqui codificada e abre pelo comando, depois da entrega.
+- `quiz/` o banco de cada quiz de módulo, codificado. Só o comando `quiz` o lê: pergunta sem gabarito, correção depois da resposta.
 - `REFERENCIAS.md` bibliografia da trilha, gerada a partir dos `referencias.md` das aulas. Não edite à mão.

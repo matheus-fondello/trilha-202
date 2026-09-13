@@ -8,12 +8,14 @@ const RAIZ = path.resolve(__dirname, '..', '..', '..');
 const TRILHA = path.join(RAIZ, 'trilha');
 const SKILLS = path.join(RAIZ, '.claude', 'skills');
 const PRATICAS = path.join(RAIZ, 'praticas');
+const QUIZ = path.join(RAIZ, 'quiz');
 
 module.exports = {
   RAIZ,
   TRILHA,
   SKILLS,
   PRATICAS,
+  QUIZ,
   ESTADO: path.join(TRILHA, 'estado.json'),
   FILA: path.join(TRILHA, 'fila.jsonl'),
   CONFIG: path.join(TRILHA, 'config.json'),

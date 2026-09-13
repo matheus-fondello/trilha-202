@@ -58,6 +58,12 @@ O que conferir:
 | `dev reset` | zera a sala e mantém o token na máquina: a sessão seguinte pede só o nome |
 | `dev desconectar` | tira o token da máquina: a sessão seguinte pede nome e token de novo |
 
+## Quiz
+
+O Q1 vem depois da correção da P1. Para chegar nele sem passar pelo módulo: `dev ir Q1`. Na sala, o tutor roda `quiz Q1` e cola a pergunta; você responde com a letra; ele grava com `quiz Q1 responder <n> <letra>` e cola a correção com a pergunta seguinte. As abertas (11 e 12) vão por arquivo em `trilha/tmp`. O gabarito mora em `quiz/q1/banco`, codificado, e não abre do chat: `cat quiz/q1/banco` é bloqueado pela guarda. Para pular o quiz inteiro, `dev fechar-tudo Q1` responde tudo com o gabarito, marcado como teste, e `concluir Q1` passa.
+
+O que conferir: a pergunta chega inteira e sem retoque; o tutor não dá dica antes da resposta; a correção abre pela certa e o segundo parágrafo é sobre a alternativa que você marcou; responder de novo é recusado; no fim, o tutor diz o que revisitar sem anunciar placar, grava uma nota `revisitar-m1` e conclui sem `avaliar`. Os eventos `quiz.resposta` aparecem em `dev fila` com a alternativa escolhida.
+
 ## Rede fora e servidor
 
 ```

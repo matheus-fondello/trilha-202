@@ -14,6 +14,7 @@
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
 //   node .claude/scripts/trilha.js criterios <pratica>
 //   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
+//   node .claude/scripts/trilha.js quiz <Q> | quiz <Q> responder <n> <letra>          (aberta: responder <n> arquivo=<txt> | texto="...")
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
@@ -32,6 +33,7 @@ const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
 const acesso = require('./lib/acesso');
+const quizLib = require('./lib/quiz');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -40,7 +42,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'corrigir', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -193,6 +195,7 @@ const comandos = {
     const aulaAv = mapa.aula(idAula);
     // A unidade que não ensina matéria não é avaliada, e a porta fecha aqui também:
     // avaliação de conversa de combinado é ruído para a 202.
+    if (aulaAv.tipo === 'quiz') falhar(`o ${idAula} não tem avaliação de fim de aula: o que sobe é a resposta de cada pergunta. Feche com a memória do aluno e \`concluir ${idAula}\`.`);
     if (aulaAv.avaliacao === false) falhar(`a aula ${idAula} não tem avaliação: ela é combinado, não matéria. Feche com o que ficou de pé e a próxima aula.`);
     const e = estadoLib.carregar();
     const reg = estadoLib.registroAula(e, idAula);
@@ -228,7 +231,13 @@ const comandos = {
     if (reg.status === 'concluida') falhar(`aula ${idAula} já concluída em ${reg.concluida_em}.`);
     const problemas = [];
     const avisos = [];
-    if (!Array.isArray(a.milestones) || !a.milestones.length) problemas.push('aula sem ementa no mapa');
+    if (a.tipo === 'quiz') {
+      // O quiz não tem milestones: fecha com todas as perguntas respondidas.
+      let banco = null;
+      try { banco = quizLib.carregar(idAula); } catch { /* sem banco */ }
+      if (!banco) problemas.push('banco do quiz não encontrado nesta cópia do harness');
+      else if (!quizLib.completo(banco, reg)) problemas.push(`perguntas respondidas: ${quizLib.respondidas(reg)} de ${banco.questoes.length}. O quiz fecha com todas (\`quiz ${idAula}\` imprime a da vez).`);
+    } else if (!Array.isArray(a.milestones) || !a.milestones.length) problemas.push('aula sem ementa no mapa');
     else {
       const pend = a.milestones.filter((x) => !reg.milestones[x.id]);
       if (pend.length) problemas.push(`milestones pendentes: ${pend.map((x) => x.id).join(', ')}`);
@@ -265,7 +274,7 @@ const comandos = {
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
-    console.log(`${a.tipo === 'pratica' ? 'Prática' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.')
+    console.log(`${a.tipo === 'pratica' ? 'Prática' : a.tipo === 'quiz' ? 'Quiz' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.')
       + (avisos.length ? `\n(${avisos.join('; ')}. Não comente com o aluno.)` : ''));
   },
 
@@ -337,6 +346,84 @@ const comandos = {
     estadoLib.salvar(e);
     try { fs.unlinkSync(arquivo); } catch { /* já foi */ }
     console.log(`Correção da ${idPratica} registrada e enfileirada. Arquivo temporário removido. Agora dê o feedback ao aluno, com as suas palavras, e feche com \`concluir ${idPratica}\`.`);
+  },
+
+  // O quiz de módulo. `quiz Q1` imprime a pergunta da vez, sem gabarito.
+  // `quiz Q1 responder <n> <letra>` grava a resposta e só então imprime a
+  // correção, já com a pergunta seguinte. Para as abertas, `responder <n>
+  // arquivo=<txt>` (o texto do aluno, em trilha/tmp) ou `texto="..."` grava o
+  // que ele escreveu e devolve a régua ao tutor. Ordem fixa, uma de cada vez,
+  // sem refazer: o que sobe é sempre a primeira resposta.
+  quiz([idQuiz, sub, ...resto]) {
+    exigirAcesso();
+    const uso = 'Uso: quiz <Q> | quiz <Q> responder <n> <letra | arquivo=<txt> | texto="...">';
+    if (!idQuiz) falhar(uso);
+    const a = mapa.aula(idQuiz);
+    if (a.tipo !== 'quiz') falhar(`${idQuiz} não é quiz.`);
+    if (!quizLib.bancoExiste(idQuiz)) falhar(`o banco do ${idQuiz} não existe nesta cópia do harness.`);
+    let banco;
+    try { banco = quizLib.carregar(idQuiz); } catch (err) { falhar(`não consegui ler o banco do ${idQuiz}: ${err.message}`); }
+    const e = estadoLib.carregar();
+    const reg = estadoLib.registroAula(e, idQuiz);
+    const q = quizLib.registro(reg);
+    if (reg.status === 'concluida') falhar(`o ${idQuiz} já foi concluído.`);
+
+    if (!sub || sub === 'proxima') {
+      if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
+      const primeira = !q.iniciado_em;
+      if (primeira) q.iniciado_em = agora();
+      estadoLib.salvar(e);
+      if (primeira) fila.enfileirar('quiz.inicio', { aula: idQuiz, questoes: banco.questoes.length }, e);
+      const prox = quizLib.proximaPendente(banco, reg);
+      console.log(prox ? quizLib.formatarPergunta(banco, prox) : fimDoQuiz(banco, reg, idQuiz));
+      return;
+    }
+    if (sub !== 'responder') falhar(uso);
+
+    const n = parseInt(resto[0], 10);
+    const prox = quizLib.proximaPendente(banco, reg);
+    if (!prox) falhar(`todas as ${banco.questoes.length} perguntas do ${idQuiz} já foram respondidas. Feche com a memória do aluno e \`concluir ${idQuiz}\`.`);
+    if (!Number.isInteger(n)) falhar(uso);
+    if (q.respostas[String(n)]) falhar(`a pergunta ${n} já foi respondida, e não há refazer: o que vale é a primeira resposta. A pergunta da vez é a ${prox.n}.`);
+    if (n !== prox.n) falhar(`a pergunta da vez é a ${prox.n}, não a ${n}. Uma de cada vez, na ordem: \`quiz ${idQuiz}\` imprime a da vez.`);
+    const questao = prox;
+    const kv = parChaveValor(resto.slice(1));
+
+    if (questao.tipo === 'fechada') {
+      const letra = String(resto[1] || '').trim().toLowerCase().replace(/[).]+$/, '');
+      if (!quizLib.LETRAS.includes(letra)) falhar('resposta de fechada é uma letra: a, b, c ou d. Se o aluno não deu uma letra clara, pergunte de novo antes de registrar; não escolha por ele.');
+      const correta = letra === questao.gabarito;
+      // Grava antes de mostrar: a correção só existe para resposta registrada.
+      q.respostas[String(n)] = { alternativa: letra, correta, ts: agora() };
+      estadoLib.salvar(e);
+      fila.enfileirar('quiz.resposta', { aula: idQuiz, questao: n, tipo: 'fechada', aulas: questao.aulas, categoria: questao.categoria, alternativa: letra, gabarito: questao.gabarito, correta }, e);
+      console.log(quizLib.formatarCorrecao(questao, letra));
+    } else {
+      let texto = kv.texto;
+      if (kv.arquivo) {
+        try { texto = fs.readFileSync(path.resolve(kv.arquivo), 'utf8'); } catch (err) { falhar(`não consegui ler ${kv.arquivo}: ${err.message}`); }
+      }
+      texto = String(texto || '').trim();
+      if (!texto) falhar('a resposta da aberta é o que o aluno escreveu, inteira e com as palavras dele: grave em trilha/tmp e passe arquivo=<txt>, ou texto="..." se for curta.');
+      q.respostas[String(n)] = { texto_caracteres: texto.length, ts: agora() };
+      estadoLib.salvar(e);
+      fila.enfileirar('quiz.resposta', { aula: idQuiz, questao: n, tipo: 'aberta', aulas: questao.aulas, texto }, e);
+      if (kv.arquivo) { try { fs.unlinkSync(path.resolve(kv.arquivo)); } catch { /* já foi */ } }
+      console.log(`Resposta da pergunta ${n} registrada (${texto.length} caracteres).`);
+      console.log(quizLib.formatarRegua(questao));
+    }
+
+    const seguinte = quizLib.proximaPendente(banco, reg);
+    console.log('');
+    if (seguinte) {
+      console.log(quizLib.formatarPergunta(banco, seguinte));
+    } else {
+      q.completo_em = agora();
+      estadoLib.salvar(e);
+      const r = quizLib.resumoFinal(banco, reg);
+      fila.enfileirar('quiz.completo', { aula: idQuiz, acertos: r.acertos, total_fechadas: r.total_fechadas, erradas: r.erradas, revisitar: r.revisitar }, e);
+      console.log(fimDoQuiz(banco, reg, idQuiz));
+    }
   },
 
   nota([chave, ...resto]) {
@@ -437,6 +524,14 @@ const comandos = {
       if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
       for (const m of a.milestones || []) reg.milestones[m.id] = reg.milestones[m.id] || agora();
       if (a.fluencia) reg.fluencia = { passou: true, tentativas: 1, registrada_em: agora() };
+      if (a.tipo === 'quiz') {
+        // Responde tudo com o gabarito, marcado como teste: nada disso é resposta de aluno.
+        const banco = quizLib.carregar(a.id);
+        const q = quizLib.registro(reg);
+        for (const x of banco.questoes) q.respostas[String(x.n)] = q.respostas[String(x.n)] || (x.tipo === 'fechada' ? { alternativa: x.gabarito, correta: true, ts: agora(), teste: true } : { texto_caracteres: 0, ts: agora(), teste: true });
+        q.iniciado_em = q.iniciado_em || agora();
+        q.completo_em = agora();
+      }
       estadoLib.salvar(e);
       anotar = { dados: { aula: a.id, milestones: (a.milestones || []).map((m) => m.id), fluencia: Boolean(a.fluencia) } };
       console.log(`Milestones e fluência da ${a.id} marcados (teste). Falta só a avaliação.`);
@@ -508,6 +603,16 @@ function validarCorrecao(c, idPratica) {
     if (typeof c.suspeita.descricao !== 'string' || typeof c.suspeita.evidencia !== 'string') erros.push('suspeita precisa de "descricao" e "evidencia"');
   }
   return erros;
+}
+
+// O fechamento do quiz, para o tutor: o que ficou para revisitar não é placar.
+function fimDoQuiz(banco, reg, idQuiz) {
+  const r = quizLib.resumoFinal(banco, reg);
+  return [
+    `Quiz ${idQuiz} completo: as ${banco.questoes.length} perguntas têm resposta gravada.`,
+    r.texto,
+    'Isso não é nota e não se anuncia como placar: o aluno já viu cada correção. Diga, com as suas palavras, o que ficou para revisitar e por quê (a aula, e quando ela volta a ser necessária), e o que as abertas mostraram. Depois grave a memória do aluno — uma nota com a chave `revisitar-m1`, dizendo o que revisitar e o que você vai fazer com isso na próxima aula em que aparecer — e feche com `concluir ' + idQuiz + '`. Sem `avaliar`: o quiz não tem.',
+  ].join('\n');
 }
 
 function validarAvaliacao(av, idAula) {

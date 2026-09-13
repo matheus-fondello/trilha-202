@@ -25,6 +25,6 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 
 ## Estado do protótipo
 
-Em construção. Escritos: o módulo 0 e o módulo 1 (onze aulas, fora a 1.11 de aprofundamento), a prática livre P0, a P1 com correção, e do módulo 2 e do módulo 3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. Faltam os quizzes e o resto do 2 e do 3; a aula que ainda não existe aparece na sequência dizendo isso, em vez de ser pulada em silêncio.
+Em construção. Escritos: o módulo 0 e o módulo 1 (onze aulas, fora a 1.11 de aprofundamento), a prática livre P0, a P1 com correção, o quiz do módulo 1, e do módulo 2 e do módulo 3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. Faltam o resto do 2 e do 3 e os quizzes deles; a aula que ainda não existe aparece na sequência dizendo isso, em vez de ser pulada em silêncio.
 
 Os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem para o CRM da 202 com o seu token; sem rede, esperam e sobem de uma vez quando ela volta. Ver `TESTE.md` para o protocolo de validação.
