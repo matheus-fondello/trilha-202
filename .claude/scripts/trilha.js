@@ -11,6 +11,7 @@
 //   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
 //   node .claude/scripts/trilha.js avaliar <aula>
 //   node .claude/scripts/trilha.js concluir <aula>
+//   node .claude/scripts/trilha.js aprofundar <aula>        (aula fora do tronco; abre quando a de tronco anterior está concluída)
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
 //   node .claude/scripts/trilha.js criterios <pratica>
 //   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
@@ -42,7 +43,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'aprofundar', 'pratica', 'criterios', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -266,16 +267,57 @@ const comandos = {
 
     reg.status = 'concluida';
     reg.concluida_em = agora();
-    // Quem fecha um aprofundamento volta para o tronco de onde saiu, que é a
-    // primeira aula de tronco ainda não concluída; `proxima` daria a seguinte no mapa.
-    const prox = a.tronco === false
-      ? mapa.todas().find((x) => x.tronco !== false && (e.aulas[x.id] || {}).status !== 'concluida') || null
-      : mapa.proxima(idAula);
+    // Quem fecha um aprofundamento volta para o tronco de onde saiu: a primeira
+    // aula de tronco ainda aberta depois do portão; `proxima` daria a seguinte no mapa.
+    const prox = a.tronco === false ? mapa.retornoDe(idAula, e) : mapa.proxima(idAula);
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
+    // Concluir a aula que é portão de um aprofundamento abre a porta dele. O
+    // tutor menciona uma vez, como opção de quem está adiantado, e não empurra.
+    const abertos = mapa.aprofundamentosDisponiveis(e).filter((x) => (mapa.portaoDe(x.id) || {}).id === idAula);
     console.log(`${a.tipo === 'pratica' ? 'Prática' : a.tipo === 'quiz' ? 'Quiz' : 'Aula'} ${idAula} concluída.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.')
+      + (abertos.length ? `\nAprofundamento disponível a partir daqui: ${abertos.map((x) => `${x.id} ${x.titulo}`).join('; ')}. Fora do tronco, para quem está adiantado; abre num chat novo com \`aprofundar <id>\` e, ao concluir, ele volta para o tronco. Diga que existe, uma vez, sem empurrar.` : '')
       + (avisos.length ? `\n(${avisos.join('; ')}. Não comente com o aluno.)` : ''));
+  },
+
+  // Troca a aula deste chat por uma de aprofundamento. Só abre quando a aula de
+  // tronco anterior no mapa está concluída, e só num chat que ainda não começou
+  // a aula da vez: com marco fechado, a aula em andamento se conclui primeiro.
+  aprofundar([idAula]) {
+    exigirAcesso();
+    if (!idAula) falhar('Uso: aprofundar <aula>');
+    const a = mapa.aula(idAula);
+    if (a.tronco !== false) falhar(`${idAula} é aula de tronco: ela abre sozinha na sequência, não por aqui.`);
+    if (!mapa.escrita(a)) falhar(`a ${idAula} ainda não foi escrita neste protótipo do harness.`);
+    const e = estadoLib.carregar();
+    const reg = estadoLib.registroAula(e, idAula);
+    if (reg.status === 'concluida') falhar(`a ${idAula} já foi concluída em ${reg.concluida_em}.`);
+    const portao = mapa.portaoDe(idAula);
+    if (portao && ((e.aulas[portao.id] || {}).status !== 'concluida')) falhar(`a ${idAula} abre depois da ${portao.id} (${portao.titulo}), que ainda não foi concluída. Aprofundamento é para quem está adiantado no tronco.`);
+    if (e.aula_atual === idAula) falhar(`a ${idAula} já é a aula deste chat.`);
+    const atual = mapa.aula(e.aula_atual);
+    const regAtual = estadoLib.registroAula(e, atual.id);
+    if (Object.keys(regAtual.milestones || {}).length || regAtual.fluencia) falhar(`a ${atual.id} já começou neste chat (há marco registrado). Conclua a aula em andamento; o aprofundamento abre num chat novo.`);
+    // A aula da vez foi aberta pelo primeiro turno deste chat, sem nada tratado:
+    // volta a "não iniciada" para abrir de novo, com a hora certa, quando ele voltar.
+    if (regAtual.status === 'em_andamento') {
+      regAtual.status = 'nao_iniciada';
+      regAtual.iniciada_em = null;
+      regAtual.sessoes = Math.max(0, (regAtual.sessoes || 0) - 1);
+    }
+    e.aula_atual = idAula;
+    if (e.sessao_atual) {
+      e.sessao_atual.aula = idAula;
+      if (e.sessao_atual.contada !== false) {
+        reg.sessoes = (reg.sessoes || 0) + 1;
+        estadoLib.abrirAula(e, idAula);
+      }
+    }
+    estadoLib.salvar(e);
+    fila.enfileirar('aula.aprofundamento', { aula: idAula, de: atual.id }, e);
+    const volta = mapa.retornoDe(idAula, e);
+    console.log(`Aula deste chat: ${idAula} ${a.titulo} (aprofundamento). Carregue a skill \`${a.skill}\` e siga. Ao concluir, o aluno volta para a ${volta ? volta.id : atual.id}.`);
   },
 
   pratica([idPratica, ...resto]) {
