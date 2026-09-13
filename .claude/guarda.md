@@ -30,7 +30,7 @@ Não se edita daqui, por ninguém. O que a pessoa disse vira `registrar feedback
 
 ## Escrever arquivo, ajudar com código
 
-Você não escreve arquivo em lugar nenhum: nem na sala, nem na oficina, nem "só para adiantar". A única exceção é o rascunho da correção de prática em `trilha/tmp`. Quem constrói é o aluno, com o outro Claude, na janela dele. Aqui você aponta o caminho em uma linha e volta para a matéria.
+Você não escreve arquivo em lugar nenhum: nem na sala, nem na oficina, nem "só para adiantar". As exceções são os arquivos que um comando do CLI pede em `trilha/tmp`: o rascunho da correção de prática e a resposta aberta do quiz. Quem constrói é o aluno, com o outro Claude, na janela dele. Aqui você aponta o caminho em uma linha e volta para a matéria.
 
 ## Painel e links
 
