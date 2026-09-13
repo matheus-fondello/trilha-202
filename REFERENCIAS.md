@@ -312,6 +312,48 @@ Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você
   https://code.claude.com/docs/en/best-practices#give-claude-a-way-to-verify-its-work
   Traz o screenshot como check na forma de prompt copiável: implemente, tire um screenshot do resultado, compare com o original, liste as diferenças e corrija.
 
+### 1.11 Subagentes, MCP e plugins
+
+**Sugerida**
+
+- **Simon Willison, *The lethal trifecta for AI agents: private data, untrusted content, and external communication*** — simonwillison.net, jun/2025 · ~7 min de leitura
+  https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/
+  A régua para decidir o que conectar: dado privado, conteúdo não confiável e saída para fora. Juntar os três num agente é o risco, e MCP convida a juntar sem perceber.
+
+**Citadas na aula**
+
+- **Anthropic, *Extend Claude Code*** — documentação do Claude Code · ~12 min de leitura
+  https://code.claude.com/docs/en/features-overview
+  A referência da ementa: a tabela que casa cada peça com o gatilho que a pede — quando vira CLAUDE.md, skill, subagente, MCP, hook ou plugin — e quanto contexto cada uma custa.
+
+- **Anthropic, *Create custom subagents*** — documentação do Claude Code · ~25 min de leitura
+  https://code.claude.com/docs/en/sub-agents
+  O arquivo em `.claude/agents/` com nome, descrição, ferramentas e modelo; o contexto isolado que devolve só o resumo; e os subagentes que já vêm prontos.
+
+- **Anthropic, *Run parallel sessions with worktrees*, seção "Start Claude in a worktree"** — documentação do Claude Code · 3 min a seção
+  https://code.claude.com/docs/en/worktrees#start-claude-in-a-worktree
+  O que o worktree é (cópia própria do repositório, na mesma história), o comando que abre um, e que exige repositório git.
+
+- **Anthropic, *Desktop application*, seção "Work in parallel with sessions"** — documentação do Claude Code · 2 min a seção
+  https://code.claude.com/docs/en/desktop#work-in-parallel-with-sessions
+  A opção de worktree no diálogo de sessão nova do aplicativo, que é onde o aluno está; o comando fica para quem usa terminal.
+
+- **Anthropic, *Connect Claude Code to tools via MCP*** — documentação do Claude Code · ~15 min de leitura
+  https://code.claude.com/docs/en/mcp
+  Como um servidor se adiciona, os três escopos (o de projeto vai para o repositório) e o aviso em destaque: confira se confia no servidor antes de conectar, porque servidor que busca conteúdo externo expõe a injeção.
+
+- **Anthropic, *Use Claude Code with Chrome*** — documentação do Claude Code · ~10 min de leitura
+  https://code.claude.com/docs/en/chrome
+  O navegador da fluência. A extensão compartilha o login do aluno, então o agente alcança qualquer site em que ele já esteja logado: é o exemplo mais nítido de alcance que a aula tem.
+
+- **Anthropic, *Discover and install prebuilt plugins through marketplaces*, seção "Security"** — documentação do Claude Code · 1 min a seção
+  https://code.claude.com/docs/en/discover-plugins#security
+  Três frases: plugin e marketplace executam código arbitrário na máquina, com os privilégios do usuário; instale só de fonte em que confia.
+
+- **Stephen Thoemmes, *How "Clinejection" Turned an AI Bot into a Supply Chain Attack*** — Snyk, fev/2026 · ~13 min de leitura
+  https://snyk.io/blog/cline-supply-chain-attack-prompt-injection-github-actions/
+  O caso da aula, passo a passo: injeção pelo título de uma issue, credencial vazada, versão adulterada no npm por oito horas instalando outro agente — dado não confiável entrando no agente mais ferramenta que executa.
+
 ## Módulo 2
 
 ### 2.1 O que significa shippar
