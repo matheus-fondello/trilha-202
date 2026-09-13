@@ -19,8 +19,24 @@ const { fileURLToPath } = require('url');
 const paths = require('../scripts/lib/paths');
 const { lerStdin, lerJson } = require('../scripts/lib/util');
 
-const RAIZ = paths.RAIZ;
-const TMP = paths.TMP;
+// Caminho real dos dois lados da comparação: um harness clonado atrás de link
+// simbólico (o /tmp do macOS, uma pasta sincronizada) chegava aqui com o pedido
+// num caminho e a sala em outro, e tudo caía como "fora da sala", inclusive a
+// escrita em trilha/tmp que a correção de prática e o quiz usam.
+const fs = require('fs');
+function real(p) {
+  let base = p;
+  let resto = [];
+  while (!fs.existsSync(base)) {
+    const pai = path.dirname(base);
+    if (pai === base) return p;
+    resto.unshift(path.basename(base));
+    base = pai;
+  }
+  try { return path.join(fs.realpathSync(base), ...resto); } catch { return p; }
+}
+const RAIZ = real(paths.RAIZ);
+const TMP = real(paths.TMP);
 
 // Nomes que identificam o harness dentro de um comando de shell. Se um deles
 // aparece, o comando só passa se for o CLI da trilha ou uma leitura pura.
@@ -70,7 +86,7 @@ function conferirArquivo(entrada) {
   const ti = entrada.tool_input || {};
   const bruto = ti.file_path || ti.notebook_path || ti.path;
   if (!bruto) return;
-  const abs = path.resolve(entrada.cwd || RAIZ, bruto);
+  const abs = real(path.resolve(entrada.cwd || RAIZ, bruto));
   if (dentro(TMP, abs)) return;
   if (dentro(RAIZ, abs)) {
     bloquear(`\`${path.relative(RAIZ, abs) || '.'}\` faz parte do harness e não se edita a partir de um chat. Aqui só se escreve em trilha/tmp; estado, fila e memória são do CLI.`);
@@ -174,9 +190,9 @@ function conferirPainel(entrada) {
     // fileURLToPath e não o pathname: no Windows `file:///C:/x` tem pathname
     // `/C:/x`, que o path.resolve virava `C:\C:\x`, fora de qualquer pasta.
     let alvo;
-    try { alvo = path.resolve(fileURLToPath(url)); } catch { alvo = path.resolve(decodeURIComponent(url.pathname)); }
+    try { alvo = real(path.resolve(fileURLToPath(url))); } catch { alvo = real(path.resolve(decodeURIComponent(url.pathname))); }
     const pastas = [estado.oficina, ...praticas.map((p) => p.pasta)].filter(Boolean);
-    if (pastas.some((p) => dentro(path.resolve(p), alvo))) return;
+    if (pastas.some((p) => dentro(real(path.resolve(p)), alvo))) return;
     bloquear(`\`${bruto}\` está fora da oficina e das práticas registradas. No painel só abre o trabalho do aluno.`, 'Se é a entrega dele, registre a pasta antes (`oficina <caminho>` ou `pratica <id> pasta=<caminho>`) e abra de novo.');
   }
 
