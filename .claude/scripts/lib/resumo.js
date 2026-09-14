@@ -67,6 +67,14 @@ function resumo(e, { fonte = 'startup' } = {}) {
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
+  if (a.tronco === false) {
+    const volta = mapa.retornoDe(a.id, e);
+    linhas.push(`Aula de aprofundamento, fora do tronco: nada aqui é pré-requisito de prática. Ao concluir, o aluno volta para ${volta ? `a ${volta.id} ${volta.titulo}` : 'o tronco'}.`);
+  } else if (!Object.keys(reg.milestones || {}).length) {
+    // Só no começo de um chat: com marco fechado, a aula da vez já é esta.
+    const abertos = mapa.aprofundamentosDisponiveis(e);
+    if (abertos.length) linhas.push(`Aprofundamento disponível: ${abertos.map((x) => `${x.id} ${x.titulo}`).join('; ')}. É opcional e fora do tronco; se o aluno pedir ou estiver com tempo sobrando, \`aprofundar <id>\` troca a aula deste chat e ele volta ao tronco ao concluir. Não empurre: a aula da vez é a de cima.`);
+  }
 
   if (!mapa.escrita(a)) {
     linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : a.tipo === 'quiz' ? 'unidade' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
