@@ -1,6 +1,6 @@
 {
   "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: o M0 (uma aula), o M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Aula com \"tronco\": false é aprofundamento: não entra na sequência padrão, `proxima` a pula, e o roteamento até ela ainda não existe. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1. Unidade com tipo quiz não tem milestones: a ementa é o banco codificado em quiz/<id>/banco (pergunta a pergunta, gabarito e explicação), a skill conduz, e ela fecha com todas as perguntas respondidas. Sem fluência e sem avaliação de fim de aula: o que sobe é a resposta de cada pergunta, com a alternativa escolhida. Escrito: o Q1.",
-  "versao": "0.10.0",
+  "versao": "0.11.0",
   "aulas": [
     {
       "id": "0.1",
@@ -556,7 +556,28 @@
       "titulo": "O problema bem definido",
       "skill": "aula-2-8",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "brief-lido",
+          "titulo": "O que o cliente pediu, por que agora e quem usa"
+        },
+        {
+          "id": "pedido-nao-e-spec",
+          "titulo": "O brief descreve o problema; a spec é a decisão"
+        },
+        {
+          "id": "a-forma-da-spec",
+          "titulo": "Objetivo em uma frase, entradas, saídas, fora, premissas"
+        },
+        {
+          "id": "o-claude-te-entrevista",
+          "titulo": "O prompt de entrevista e o SPEC.md que sai dele"
+        },
+        {
+          "id": "sessao-nova",
+          "titulo": "Sessão nova, só com a spec, é o teste da spec"
+        }
+      ]
     },
     {
       "id": "2.9",
@@ -565,7 +586,28 @@
       "titulo": "Critérios de aceitação e decomposição",
       "skill": "aula-2-9",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "criterio-verificavel",
+          "titulo": "Critério da própria spec reescrito com exemplo e resultado"
+        },
+        {
+          "id": "restricoes",
+          "titulo": "Restrições da P2 listadas nas cinco famílias"
+        },
+        {
+          "id": "fatias-verticais",
+          "titulo": "Spec cortada em fatias da tela ao dado, ordenadas por risco"
+        },
+        {
+          "id": "spec-como-contrato",
+          "titulo": "SPEC.md commitado com verificação ponta a ponta no fim"
+        },
+        {
+          "id": "linguagem-natural",
+          "titulo": "O que a spec em português prende e onde escapa"
+        }
+      ]
     },
     {
       "id": "2.10",
@@ -574,7 +616,28 @@
       "titulo": "Testes e TDD com agentes",
       "skill": "aula-2-10",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "plausivel-por-construcao",
+          "titulo": "Parece certo não é evidência; o custo de cada teste"
+        },
+        {
+          "id": "onde-doi",
+          "titulo": "O que vale teste no sistema dele, e o que não"
+        },
+        {
+          "id": "o-loop",
+          "titulo": "Vermelho, verde, refatorar, com o teste antes"
+        },
+        {
+          "id": "nao-conserta-o-teste",
+          "titulo": "O teste que passou porque mudou"
+        },
+        {
+          "id": "check-automatico",
+          "titulo": "Os testes rodando sozinhos a cada mudança"
+        }
+      ]
     },
     {
       "id": "2.11",
@@ -583,7 +646,24 @@
       "titulo": "Debugging sem ler código",
       "skill": "aula-2-11",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "do-sintoma-a-causa",
+          "titulo": "Reproduzir, isolar e escrever a hipótese antes de corrigir"
+        },
+        {
+          "id": "instrumentos",
+          "titulo": "Log, teste, screenshot e a explicação em português"
+        },
+        {
+          "id": "conceitual-ou-sintatico",
+          "titulo": "O que a máquina pega e o que só o entendimento pega"
+        },
+        {
+          "id": "causa-raiz-nao-supressao",
+          "titulo": "Supressão, duas correções, /clear e prompt melhor"
+        }
+      ]
     },
     {
       "id": "2.12",
@@ -592,7 +672,24 @@
       "titulo": "Revisão adversarial",
       "skill": "aula-2-12",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "contexto-limpo",
+          "titulo": "O que o revisor recebe e por que menos é melhor"
+        },
+        {
+          "id": "contra-a-spec",
+          "titulo": "Pedir contra a spec, e o que o /code-review cobre"
+        },
+        {
+          "id": "duas-sessoes",
+          "titulo": "Escritor e revisor sem contexto em comum"
+        },
+        {
+          "id": "julgar-a-lista",
+          "titulo": "Cada achado numa caixa, com motivo"
+        }
+      ]
     },
     {
       "id": "2.13",
@@ -601,7 +698,28 @@
       "titulo": "Segurança e dados",
       "skill": "aula-2-13",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "entrada-hostil",
+          "titulo": "Injeção nas três formas e a validação no servidor"
+        },
+        {
+          "id": "quem-ve-o-que",
+          "titulo": "Autorização no servidor e o ID que se adivinha"
+        },
+        {
+          "id": "revisao-de-seguranca",
+          "titulo": "Revisão separada, por subagente, com a OWASP como lista"
+        },
+        {
+          "id": "dado-pessoal",
+          "titulo": "Finalidade, mínimo, e fonte pública contra vazada"
+        },
+        {
+          "id": "em-desenvolvimento",
+          "titulo": "Nenhum dado real em log, teste ou prompt"
+        }
+      ]
     },
     {
       "id": "2.14",
@@ -653,7 +771,24 @@
       "fluencia": false,
       "correcao": true,
       "criterios": ["spec", "funcionamento", "testes", "seguranca_dado", "decisoes"],
-      "milestones": null
+      "milestones": [
+        {
+          "id": "inventario",
+          "titulo": "O que falta entre o que existe e o que o brief pede"
+        },
+        {
+          "id": "entrega-vista",
+          "titulo": "O simulador no ar, visto no painel"
+        },
+        {
+          "id": "readme",
+          "titulo": "README com decisões, cortes, dados pessoais e revisão"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Pasta, URL e repositório registrados"
+        }
+      ]
     },
     {
       "id": "Q2",
