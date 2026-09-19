@@ -34,6 +34,14 @@ Serve os dois marcos: cite no `context-engineering` e volte a ele no `tarefas-lo
 
 Longo e cheio de código. É citada, não leitura de aula: solte o link e siga. Se o aluno quiser um pedaço só, mande o começo, sobre linter.
 
+**marco `fan-out`**
+
+- **Anthropic, *Run Claude Code programmatically*** — documentação do Claude Code · ~10 min de leitura
+  https://code.claude.com/docs/en/headless
+  A flag `-p`, o formato de saída em JSON e o que mais um script precisa para chamar o modelo uma vez por item e ler a resposta.
+
+Documentação viva, sem data: se não bater com a versão do aluno, vale a máquina dele. Cite e siga; a fluência não pede que ele monte um laço.
+
 **marco `os-oitenta-de-verdade`**
 
 - **Addy Osmani, *The 70% problem: Hard truths about AI-assisted coding*** — Elevate (newsletter do autor), dez/2024 · ~11 min de leitura
