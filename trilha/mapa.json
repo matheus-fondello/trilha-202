@@ -1,6 +1,6 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: o M0 (uma aula), o M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2 e as de aprofundamento 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Aula com \"tronco\": false é aprofundamento: não entra na sequência padrão, `proxima` a pula, e o roteamento até ela ainda não existe. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1. Unidade com tipo quiz não tem milestones: a ementa é o banco codificado em quiz/<id>/banco (pergunta a pergunta, gabarito e explicação), a skill conduz, e ela fecha com todas as perguntas respondidas. Sem fluência e sem avaliação de fim de aula: o que sobe é a resposta de cada pergunta, com a alternativa escolhida. Escrito: o Q1.",
-  "versao": "0.10.0",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos: o M0 (uma aula), o M1, a P0, a P1, e do M2 e do M3 as aulas 2.1 a 2.6, 3.1, 3.2, 2.14 e 3.9. As demais entram aqui sem milestones, para que a sequência não pule buraco em silêncio: o resumo diz ao tutor que a aula não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Toda unidade é de tronco e a sequência é a ordem deste arquivo: a categoria \"aprofundamento\" saiu em 19/09, e a 2.15 foi dissolvida na 1.11 e na 2.14. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1. Unidade com tipo quiz não tem milestones: a ementa é o banco codificado em quiz/<id>/banco (pergunta a pergunta, gabarito e explicação), a skill conduz, e ela fecha com todas as perguntas respondidas. Sem fluência e sem avaliação de fim de aula: o que sobe é a resposta de cada pergunta, com a alternativa escolhida. Escrito: o Q1.",
+  "versao": "0.12.0",
   "aulas": [
     {
       "id": "0.1",
@@ -322,7 +322,6 @@
       "titulo": "Subagentes, MCP e plugins",
       "skill": "aula-1-11",
       "fluencia": true,
-      "tronco": false,
       "milestones": [
         {
           "id": "subagentes-por-papel",
@@ -610,7 +609,6 @@
       "titulo": "Harness engineering",
       "skill": "aula-2-14",
       "fluencia": true,
-      "tronco": false,
       "milestones": [
         {
           "id": "modelo-versus-harness",
@@ -629,20 +627,14 @@
           "titulo": "Plano no disco e retomada"
         },
         {
+          "id": "fan-out",
+          "titulo": "O modelo dentro de um script"
+        },
+        {
           "id": "os-oitenta-de-verdade",
           "titulo": "Onde mora o 20 que falta"
         }
       ]
-    },
-    {
-      "id": "2.15",
-      "modulo": 2,
-      "tipo": "aula",
-      "titulo": "Orquestração",
-      "skill": "aula-2-15",
-      "fluencia": true,
-      "tronco": false,
-      "milestones": null
     },
     {
       "id": "P2",
@@ -768,7 +760,6 @@
       "titulo": "Recuperação e memória",
       "skill": "aula-3-8",
       "fluencia": true,
-      "tronco": false,
       "milestones": null
     },
     {
@@ -778,7 +769,6 @@
       "titulo": "Ferramentas e agentes no produto",
       "skill": "aula-3-9",
       "fluencia": true,
-      "tronco": false,
       "milestones": [
         {
           "id": "tool-use",

@@ -10,7 +10,7 @@ user-invocable: false
 
 Contexto para discorrer, do seu jeito: tudo na sessão — o que ele escreveu, o que o agente leu, cada saída de comando — ocupa a mesma janela, e ela enche muito mais rápido do que parece. Quando enche, a qualidade cai antes de qualquer aviso, e os sintomas são reconhecíveis: o agente repete o que já fez, esquece uma decisão de dez minutos atrás, ou se contradiz. A regra que resolve 80% disso é uma tarefa por chat, e `/clear` entre elas. A outra regra é sobre a espiral: se ele corrigiu a mesma coisa duas vezes e não andou, o contexto já está poluído com as tentativas erradas; limpar e reescrever o pedido do zero é mais rápido que insistir, e é contraintuitivo justamente porque parece jogar trabalho fora. `/compact` com instrução é diferente de compactar no automático — dizer o que precisa sobreviver muda o que fica. O `/rewind` desfaz o que o agente fez na sessão, e vale ser explícito: não substitui git; commit antes de mudança grande é o cinto de segurança de verdade, porque sobrevive ao fim da sessão. Subagente é contexto descartável: mandar investigar e receber a conclusão, sem trazer para a sua janela o lixo da investigação. O `/btw` resolve a pergunta lateral sem que ela entre no histórico, e é das melhores coisas da ferramenta. E `/rename` mais `claude --resume` são o que permitem ter uma frente de trabalho por sessão e voltar para ela dias depois sabendo qual é qual.
 
-Sala e oficina. Fica para o aprofundamento: subagentes por papel e sessões paralelas em worktree.
+Sala e oficina. Fica para a 1.11: subagentes por papel e sessões paralelas em worktree.
 
 ## Antes de começar
 

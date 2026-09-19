@@ -534,6 +534,10 @@ Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você
   https://martinfowler.com/articles/sensors-for-coding-agents.html
   Sensor por sensor com o que ela achou na prática: linter com mensagem escrita para o agente, regra de dependência, dado de acoplamento, revisão de modularidade pelo próprio modelo, suíte de testes como sensor de regressão e teste de mutação.
 
+- **Anthropic, *Run Claude Code programmatically*** — documentação do Claude Code · ~10 min de leitura
+  https://code.claude.com/docs/en/headless
+  A flag `-p`, o formato de saída em JSON e o que mais um script precisa para chamar o modelo uma vez por item e ler a resposta.
+
 - **Addy Osmani, *The 70% problem: Hard truths about AI-assisted coding*** — Elevate (newsletter do autor), dez/2024 · ~11 min de leitura
   https://addyo.substack.com/p/the-70-problem-hard-truths-about
   Nomeia onde mora o resto: caso de borda, depuração que gera novo defeito, estado de tela inacabado, acessibilidade, desempenho em aparelho lento — e por que quem não tem modelo mental do código fica preso ali.

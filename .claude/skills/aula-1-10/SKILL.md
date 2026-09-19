@@ -29,4 +29,4 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 Na oficina: entregar ao agente o arquivo de design e pedir uma variação da página da P0, recebendo screenshot como evidência. Passa se ele conseguir apontar, no screenshot, onde a variação seguiu o design e onde não seguiu. Registre com `fluencia 1.10 passou|nao-passou <tentativas>`.
 
-Fechamento da `tutor`. Próximo passo: a P1, a landing page do brief, feita do zero. Gancho: o módulo inteiro esteve remendando a página da P0; a P1 é a prova de que ele consegue fazer sozinho desde a primeira linha.
+Fechamento da `tutor`. Próximo passo: a 1.11, a última antes da P1, sobre estender o agente sem perder o controle do que entra nele. Gancho: o revisor que ele vai montar lá é o que vai olhar a P1 antes de ele entregar.
