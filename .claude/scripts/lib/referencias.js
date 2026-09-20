@@ -67,7 +67,7 @@ function markdown(lista) {
     '',
     'Tudo aqui é opcional. A aula se sustenta sozinha: isto é para quem quer ir além, na hora ou depois. Você também pode pedir ao Claude, na sala: `/referencias`.',
     '',
-    'Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você for ver só uma coisa. As **citadas** são a fonte do que foi dito na aula.',
+    'As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada uma no seu momento; se você for ver só uma coisa de uma aula, é uma delas. As **citadas** são a fonte do que foi dito na aula.',
     '',
     '> Arquivo gerado por `node .claude/scripts/trilha.js dev referencias`. Para mudar algo, edite o `referencias.md` da aula e gere de novo.',
   ];

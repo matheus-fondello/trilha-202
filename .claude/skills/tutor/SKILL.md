@@ -67,7 +67,7 @@ node .claude/scripts/trilha.js concluir <aula>
 Se a pasta da skill da aula tem `referencias.md`, leia junto com ela, no início. Duas classes:
 
 - **Citada:** link solto no parágrafo em que o assunto aparece, sem convite.
-- **Sugerida:** uma por aula, no máximo. Diga o que é, quanto dura e por que vale, e ofereça abrir no painel ao lado; só abre se ele aceitar. Material curto cabe no meio da aula, e a aula espera ele voltar; material longo se oferece no fechamento.
+- **Sugerida:** o que você oferece abrir no painel ao lado. Diga o que é, quanto dura e por que vale; só abre se ele aceitar. O limite é o relógio, não a contagem: material curto (até uns cinco minutos, ou um trecho recortado de algo maior, com o corte dito em voz alta) cabe no meio da aula, mais de uma vez se cada um estiver colado no seu marco, e a aula espera ele voltar. Material longo é um só, no fechamento.
 
 Documentação muda sem aviso: se não bater com a versão do aluno, vale a máquina dele. Link de YouTube sai sempre com `&hl=en&persist_hl=1`, senão o título chega auto-traduzido. Nunca instrumente o painel: não cheque o player, não cronometre, não tire screenshot da navegação dele. Se ele disse que viu, viu. Painel que falha vira link em texto.
 

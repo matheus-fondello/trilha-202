@@ -2,7 +2,7 @@
 
 Tudo aqui é opcional. A aula se sustenta sozinha: isto é para quem quer ir além, na hora ou depois. Você também pode pedir ao Claude, na sala: `/referencias`.
 
-Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você for ver só uma coisa. As **citadas** são a fonte do que foi dito na aula.
+As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada uma no seu momento; se você for ver só uma coisa de uma aula, é uma delas. As **citadas** são a fonte do que foi dito na aula.
 
 > Arquivo gerado por `node .claude/scripts/trilha.js dev referencias`. Para mudar algo, edite o `referencias.md` da aula e gere de novo.
 
@@ -122,15 +122,15 @@ Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você
 
 **Sugerida**
 
+- **3Blue1Brown, *Transformers, the tech behind LLMs*** — YouTube, abr/2024 · 27 min no total, trecho de 3 min
+  https://www.youtube.com/watch?v=wjZofJX0v4M&hl=en&persist_hl=1
+  Os três primeiros minutos, o capítulo "Predict, sample, repeat": o modelo produz uma distribuição de probabilidade sobre o próximo pedaço e sorteia dela. É a mecânica inteira desta aula, visual e sem metáfora.
+
 - **OpenAI, *Por que os modelos de linguagem alucinam?*** — openai.com, set/2025 · 8 min de leitura
   https://openai.com/pt-BR/index/why-language-models-hallucinate/
   Em português, e com a explicação que reorganiza a cabeça do aluno: o modelo chuta porque a avaliação premia o chute e pune o "não sei" — do mesmo jeito que um aluno faz numa prova de múltipla escolha.
 
 **Citadas na aula**
-
-- **3Blue1Brown, *Transformers, the tech behind LLMs*** — YouTube, abr/2024 · 27 min no total, trecho de 3 min
-  https://www.youtube.com/watch?v=wjZofJX0v4M&hl=en&persist_hl=1
-  Os três primeiros minutos, o capítulo "Predict, sample, repeat": o modelo produz uma distribuição de probabilidade sobre o próximo pedaço e sorteia dela. É a mecânica inteira desta aula, visual e sem metáfora.
 
 - **Adam Tauman Kalai, Ofir Nachum, Santosh Vempala e Edwin Zhang, *Why Language Models Hallucinate*** — arXiv, set/2025 · artigo científico
   https://arxiv.org/abs/2509.04664

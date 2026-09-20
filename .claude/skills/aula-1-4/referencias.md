@@ -8,16 +8,6 @@ o tutor, e não chega ao aluno.
 
 Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, sem parar a aula.
 
-**marco `mecanica-minima`**
-
-- **3Blue1Brown, *Transformers, the tech behind LLMs*** — YouTube, abr/2024 · 27 min no total, trecho de 3 min
-  https://www.youtube.com/watch?v=wjZofJX0v4M&hl=en&persist_hl=1
-  Os três primeiros minutos, o capítulo "Predict, sample, repeat": o modelo produz uma distribuição de probabilidade sobre o próximo pedaço e sorteia dela. É a mecânica inteira desta aula, visual e sem metáfora.
-
-Diga o recorte em voz alta: **assista até os 3 minutos e volte**. Do minuto três em diante
-vira álgebra linear e o aluno se perde achando que devia entender. Se ele quiser saber por
-que a mesma pergunta dá respostas diferentes, o trecho de 22:22 a 26:03 fecha isso.
-
 **marco `alucinacao`**
 
 - **Adam Tauman Kalai, Ofir Nachum, Santosh Vempala e Edwin Zhang, *Why Language Models Hallucinate*** — arXiv, set/2025 · artigo científico
@@ -30,7 +20,23 @@ que a mesma pergunta dá respostas diferentes, o trecho de 22:22 a 26:03 fecha i
   https://openai.com/index/sycophancy-in-gpt-4o/
   Sicofância não é teoria: uma versão que concordava com tudo foi ao ar e teve que ser revertida.
 
-## Sugerida
+## Sugeridas
+
+Duas, e as duas pausam a aula: são curtas, cada uma colada no seu marco, e têm trabalhos
+diferentes. A primeira é a mecânica, visual; a segunda é a explicação, em português.
+
+**marco `mecanica-minima`**
+
+- **3Blue1Brown, *Transformers, the tech behind LLMs*** — YouTube, abr/2024 · 27 min no total, trecho de 3 min
+  https://www.youtube.com/watch?v=wjZofJX0v4M&hl=en&persist_hl=1
+  Os três primeiros minutos, o capítulo "Predict, sample, repeat": o modelo produz uma distribuição de probabilidade sobre o próximo pedaço e sorteia dela. É a mecânica inteira desta aula, visual e sem metáfora.
+
+Ofereça no painel logo que o marco abrir, e diga o recorte em voz alta: **assista até os
+3 minutos e volte**. Do minuto três em diante vira álgebra linear e o aluno se perde achando
+que devia entender. Se ele quiser saber por que a mesma pergunta dá respostas diferentes, o
+trecho de 22:22 a 26:03 fecha isso.
+
+**marco `alucinacao`**
 
 - **OpenAI, *Por que os modelos de linguagem alucinam?*** — openai.com, set/2025 · 8 min de leitura
   https://openai.com/pt-BR/index/why-language-models-hallucinate/
