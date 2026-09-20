@@ -512,6 +512,158 @@ Cada aula tem no máximo uma **sugerida**, que é a que vale de verdade se você
   https://vercel.com/docs/deployments/environments#preview-environment-pre-production
   Lista exatamente o que dispara um preview (commit fora da branch de produção, pull request, `vercel` sem `--prod`) e a diferença entre a URL da branch e a URL do commit.
 
+### 2.8 O problema bem definido
+
+**Sugerida**
+
+- **Sean Grove, *The New Code*** — YouTube, canal AI Engineer, jul/2025 · 21 min 35 s
+  https://www.youtube.com/watch?v=8rABwKRsec4&hl=en&persist_hl=1
+  Argumenta que o código é uma projeção com perda da spec, que hoje se joga fora o prompt e se guarda o código gerado (o contrário de guardar a fonte), e mostra o Model Spec da OpenAI como spec versionada, com teste por cláusula.
+
+**Citadas na aula**
+
+- **Joel Spolsky, *Painless Functional Specifications – Part 2: What's a Spec?*** — Joel on Software, out/2000 · ~8 min de leitura
+  https://www.joelonsoftware.com/2000/10/03/painless-functional-specifications-part-2-whats-a-spec/
+  Lista o que uma spec carrega e tem a seção "Nongoals": a lista do que não vai existir, escrita, porque todo mundo tem a funcionalidade favorita e fazer todas custa infinito.
+
+- **Anthropic, *Best practices*, seção "Let Claude interview you"** — documentação do Claude Code · 2 min de leitura (a seção)
+  https://code.claude.com/docs/en/best-practices#let-claude-interview-you
+  Traz o prompt de entrevista em quatro linhas, manda escrever o SPEC.md no fim, e diz na frase seguinte que a execução começa em sessão nova, com o que a spec mais útil tem: o que fica de fora e uma verificação ponta a ponta.
+
+- **Harper Reed, *My LLM codegen workflow atm*** — harper.blog, fev/2025 · ~13 min de leitura
+  https://harper.blog/2025/02/16/my-llm-codegen-workflow-atm/
+  É a origem do padrão: "uma pergunta de cada vez", cada uma construída sobre a resposta anterior, a spec compilada no fim e salva como `spec.md` no repositório, e o plano feito em outra conversa.
+
+### 2.9 Critérios de aceitação e decomposição
+
+**Sugerida**
+
+- **Henrik Kniberg, *Making sense of MVP — and why I prefer Earliest Testable/Usable/Lovable*** — Crisp's Blog, jan/2016 · ~15 min de leitura
+  https://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp
+  O desenho do skate e do carro: entregar uma roda por vez não serve para ninguém, entregar um skate inteiro serve e ensina — e o primeiro corte é o que responde à maior dúvida, não o mais bonito.
+
+**Citadas na aula**
+
+- **Martin Fowler, *Given When Then*** — martinfowler.com, ago/2013 · ~3 min de leitura
+  https://martinfowler.com/bliki/GivenWhenThen.html
+  Dá nome à forma que a aula pede: *given* é o estado antes, *when* é a ação, *then* é o resultado esperado — e diz que a mesma estrutura serve em prosa informal, sem ferramenta.
+
+- **Anthropic, *Best practices*, seção "Give Claude a way to verify its work"** — documentação do Claude Code · 4 min a seção
+  https://code.claude.com/docs/en/best-practices#give-claude-a-way-to-verify-its-work
+  A primeira linha da tabela é um critério de aceitação inteiro: em vez de "implemente uma função que valida e-mail", os três exemplos com o resultado esperado de cada um.
+
+- **Anthropic, *Best practices*, seção "Let Claude interview you"** — documentação do Claude Code · 2 min a seção
+  https://code.claude.com/docs/en/best-practices#let-claude-interview-you
+  O último parágrafo é a definição de spec útil que esta aula cobra: nomeia arquivos e interfaces, diz o que fica fora, e termina com uma verificação ponta a ponta que prova que a feature funciona.
+
+- **Edsger W. Dijkstra, *On the foolishness of "natural language programming"* (EWD 667)** — E.W. Dijkstra Archive, Universidade do Texas, c. 1978 · ~5 min de leitura
+  https://www.cs.utexas.edu/~EWD/transcriptions/EWD06xx/EWD667.html
+  Argumenta que a naturalidade da língua é a facilidade de dizer coisas cujo absurdo não é óbvio, e que o símbolo formal é privilégio, não fardo: é a objeção mais forte à tese de que a spec é o código.
+
+### 2.10 Testes e TDD com agentes
+
+**Citadas na aula**
+
+- **Martin Fowler, *Test Pyramid*** — martinfowler.com (bliki), mai/2012 · ~4 min de leitura
+  https://martinfowler.com/bliki/TestPyramid.html
+  A figura dos três tipos de teste com o custo de cada um, e a razão de ter muitos embaixo e poucos em cima: o de ponta a ponta pela tela é frágil, caro de escrever e lento de rodar.
+
+- **Kent Beck, *Canon TDD*** — Software Design: Tidy First? (boletim do autor), dez/2023 · ~6 min de leitura
+  https://newsletter.kentbeck.com/p/canon-tdd
+  Os cinco passos do TDD como o autor do método os escreve, e os erros que ele lista: escrever todos os testes antes, teste sem afirmação só para cobertura, e refatorar no meio da implementação.
+
+- **Kent Beck, *Augmented Coding: Beyond the Vibes*** — Software Design: Tidy First? (boletim do autor), jun/2025 · ~8 min de leitura
+  https://newsletter.kentbeck.com/p/augmented-coding-beyond-the-vibes
+  O autor do TDD rodando o loop com um agente: "implement the test, then implement only enough code to make that test pass", e o sinal de que o gênio está trapaceando, "disabling or deleting tests".
+
+- **Anthropic, *Automate actions with hooks*, seção "Auto-format code after edits"** — documentação do Claude Code · 2 min de leitura (a seção)
+  https://code.claude.com/docs/en/hooks-guide#auto-format-code-after-edits
+  O hook de `PostToolUse` com o filtro `Edit|Write`, que roda um comando depois de cada edição; trocar o formatador pelo comando de teste é o hook da fluência.
+
+### 2.11 Debugging sem ler código
+
+**Sugerida**
+
+- **Julia Evans, *A debugging manifesto*** — jvns.ca, dez/2022 · ~4 min de leitura
+  https://jvns.ca/blog/2022/12/08/a-debugging-manifesto/
+  Oito princípios em uma página, e o primeiro é a aula inteira: "inspect, don't squash", deixe o bug no lugar e entenda o que aconteceu antes de mexer, porque consertar sem entender costuma deixar mais confuso, não menos.
+
+**Citadas na aula**
+
+- **Andreas Zeller, *Introduction to Debugging — The Scientific Method*, The Debugging Book** — livro aberto (CC BY-NC-SA), edição de 2024 · ~4 min de leitura (a seção)
+  https://www.debuggingbook.org/html/Intro_Debugging.html#The-Scientific-Method
+  Os cinco passos, escritos como ciência e não como truque: pergunta, hipótese, predição, experimento, e repetir até a hipótese não ter mais o que explicar.
+
+- **David A. Wheeler, *Review of "Debugging" by David J. Agans*** — dwheeler.com, mar/2004 · ~8 min de leitura
+  https://dwheeler.com/essays/debugging-agans.html
+  Resume as nove regras de Agans com os subpontos de cada uma, e três delas são esta aula: "quit thinking and look", "change one thing at a time" e "if you didn't fix it, it ain't fixed".
+
+- **Anthropic, *Best practices for Claude Code — Course-correct early and often*** — documentação oficial · ~2 min de leitura (a seção)
+  https://code.claude.com/docs/en/best-practices#course-correct-early-and-often
+  Diz com todas as letras a regra das duas correções: mais de duas no mesmo problema e o contexto está cheio de tentativas falhas; `/clear` e um prompt melhor com o que se aprendeu vence a sessão longa quase sempre.
+
+### 2.12 Revisão adversarial
+
+**Sugerida**
+
+- **Google, *What to look for in a code review*** — Google Engineering Practices, 2019 · 8 min de leitura
+  https://google.github.io/eng-practices/review/reviewer/looking-for.html
+  A lista inteira do que um revisor procura, do desenho ao teste, com a distinção que a fluência precisa: funcionalidade e teste são lacuna, nome e estilo são preferência.
+
+**Citadas na aula**
+
+- **Anthropic, *Create custom subagents*, seção "Manage subagent context"** — documentação do Claude Code · 3 min a seção
+  https://code.claude.com/docs/en/sub-agents#manage-subagent-context
+  Diz em uma frase o que o revisor não vê: a conversa, as skills já carregadas e os arquivos já lidos; ele parte só da tarefa que recebe.
+
+- **Anthropic, *Best practices*, seção "Add an adversarial review step"** — documentação do Claude Code · 3 min a seção
+  https://code.claude.com/docs/en/best-practices#add-an-adversarial-review-step
+  O pedido modelo, contra um plano: cada requisito implementado, os casos de borda com teste, nada fora do escopo mudou; lacunas, não preferências. Troque o plano pela spec e é o pedido da fluência.
+
+- **Anthropic, *Code Review*, seção "Review a diff locally"** — documentação do Claude Code · 4 min a seção
+  https://code.claude.com/docs/en/code-review#review-a-diff-locally
+  O que o `/code-review` faz: revisa num subagente com contexto próprio, caça bug de correção e limpeza, aceita um alvo, e o nível de esforço troca cobertura por confiança.
+
+- **Anthropic, *Best practices*, seção "Run multiple Claude sessions"** — documentação do Claude Code · 2 min a seção
+  https://code.claude.com/docs/en/best-practices#run-multiple-claude-sessions
+  A tabela escritor e revisor em duas sessões, com a frase que justifica o desenho: contexto novo melhora a revisão porque o modelo não fica do lado do código que acabou de escrever.
+
+- **Google, *The Standard of Code Review*** — Google Engineering Practices, 2019 · 5 min de leitura
+  https://google.github.io/eng-practices/review/reviewer/standard.html
+  Não existe código perfeito, só código melhor; e fato técnico vence opinião e preferência. É a régua para decidir o que entra na caixa de corrigir.
+
+- **Google, *How to write code review comments*, seção "Label comment severity"** — Google Engineering Practices, 2019 · 1 min a seção
+  https://google.github.io/eng-practices/review/reviewer/comments.html#label-comment-severity
+  Três rótulos que um revisor humano usa: nit, opcional, só para saber. Se o revisor do aluno não rotula, ele rotula; é a mesma triagem.
+
+- **Google, *What to look for in a code review*, seção "Complexity"** — Google Engineering Practices, 2019 · 1 min a seção
+  https://google.github.io/eng-practices/review/reviewer/looking-for.html#complexity
+  Resolva o problema que existe agora, não o que alguém especula que pode existir: é a definição de excesso de engenharia que o aluno usa para recusar achado com motivo.
+
+### 2.13 Segurança e dados
+
+**Citadas na aula**
+
+- **Supabase, *Row Level Security*, seção "Understand Row Level Security"** — documentação do Supabase · 3 min de leitura (a seção)
+  https://supabase.com/docs/guides/database/postgres/row-level-security#understand-row-level-security
+  A regra por linha como o banco a escreve: uma política que só devolve as linhas em que o dono é quem está logado, e a explicação de que ela funciona como um filtro que a consulta não consegue tirar.
+
+- **OWASP, *OWASP Top 10:2025*** — owasp.org, edição 2025 · ~5 min a página inicial
+  https://top10.owasp.org/2025
+  Os dez riscos mais comuns em aplicações web, com controle de acesso quebrado em primeiro (A01) e injeção em quinto (A05): é a lista que o subagente de segurança recebe como checklist.
+
+- **OWASP, *2025 Top 10 Risk & Mitigations for LLMs and Gen AI Apps*** — genai.owasp.org, edição 2025 · ~5 min a página inicial
+  https://genai.owasp.org/llm-top-10/
+  A lista irmã para sistemas com modelo de linguagem, com injeção de prompt em primeiro (LLM01) e vazamento de informação sensível em segundo: entra aqui como aviso e volta na P3.
+
+- **Brasil, *Lei nº 13.709/2018 (LGPD)*, art. 5º, 6º e 20** — Planalto, ago/2018, texto consolidado · 5 min os três artigos
+  https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm#art5
+  As definições de dado pessoal e sensível (art. 5º, I e II), os princípios de finalidade e necessidade (art. 6º, I e III) e o direito à revisão de decisão automatizada (art. 20), que são os três pontos que a aula usa.
+
+- **Jeniffer Mendonça, *CPF, endereço e renda: ONG revela comércio de dados pessoais no Telegram*** — Núcleo Jornalismo, mar/2026 · ~4 min de leitura
+  https://nucleo.jor.br/curtas/2026-03-12-cpf-endereco-e-renda-ong-revela-comercio-de-dados-pessoais-no-telegram/
+  O levantamento da Derechos Digitales com dez grupos brasileiros do Telegram vendendo CPF, endereço e renda por bot, com dado que só pode ter saído de base vazada: é o exemplo de fonte vazada contra fonte pública.
+
 ### 2.14 Harness engineering
 
 **Sugerida**
