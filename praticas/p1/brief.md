@@ -16,9 +16,9 @@ Já instalamos 412 sistemas residenciais. A distribuidora da região é a CPFL.
 
 ## O que vendemos
 
-Sistema fotovoltaico conectado à rede, para casa. O tamanho típico fica entre 5 e 8 kWp, de doze a vinte painéis no telhado, com investimento entre R$ 19 mil e R$ 31 mil. O ticket médio dos últimos doze meses foi R$ 24.300.
+Sistema fotovoltaico conectado à rede, para casa. O tamanho típico fica entre 5 e 8 kWp, de doze a vinte painéis no telhado, com investimento entre R$ 14 mil e R$ 19 mil. O ticket médio dos últimos doze meses foi R$ 16.300.
 
-A conta de luz não zera: sempre resta a taxa mínima da distribuidora e o custo do fio. Na média dos nossos clientes, a conta cai entre 75% e 90%. O retorno do investimento tem levado de quatro a cinco anos, e o sistema dura mais de 25.
+A conta de luz não zera: sempre resta a taxa mínima da distribuidora e o custo do fio. Na média dos nossos clientes, a conta cai entre 75% e 90%. O retorno do investimento tem levado de três a quatro anos, e o sistema dura mais de 25.
 
 Prazo: de 45 a 60 dias entre a assinatura e o sistema ligado. A instalação em si leva dois dias; o resto é projeto e homologação na distribuidora, que é a parte que não depende de nós.
 
