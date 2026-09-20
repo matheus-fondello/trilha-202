@@ -34,10 +34,30 @@ O livro de Agans é de 2002 e não é aberto; a resenha de Wheeler é o melhor s
 
 A mesma página, em *Give Claude a way to verify its work*, tem a linha "address the root cause, don't suppress the error" na tabela de antes e depois, e é a única menção desta página ao que esta aula chama de supressão. A 1.7 já deu a regra; o que muda aqui é o conteúdo do prompt novo: reprodução, hipótese e o que já foi descartado. Sem isso, o `/clear` só reinicia o chute.
 
-## Sugerida
+## Sugeridas
+
+**marco `do-sintoma-a-causa`**
 
 - **Julia Evans, *A debugging manifesto*** — jvns.ca, dez/2022 · ~4 min de leitura
   https://jvns.ca/blog/2022/12/08/a-debugging-manifesto/
   Oito princípios em uma página, e o primeiro é a aula inteira: "inspect, don't squash", deixe o bug no lugar e entenda o que aconteceu antes de mexer, porque consertar sem entender costuma deixar mais confuso, não menos.
 
-Ofereça no painel no fim do marco `do-sintoma-a-causa`, antes dos instrumentos: são quatro minutos, pausa a aula sem custo, e o aluno volta com "inspect, don't squash" na cabeça, que é o que ele vai precisar quando o agente propuser o try/catch no marco `causa-raiz-nao-supressao`. "There's always a reason" e "trust nobody and nothing" são as outras duas que conversam com a aula: bug não é aleatório, e "o agente disse" não é evidência. Em inglês, com desenho; se ele recusar, nada depende de ter visto.
+Ofereça no painel no fim do marco, antes dos instrumentos: são quatro minutos, pausa a aula sem custo, e o aluno volta com "inspect, don't squash" na cabeça, que é o que ele vai precisar quando o agente propuser o try/catch no marco `causa-raiz-nao-supressao`. "There's always a reason" e "trust nobody and nothing" são as outras duas que conversam com a aula: bug não é aleatório, e "o agente disse" não é evidência. Em inglês, com desenho; se ele recusar, nada depende de ter visto.
+
+**marco `instrumentos`**
+
+- **MIT OpenCourseWare, *What is "rubber duck debugging?"*** — YouTube, canal oficial do MIT OCW · 5 min 15 s
+  https://www.youtube.com/watch?v=f98ogUP80KI&hl=en&persist_hl=1
+  Ana Bell, do MIT, demonstrando ao vivo o instrumento que a aula chama de mais subestimado: explicar o caminho do valor em voz alta e ver o erro aparecer no meio da explicação, com um pato em vez do Claude.
+
+Ofereça quando o marco abrir. É o mesmo movimento de "peça ao agente a explicação em português do
+caminho do valor", sem o harness no meio, e por isso ajuda: o efeito vem de narrar, não de quem escuta.
+
+**marco `conceitual-ou-sintatico`**
+
+- **Daniel R. Collins, *Syntax vs. logic errors*** — YouTube, canal do autor (professor de Ciência da Computação, CUNY) · 1 min 35 s
+  https://www.youtube.com/watch?v=SYDKQqAJ7UU&hl=en&persist_hl=1
+  Os dois tipos de erro lado a lado, com código na tela: um que a linguagem recusa, outro que roda liso e devolve o número errado.
+
+Um minuto e meio. O exemplo é em C++; diga que a distinção é a mesma em qualquer linguagem, para
+ele não estranhar a sintaxe.

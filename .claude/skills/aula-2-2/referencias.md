@@ -40,10 +40,26 @@ Aqui a referência serve de exemplo vivo, não de leitura. É uma API pública b
 
 A parte útil da página termina em "Supported HTTP Methods". O que vem depois (cache, Cache Components, prerender) não é assunto desta aula e desorienta se o aluno rolar até lá; se ele descer, diga que aquilo é problema de outra aula.
 
-## Sugerida
+## Sugeridas
+
+**marco `requisicao-e-resposta`**
+
+- **Fireship, *Computer Networking in 100 Seconds*** — YouTube, ago/2020 · 2 min 17 s
+  https://www.youtube.com/watch?v=keeqnciDVOo&hl=en&persist_hl=1
+  O caminho do clique à resposta em animação: o pacote saindo do navegador, atravessando a rede e voltando. A MDN citada mostra o texto da requisição; este mostra o caminho que o texto percorre.
+
+Ofereça antes da MDN. Vídeo de 2020, e o par requisição e resposta não mudou.
+
+**marco `front-e-back`**
 
 - **Next.js, *How to use environment variables in Next.js — Bundling Environment Variables for the Browser*** — documentação oficial · ~2 min de leitura
   https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
   É onde a fronteira entre front e back vira uma regra que se pode conferir: sem o prefixo `NEXT_PUBLIC_` a variável fica só no servidor, com o prefixo ela é colada dentro do JavaScript que desce para o navegador.
 
-Ofereça no fim do marco `front-e-back`, quando o "por que isso decide onde vive um segredo" já foi dito e ainda está abstrato. São três minutos e o aluno volta com a regra na mão, o que deixa o marco `a-pagina-ganha-servidor` mais fácil: ele já sabe por que a chave não pode morar no HTML. Não ofereça no fechamento — ali já não muda o trabalho dele.
+Ofereça no fim do marco, quando o "por que isso decide onde vive um segredo" já foi dito e ainda está abstrato. São três minutos e o aluno volta com a regra na mão, o que deixa o marco `a-pagina-ganha-servidor` mais fácil: ele já sabe por que a chave não pode morar no HTML. Não ofereça no fechamento — ali já não muda o trabalho dele.
+
+**marco `api-e-contrato`**
+
+- **Yudi Ganeko, *O que é API (em 2 minutos)*** — YouTube, em português, set/2025 · 2 min 34 s
+  https://www.youtube.com/watch?v=Q-lyQ7BdDXE&hl=en&persist_hl=1
+  API como contrato dito em português, com exemplo fora de código: o conceito em voz, antes ou depois da ViaCEP, que é a demonstração viva.

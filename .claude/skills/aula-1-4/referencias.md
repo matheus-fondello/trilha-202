@@ -20,10 +20,16 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://openai.com/index/sycophancy-in-gpt-4o/
   Sicofância não é teoria: uma versão que concordava com tudo foi ao ar e teve que ser revertida.
 
+- **Sara Zan, *Setting the temperature to zero will make an LLM deterministic?*** — zansara.dev, mar/2026 · 6 min de leitura
+  https://www.zansara.dev/posts/2026-03-24-temp-0-llm/
+  Desmonta a resposta que todo mundo dá ("é só zerar a temperatura"): mesmo sem sorteio, o mesmo pedido pode dar respostas diferentes, e a saída é desenhar em volta da variação.
+
+Para quem perguntar por que nem sem sorteio a resposta se repete. Assume o vocabulário de token e distribuição que o 3Blue1Brown acabou de dar; funciona depois dele, não antes.
+
 ## Sugeridas
 
-Duas, e as duas pausam a aula: são curtas, cada uma colada no seu marco, e têm trabalhos
-diferentes. A primeira é a mecânica, visual; a segunda é a explicação, em português.
+Três, cada uma colada no seu marco: a mecânica em vídeo, a explicação em português, e a regra
+que fecha a aula em vídeo. Nenhuma passa de oito minutos.
 
 **marco `mecanica-minima`**
 
@@ -45,3 +51,13 @@ trecho de 22:22 a 26:03 fecha isso.
 Oito minutos e em português, então cabe pausar a aula. Ofereça quando o marco
 `alucinacao` fechar, e espere ele voltar: a analogia da prova é boa demais para você
 resumir por cima.
+
+**marco `faz-bem-faz-mal`**
+
+- **Claude, *Can you trust what AI tells you?*** — canal oficial no YouTube, série Claude Academy, ago/2026 · 5 min 3 s
+  https://www.youtube.com/watch?v=cIMlBw2nqfA&hl=en&persist_hl=1
+  Alucinação e sicofância juntas como as duas causas de "confiantemente errado", confiança como um dial e não um interruptor, e quatro hábitos de verificação: a regra que fecha a aula, dita por quem faz o modelo.
+
+Ofereça quando o marco abrir, porque é ele em vídeo. Se a aula já estiver longa, só o corte de
+3:04 ao fim ("trust is a dial" e os quatro hábitos, dois minutos): os dois defeitos ele acabou de
+ver. Inglês com legenda automática.

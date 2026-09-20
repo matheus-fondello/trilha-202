@@ -34,6 +34,12 @@ Foi a sugerida da 1.3; aqui só a primeira linha da tabela interessa. Se ele lem
 da aula, é reconhecimento e não leitura: "é a mesma coisa que você fez na P0, agora
 para o projeto inteiro".
 
+- **Alistair Mavin, *EARS: Easy Approach to Requirements Syntax*** — alistairmavin.com, página do criador do método · 5 min de leitura
+  https://alistairmavin.com/ears/
+  Um segundo formalismo para critério verificável, mais rígido que o Given-When-Then: "while precondição, when gatilho, o sistema shall resposta", criado para sistema crítico e hoje citado em spec para agente.
+
+Onde Fowler é prosa informal para humano, EARS é sintaxe fechada para reduzir ambiguidade; o mesmo motivo por que a aula pede critério com exemplo.
+
 **marco `spec-como-contrato`**
 
 - **Anthropic, *Best practices*, seção "Let Claude interview you"** — documentação do Claude Code · 2 min a seção
@@ -56,15 +62,23 @@ estava errado"; use como "ele estava certo sobre o risco, e a resposta é o crit
 exemplo, que é o pedaço formal dentro da spec em português". O aluno que ler o texto
 vai achar o tom arrogante; é, e não importa.
 
-## Sugerida
+## Sugeridas
+
+**marco `fatias-verticais`**
+
+- **Ralph Jocham, *Vertical Slicing and Sprint Goals*** — canal Scrum.org no YouTube, série Scrum Tapas, dez/2023 · 2 min 42 s
+  https://www.youtube.com/watch?v=urZ1TIycedU&hl=en&persist_hl=1
+  Fatia vertical em menos de três minutos, por um Professional Scrum Trainer, com o mesmo argumento da aula: atravessa a pilha inteira.
+
+Ofereça quando o marco abrir, antes de discorrer. Inglês sem legenda.
+
+**fechamento**
 
 - **Henrik Kniberg, *Making sense of MVP — and why I prefer Earliest Testable/Usable/Lovable*** — Crisp's Blog, jan/2016 · ~15 min de leitura
   https://blog.crisp.se/2016/01/25/henrikkniberg/making-sense-of-mvp
   O desenho do skate e do carro: entregar uma roda por vez não serve para ninguém, entregar um skate inteiro serve e ensina — e o primeiro corte é o que responde à maior dúvida, não o mais bonito.
 
-Ofereça no painel logo depois do marco `fatias-verticais`, quando ele já ouviu "atravessa
-da tela ao dado" e ainda está achando que a fatia fina é uma versão pobre do sistema.
-São quinze minutos, com imagens, e o argumento é visual, então pausa a aula sem custo.
-O texto é sobre produto e cliente, não sobre agente: a transferência para "o que o
-agente constrói primeiro" é sua, não dele. Se ele recusar, guarde para o fechamento;
-nada na fluência depende de ter lido.
+Quinze minutos: no fechamento, quando ele já ouviu "atravessa da tela ao dado" e ainda acha que
+a fatia fina é uma versão pobre do sistema. O texto é sobre produto e cliente, não sobre agente:
+a transferência para "o que o agente constrói primeiro" é sua, não dele. Nada na fluência depende
+de ter lido.

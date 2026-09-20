@@ -38,10 +38,30 @@ São dois recortes do mesmo teste por caminhos diferentes: o do Google é uma li
 
 Serve para tirar "custo por uso" do abstrato. O aluno não precisa entender o benchmark; precisa ver que o preço de uma feature de IA se mede por tarefa entregue, não por chamada, e que a conta muda quando o modelo muda.
 
-## Sugerida
+- **Google PAIR, *Errors + Graceful Failure*, seção "Provide paths forward from failure"** — People + AI Guidebook, 2019 · 3 min a seção
+  https://pair.withgoogle.com/chapter/errors-failing/#section3
+  O que pôr na tela quando a IA erra: focar no que a pessoa pode fazer a seguir, não só admitir a falha, com o exemplo do garçom que oferece alternativa em vez de dizer "acabou".
+
+Mesma fonte da citada de `quando-faz-sentido`, outro capítulo; é a metade do marco que a latência não cobre.
+
+## Sugeridas
+
+**marco `formatos-de-feature`**
+
+- **Apple Support, *How to use Writing Tools with Apple Intelligence*** — YouTube, canal oficial (UK), abr/2026 · 1 min 34 s
+  https://www.youtube.com/watch?v=iCKG5rDteXY&hl=en&persist_hl=1
+  Corrigir, resumir e reescrever dentro de qualquer campo de texto do sistema, sem abrir chat nenhum: os formatos transformar e extrair acontecendo no fluxo de escrita de alguém.
+
+- **GitHub, *Code Completion Made Easy with GitHub Copilot*** — YouTube, canal oficial, dez/2024 · 58 s
+  https://www.youtube.com/watch?v=Wk1GVJWt2JA&hl=en&persist_hl=1
+  Sugestão de código aparecendo enquanto se digita, aceita com Tab: o formato gerar no fluxo, sem chat, e familiar porque é o que o Claude Code faz na oficina.
+
+Os dois somam menos de três minutos; ofereça juntos quando o marco abrir, antes da Appleton. Um é
+escrita comum, o outro é código: dois formatos diferentes. Se for um só, o da Apple fala mais
+direto com quem não programa.
 
 - **Maggie Appleton, *Language Model Sketchbook, or Why I Hate Chatbots*** — maggieappleton.com, jun/2023 · ~6 min de leitura
   https://maggieappleton.com/lm-sketchbook
   Três esboços de interface que não são chat — sugestões que aparecem enquanto se escreve, cadeias de causa e consequência, menu de botão direito — com o argumento de que o chat é a solução preguiçosa.
 
-Ofereça no painel logo depois do marco `formatos-de-feature`, ainda no meio da aula. É curta, tem imagens e vídeos curtos, e o efeito é imediato: o aluno volta com a percepção de que "conversar" é um formato entre vários e quase nunca o melhor. Se ele já chegou nessa conclusão sozinho durante o marco, ofereça mesmo assim, mas no fechamento.
+Ofereça no painel logo depois dos vídeos, ainda no meio da aula. É curta, tem imagens e vídeos curtos, e o efeito é imediato: o aluno volta com a percepção de que "conversar" é um formato entre vários e quase nunca o melhor. Se ele já chegou nessa conclusão sozinho durante o marco, ofereça mesmo assim, mas no fechamento.

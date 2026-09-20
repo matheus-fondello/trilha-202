@@ -26,12 +26,26 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://simonwillison.net/2026/May/6/vibe-coding-and-agentic-engineering/
   O mesmo autor, um ano depois, incomodado com a fronteira ficando borrada. Só para quem já digeriu a distinção; antes disso, embaralha.
 
-## Sugerida
+- **Andrej Karpathy, a retrospectiva de um ano do tweet** — X, fev/2026 · post curto
+  https://x.com/karpathy/status/2019137879310836075
+  O autor do termo, um ano depois, cunhando "agentic engineering" como o nome que sucede vibe coding: "agentic" porque você quase não escreve o código direto, "engineering" porque é arte e ciência que se aprende.
+
+Os dois tweets juntos, o de 2025 e o de 2026, mostram o termo nascendo e o autor revisando; é mais forte que citar só o nascimento. O X sem login é instável no painel, por isso é link solto e não pausa.
+
+## Sugeridas
 
 - **Andrej Karpathy: From Vibe Coding to Agentic Engineering, com Stephanie Zhan** — Sequoia Capital, abr/2026 · 30 min
   https://www.youtube.com/watch?v=96jN2OCOfLs&hl=en&persist_hl=1
   É a aula inteira contada pelo cara que cunhou o termo, com o mesmo arco: vibe coding de um lado, engenharia agêntica do outro. Se ele for ver um só material desta aula, é este.
 
-São 30 minutos, então **não ofereça no meio da aula** — estoura o relógio e corta a explicação ao meio. Ofereça depois de fechar o último marco: "acabamos; quer que eu abra aqui do lado?". Se ele aceitar, abra no painel e encerre a aula normalmente — ele assiste no tempo dele, sem você esperando.
+- **Andrej Karpathy, resumo em 12 pontos da conversa no Sequoia AI Ascent 2026** — karpathy.bearblog.dev, abr/2026 · 5 min de leitura
+  https://karpathy.bearblog.dev/sequoia-ascent-2026/
+  A mesma entrevista em doze pontos escritos pelo próprio Karpathy: vibe coding levanta o piso, engenharia agêntica segura a qualidade, e dá para terceirizar a execução, não o entendimento.
 
-Se ele quiser só o trecho do vibe coding, é a partir de 15:46: acrescente `&t=946s` à URL.
+São o mesmo material em dois formatos, e é uma oferta só, no fechamento: "acabamos; são 30 minutos
+de vídeo ou 5 minutos lendo o resumo do próprio autor, quer que eu abra um dos dois aqui do lado?".
+**Não ofereça no meio da aula**: estoura o relógio e corta a explicação ao meio. Se ele aceitar o
+vídeo, abra no painel e encerre a aula normalmente; ele assiste no tempo dele, sem você esperando.
+Se ele escolher o texto, diga para parar nos doze pontos: a página segue com a transcrição inteira.
+
+Se ele quiser só o trecho do vibe coding no vídeo, é a partir de 15:46: acrescente `&t=946s` à URL.

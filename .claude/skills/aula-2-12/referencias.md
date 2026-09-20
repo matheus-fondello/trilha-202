@@ -66,13 +66,24 @@ O rótulo de severidade é o gancho para as três caixas da aula: nit e opcional
 e "para saber" é o que se deixa. A página de complexidade dá nome ao que o revisor sugere
 demais; peça que ele ache na própria lista um item que cai ali antes de mandar o link.
 
-## Sugerida
+## Sugeridas
+
+**marco `contra-a-spec`**
 
 - **Google, *What to look for in a code review*** — Google Engineering Practices, 2019 · 8 min de leitura
   https://google.github.io/eng-practices/review/reviewer/looking-for.html
   A lista inteira do que um revisor procura, do desenho ao teste, com a distinção que a fluência precisa: funcionalidade e teste são lacuna, nome e estilo são preferência.
 
-Ofereça no painel durante o marco `contra-a-spec`, antes de ele escrever o pedido: são oito
-minutos, e ele volta com o vocabulário para dizer ao revisor o que conta como achado e, depois,
-para triar o que voltou. Se ele preferir não parar, guarde para o fechamento; a fluência
-funciona sem ela.
+Ofereça no painel durante o marco, antes de ele escrever o pedido: são oito minutos, e ele volta
+com o vocabulário para dizer ao revisor o que conta como achado e, depois, para triar o que
+voltou. Se ele preferir não parar, guarde para o fechamento; a fluência funciona sem ela.
+
+**marco `julgar-a-lista`**
+
+- **Jeff Atwood, *The Ten Commandments of Egoless Programming*** — Coding Horror, mai/2006, a partir de Gerald Weinberg (1971) · 3 min de leitura
+  https://blog.codinghorror.com/the-ten-commandments-of-egoless-programming/
+  Dez frases sobre separar o código de quem o escreveu: você não é o seu código, critique o código e não a pessoa, revisão existe para achar problema.
+
+Três minutos: ofereça bem no fim, junto com "cada achado cai numa caixa", antes de ele julgar a
+própria lista. A régua do Google diz o que é lacuna e o que é preferência; esta diz como não
+travar quando a lista voltar cheia.

@@ -63,13 +63,26 @@ A seção de segurança da documentação vale citar em voz alta, não só linka
 Anthropic dizendo que não controla o que vai dentro de um plugin. O caso da Cline é
 longo e técnico no meio (cache de CI); o que o aluno precisa está no começo e no fim.
 
-## Sugerida
+- **SentinelOne, *When Your AI Coding Plugin Starts Picking Your Dependencies: Marketplace Skills and Dependency Hijack in Claude Code*** — sentinelone.com, jan/2026 · 2 min de leitura
+  https://www.sentinelone.com/blog/marketplace-skills-and-dependency-hijack-in-claude-code/
+  Um segundo mecanismo, no Claude Code mesmo: o plugin malicioso não rouba credencial, troca a fonte de instalação de um pacote, e a versão adulterada entra limpa, sem erro.
+
+Fecha a lacuna "isso também acontece aqui": o Cline é de outra ferramenta, este é desta.
+
+## Sugeridas
+
+**marco `mcp`**
+
+- **Claude, *MCP in Claude Code*** — canal oficial no YouTube, série Claude Code 101, mai/2026 · 3 min 37 s
+  https://www.youtube.com/watch?v=kkBFmwkDzdo&hl=en&persist_hl=1
+  Adicionar um servidor, escopar por equipe e o custo de contexto, mostrados por dentro do Claude Code em vez do protocolo em abstrato.
+
+Ofereça quando o marco abrir: mecanismo primeiro, risco depois. Três minutos pausam sem custo.
 
 - **Simon Willison, *The lethal trifecta for AI agents: private data, untrusted content, and external communication*** — simonwillison.net, jun/2025 · ~7 min de leitura
   https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/
   A régua para decidir o que conectar: dado privado, conteúdo não confiável e saída para fora. Juntar os três num agente é o risco, e MCP convida a juntar sem perceber.
 
-Sete minutos, então ofereça no meio, logo depois do marco `mcp` e antes de entrar em
-plugins: a régua dele é o que o aluno vai usar na pergunta de aplicação seguinte. Se
-o aluno reclamar da data, é bom sinal: pergunte o que mudou desde então e o que não
-mudou.
+Sete minutos: ofereça logo depois do vídeo, no fim do marco e antes de entrar em plugins. A régua
+dele é o que o aluno vai usar na pergunta de aplicação seguinte. Se o aluno reclamar da data, é
+bom sinal: pergunte o que mudou desde então e o que não mudou.

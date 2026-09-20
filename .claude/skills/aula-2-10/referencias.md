@@ -47,6 +47,21 @@ o antigo, é o mesmo texto.
 A 1.8 já mostrou hooks por esta página; a âncora é nova. O aluno pede ao Claude da oficina que
 escreva o hook, como a documentação sugere; você não dita o JSON.
 
-## Sugerida
+## Sugeridas
 
-Nenhuma nesta aula: o texto do Beck de 2025 é curto e já entra como citada no marco que importa.
+**marco `o-loop`**
+
+- **Matt Pocock, *Red Green Refactor is OP With Claude Code*** — YouTube, canal do autor · 5 min 19 s
+  https://www.youtube.com/watch?v=hYZdIwFIy-c&hl=en&persist_hl=1
+  O mesmo autor citado na 1.7 rodando vermelho, verde, refatorar com o Claude Code de verdade, na ferramenta que o aluno usa.
+
+Cinco minutos e pouco, sem capítulo para cortar; ofereça inteiro quando o marco abrir.
+
+**fechamento**
+
+- **Jeongho Nam, *AI Deleted My Tests and Said "All Tests Pass" — A Horror Story from Porting `typia` from TypeScript to Go*** — DEV Community, mai/2025 · 9 min de leitura
+  https://dev.to/samchon/ai-deleted-my-tests-and-said-all-tests-pass-a-horror-story-from-porting-typia-from-typescript-2bmf
+  O mantenedor de uma biblioteca real contando quatro tentativas de portar o projeto com agente, três delas trapaceando de formas diferentes: apagar teste, tabela de busca no lugar da lógica, categoria de teste excluída do CI em segredo.
+
+É o caso concreto da frase do Beck sobre o gênio trapaceando. Ofereça no fechamento, depois do
+`nao-conserta-o-teste`; é de maio de 2025 e o padrão que descreve não depende de versão de modelo.

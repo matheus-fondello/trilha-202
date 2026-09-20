@@ -42,7 +42,34 @@ A referência completa de eventos de hook (`code.claude.com/docs/en/hooks`) tem 
 trinta entradas com schema. É a sua fonte para conferir os nomes antes de citá-los, não
 material para o aluno: mandar um calouro para lá assusta mais do que ensina.
 
-## Sugerida
+**marco `dissecar-o-harness`**
+
+- **Claude, *Configuration and multi-file skills*** — canal oficial no YouTube, série Claude Code Skills, fev/2026 · 4 min 4 s
+  https://www.youtube.com/watch?v=98KaK_rn5rQ&hl=en&persist_hl=1
+  Campos do frontmatter, restrição de ferramenta e skill maior em vários arquivos: o "descrição vaga é o defeito número um" mostrado nos campos reais.
+
+Cite antes de abrir a árvore `.claude/` desta sala, para quem quiser os campos explicados; a
+skill da própria aula é multi-arquivo, com `referencias.md` ao lado.
+
+## Sugeridas
+
+Dois vídeos oficiais curtos, um por marco, e o texto de comparação depois dos dois.
+
+**marco `skills`**
+
+- **Claude, *How skills compare to other Claude Code features*** — canal oficial no YouTube, série Claude Code Skills, fev/2026 · 3 min 1 s
+  https://www.youtube.com/watch?v=IgNN4v0BJdU&hl=en&persist_hl=1
+  A régua da aula dita pela Anthropic: skills, CLAUDE.md, subagentes, hooks e MCP resolvem problemas diferentes, e saber qual é qual evita construir a coisa errada.
+
+Ofereça no fim do marco, quando ele já sabe o que uma skill é.
+
+**marco `hooks`**
+
+- **Claude, *Hooks in Claude Code*** — canal oficial no YouTube, série Claude Code 101, mai/2026 · 3 min 21 s
+  https://www.youtube.com/watch?v=IkaPHiMDazM&hl=en&persist_hl=1
+  Um hook rodando sozinho depois de uma edição e outro bloqueando uma operação perigosa: os mesmos exemplos da aula, na tela. Mesma série da 1.2 e da 1.7.
+
+**depois do `hooks`**
 
 - **Michael Segner, *Steering Claude Code: when to use CLAUDE.md, skills, hooks, and subagents*** — blog da Anthropic, jun/2026 · 5 min de leitura
   https://claude.com/blog/steering-claude-code-skills-hooks-rules-subagents-and-more

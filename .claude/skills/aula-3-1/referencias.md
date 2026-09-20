@@ -42,7 +42,24 @@ A âncora certa é `#latest-models-comparison`, apesar de o título da seção n
 
 O parágrafo de abertura da página, logo acima dessa seção, é onde está a frase do custo. Use para desfazer a ideia de que ligar thinking é grátis.
 
-## Sugerida
+## Sugeridas
+
+**marco `pre-e-pos-treino`**
+
+- **Louis-François Bouchard, *Base Model vs Instruct Model*** — What's AI, YouTube, dez/2025 · 1 min 20 s
+  https://www.youtube.com/watch?v=TRVmuskzE5Y&hl=en&persist_hl=1
+  Em oitenta segundos: o modelo base só continua texto e não tenta ajudar; o modelo instruído foi treinado para seguir instrução. Mesmo conhecimento, comportamento diferente.
+
+Ofereça quando o marco abrir, antes de explicar.
+
+- **Sebastian Raschka, *Reinforcement Learning with Human Feedback (RLHF) in 4 minutes*** — YouTube, fev/2025 · 4 min 6 s
+  https://www.youtube.com/watch?v=vJ4SsfmeQlk&hl=en&persist_hl=1
+  Como a preferência humana vira sinal de treino, por um autor de referência em ML aplicado: é o pedaço do pós-treino que a aula menciona e nenhuma outra referência aprofunda.
+
+Ofereça depois, quando você já disse que pós-treino usa preferência humana e ele perguntar como
+isso funciona. Os dois em inglês.
+
+**fechamento**
 
 - **Andrej Karpathy, *Deep Dive into LLMs like ChatGPT*** — YouTube, fev/2025 · 3h31min
   https://www.youtube.com/watch?v=7xTGNNLPyMI&hl=en&persist_hl=1

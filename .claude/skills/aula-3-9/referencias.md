@@ -24,6 +24,12 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 Solte no parágrafo em que você disser que o modelo nunca executa nada. A mesma página tem a divisão
 entre ferramenta do cliente e ferramenta do servidor, que é a confusão mais comum aqui.
 
+- **Ken Aizawa e colaboradores, *Writing effective tools for AI agents—using AI agents*** — Anthropic, engenharia, set/2025 · ~12 min de leitura
+  https://www.anthropic.com/engineering/writing-tools-for-agents
+  A outra metade da história: como se escreve a ferramenta do lado do servidor para o modelo pedir bem, com seleção, descrição clara e resposta econômica em contexto.
+
+Para quem for construir ferramenta na P3; o aluno não escreve ferramenta nesta aula.
+
 **marco `workflow-versus-agente`**
 
 - **Anthropic, *How the agent loop works*** — Claude Code Docs, Agent SDK · ~1 min de leitura (a seção)
@@ -50,7 +56,25 @@ introdução, que o aluno vai ver de qualquer jeito se aceitar a sugerida.
 
 Se o aluno perguntar do Agent SDK aqui, volte ao link do marco anterior: é a mesma documentação.
 
-## Sugerida
+## Sugeridas
+
+**marco `mcp-e-sdk`**
+
+- **Alex Albert e Erik S., *Building more effective AI agents*, trecho "Using the Claude Agent SDK to build agents"** — canal oficial Anthropic no YouTube, out/2025 · 19 min no total, trecho de 1 min 40 s, de 3:20 a 5:00
+  https://www.youtube.com/watch?v=uhJJgc-0iTQ&hl=en&persist_hl=1&t=200s
+  O coautor do artigo explicando o que o Agent SDK resolve e quando não precisa dele: a metade do marco que a citada de MCP não cobre.
+
+De 3:20 a 5:00 e volta; é um capítulo inteiro, marcado pelo canal.
+
+**marco `quando-workflow-basta`**
+
+- **Alex Albert e Erik S., *Building more effective AI agents*, trechos "The evolution of workflows and agents" e "The value of simple agent architectures"** — canal oficial Anthropic no YouTube, out/2025 · 19 min no total, trecho de 2 min 50 s, de 6:40 a 9:30
+  https://www.youtube.com/watch?v=uhJJgc-0iTQ&hl=en&persist_hl=1&t=400s
+  O mesmo coautor revisitando a tese quase um ano depois: o que mudou desde dezembro de 2024 e o que continua valendo sobre preferir a arquitetura mais simples.
+
+De 6:40 a 9:30 e volta. Ofereça quando o marco abrir; a palestra do Zhang fica para o fechamento.
+
+**fechamento**
 
 - **Barry Zhang, *How We Build Effective Agents*** — AI Engineer, abr/2025 · 15 min
   https://www.youtube.com/watch?v=D7_ipDqhtwk&hl=en&persist_hl=1

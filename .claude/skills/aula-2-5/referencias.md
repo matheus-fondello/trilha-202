@@ -26,6 +26,12 @@ O motivo do branch por tarefa é esse troca-de-contexto, não organização. Cit
 
 Página curtíssima e em inglês simples; serve de link solto, não de leitura.
 
+- **Philomatics, *Never fear merge conflicts again — git merge/pull tutorial*** — YouTube, mai/2024 · 5 min 12 s
+  https://www.youtube.com/watch?v=DloR0BOGNU0&hl=en&persist_hl=1
+  Só sobre conflito, no terminal: como ler os marcadores, como abortar o merge se travar, e como fechar depois de escolher.
+
+Reserva: cite se o conflito aparecer na oficina, não como pausa da aula.
+
 **marco `o-remoto`**
 
 - **Scott Chacon e Ben Straub, *Branches Remotos (Remote Branches)*** — Pro Git, 2ª edição, tradução pt-br · ~11 min de leitura (~3 min só a seção de push)
@@ -42,10 +48,30 @@ Se o aluno quiser a lista de comandos do `gh`, `gh pr --help` na própria máqui
 
 Aqui a referência é sobre a mecânica da tela, não sobre julgar código. O julgamento continua sendo do revisor adversarial lendo o diff; o aluno lê o comentário, não o código.
 
-## Sugerida
+## Sugeridas
+
+**marco `branch-por-tarefa`**
+
+- **Peter Cottle, *Learn Git Branching*, em português, níveis 1 a 3 da introdução** — learngitbranching.js.org · interativo, uns 10 min para os três níveis
+  https://learngitbranching.js.org/?locale=pt_BR
+  O aluno digita `git commit`, `git branch` e `git merge` numa página que desenha o grafo em tempo real: o commit vira um círculo, a branch uma etiqueta que anda, o merge o nó com dois pais. É a única forma de ele ver o grafo da 2.4 virar branch.
+
+Corte dito: "faça só os três primeiros níveis da introdução e volte; o quarto é rebase e não é
+assunto de hoje". São uns dez minutos, mais que o normal para uma pausa, e valem porque é a
+imagem de que a aula inteira precisa. Ele digita git de mentira numa página, o que contraria de
+leve o "conferir, não digitar"; diga que aqui o propósito é o desenho.
+
+**marco `pr-como-unidade`**
 
 - **GitHub, *How to create a pull request in 4 min | GitHub for Beginners*** — YouTube, ago/2024 · 3 min 44 s
   https://www.youtube.com/watch?v=nCKdihvneS0&hl=en&persist_hl=1
   Canal oficial do GitHub: em menos de quatro minutos o aluno vê a tela do PR de verdade — o botão, o diff, o merge — que é o que falta para quem nunca abriu um.
 
-Ofereça abrir no painel logo depois do marco `pr-como-unidade`, antes de o aluno abrir o primeiro PR pelo `gh`. É curto, pausa a aula sem custo. Avise que está em inglês e que o vídeo cria o PR pela interface web, enquanto na aula quem cria é o `gh` — o que importa é reconhecer a tela depois.
+- **GitHub, *How to merge a pull request | Introduction to GitHub*** — YouTube, canal oficial, ago/2024 · 3 min 23 s
+  https://www.youtube.com/watch?v=FDXSgyDGmho&hl=en&persist_hl=1
+  O segundo tempo: o PR aberto vira merge na tela, e no meio (1:05 a 2:56) aparece um conflito de verdade, com os marcadores e a decisão de qual versão vale.
+
+Ofereça os dois em sequência, logo depois do marco e antes de ele abrir o primeiro PR pelo `gh`:
+sete minutos de vídeo oficial que fecham o ciclo do PR. Avise que está em inglês e que os vídeos
+criam e mesclam pela interface web, enquanto na aula quem cria é o `gh`; o que importa é
+reconhecer a tela depois.

@@ -38,6 +38,12 @@ ou tutorial de 2019. `reflog` não está nesta página; se ele quiser ir atrás,
 "Seleção de Revisão" e o 10.7 "Manutenção e Recuperação de Dados", e nenhum dos dois cabe
 nesta aula.
 
+- **Katie Sylor-Miller, *Dangit, Git!?!*, versão em português** — dangitgit.com, 2016, tradução da comunidade · 6 min de leitura
+  https://dangitgit.com/pt_BR
+  Nove situações do ponto de vista de quem acabou de errar, e a primeira resposta é o `reflog`, que a aula chama de rede da rede e o Pro Git citado não cobre.
+
+É o pronto-socorro em português; o Pro Git é o manual. Usa `master` e `checkout --` no lugar de `restore`, o mesmo aviso de cima.
+
 **marco `desfazer`**
 
 - **Anthropic, *Checkpointing*, seção "Limitations"** — documentação do Claude Code · 2 min a seção
@@ -48,13 +54,34 @@ Esse é o item mais importante da aula e o que mais contraria a intuição do al
 de descobrir o `/rewind` e acha que já tem rede. Vale ler em voz alta a limitação do bash:
 o agente roda `rm` e `mv` o tempo todo, e é exatamente isso que o checkpoint não desfaz.
 
-## Sugerida
+## Sugeridas
+
+Dois vídeos curtos no meio, e o texto do Beams no fechamento.
+
+**marco `modelo-mental`**
+
+- **ByteByteGo, *How Git Works: Explained in 4 Minutes*** — YouTube, nov/2023 · 4 min 18 s
+  https://www.youtube.com/watch?v=e9lnsKot_SQ&hl=en&persist_hl=1
+  As quatro áreas (diretório de trabalho, staging, repositório local, remoto) com os comandos como setas entre elas: o desenho que a prosa descreve e não consegue mostrar.
+
+Ofereça quando o marco abrir. O quarto quadrado, o remoto, é assunto da 2.5; diga isso. Inglês
+com narração limpa, a legenda automática funciona.
+
+**marco `desfazer`**
+
+- **Philomatics, *Undo a git commit — git reset/revert — pushed/not pushed*** — YouTube, set/2024 · 3 min 27 s
+  https://www.youtube.com/watch?v=GytsxgB4-HU&hl=en&persist_hl=1
+  Se o commit ainda não subiu, `reset`; se já está no remoto, `revert` cria outro commit que desfaz, com o grafo nas duas situações. É a pergunta de aplicação do marco, respondida na tela.
+
+Ofereça depois da resposta dele à pergunta do marco, como confirmação visual, não antes. Não
+cobre `restore` nem `reflog`.
+
+**fechamento**
 
 - **Chris Beams, *How to Write a Git Commit Message*** — cbea.ms, ago/2014 · 12 min de leitura
   https://cbea.ms/git-commit/
   As sete regras que viraram o padrão de fato, e a sétima é a aula inteira: use o corpo da mensagem para explicar o quê e o porquê, nunca o como.
 
-Ofereça no painel logo depois que o marco `commit-bem-feito` fechar, enquanto o aluno ainda
-está escrevendo a mensagem dele. É em inglês, e três das sete regras são convenção de largura
-de linha que não importa para ele — avise isso ao oferecer, e mande olhar os exemplos de antes
-e depois no fim do texto, que é onde a diferença aparece.
+Doze minutos, então no fechamento. É em inglês, e três das sete regras são convenção de largura
+de linha que não importa para ele; avise, e mande olhar os exemplos de antes e depois no fim do
+texto, que é onde a diferença aparece.

@@ -50,7 +50,18 @@ Documentação viva, sem data: se não bater com a versão do aluno, vale a máq
 
 O mais antigo da lista e ainda o melhor no ponto. Se o aluno reclamar da data, é bom sinal: pergunte o que mudou desde então e o que não mudou.
 
-## Sugerida
+## Sugeridas
+
+**marco `modelo-versus-harness`**
+
+- **Thariq Shihipar, Sid Bidasaria e Robert Boyce, *How the Claude Code team uses Claude Code*, trecho "from tool calls to goals"** — canal oficial Claude no YouTube, set/2026 · 22 min no total, trecho de 1 min 42 s, de 0:35 a 2:17
+  https://www.youtube.com/watch?v=S-sYlFiGFv8&hl=en&persist_hl=1&t=35s
+  A própria equipe do Claude Code, com nome e cargo, contando por que passou a dar objetivo em vez de tarefa passo a passo: o time que constrói o harness desta sala dizendo que harness é decisão de design.
+
+De 0:35 a 2:17 e volta; o link já abre no trecho. Ofereça na abertura, perto da pergunta de
+previsão. É de setembro de 2026, o material mais atual da trilha.
+
+**fechamento**
 
 - **Geoffrey Litt, *Understanding is the new bottleneck*** — geoffreylitt.com, jul/2026 · ~11 min de leitura
   https://www.geoffreylitt.com/2026/07/02/understanding-is-the-new-bottleneck

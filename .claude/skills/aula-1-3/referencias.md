@@ -24,6 +24,12 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://code.claude.com/docs/en/goal
   A página do comando que esta aula ensina: como escrever a condição, o que o avaliador enxerga (só a conversa), e como limitar quantos turnos ele roda.
 
+**marco `evidencia`**
+
+- **Simon Willison, *Agentic manual testing*** — guia Agentic Engineering Patterns, simonwillison.net, mar/2026 · 7 min de leitura
+  https://simonwillison.net/guides/agentic-engineering-patterns/agentic-manual-testing/
+  Quando um screenshot prova algo ("o menu está no lugar certo") e quando passar nos testes não basta: a pergunta do marco, respondida com casos.
+
 **marco `revisor-separado`**
 
 - **Anthropic, *Best practices*, seção "Add an adversarial review step"** — documentação do Claude Code · 3 min de leitura
@@ -33,11 +39,34 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 O contrapeso do revisor é a parte que o aluno mais precisa ouvir, porque o entusiasmo
 com o revisor adversarial é a armadilha seguinte. Vale citar em voz alta, não só linkar.
 
-## Sugerida
+## Sugeridas
+
+Três, cada uma no seu lugar: um texto curto no primeiro marco, a seção de trabalho no meio, e um
+texto oficial no fechamento.
+
+**marco `parece-pronto`**
+
+- **Simon Willison, *Your job is to deliver code you have proven to work*** — simonwillison.net, dez/2025 · 5 min de leitura
+  https://simonwillison.net/2025/Dec/18/code-proven-to-work/
+  A tese da aula sem vocabulário de ferramenta: se você não viu o código fazer a coisa certa com os próprios olhos, esse código não funciona, e isso é trabalho de quem opera, não do agente.
+
+Cinco minutos: ofereça quando o marco fechar, antes de entrar no check executável. Ele volta com
+o porquê da aula; o resto é o como.
+
+**marco `check-executavel`**
 
 - **Anthropic, *Best practices for Claude Code*, seção "Give Claude a way to verify its work"** — documentação do Claude Code · 4 min a seção
   https://code.claude.com/docs/en/best-practices#give-claude-a-way-to-verify-its-work
   A aula inteira em uma seção, com uma tabela de prompts antes e depois que ele copia direto para a oficina.
 
-Quatro minutos, e é material de trabalho, não de leitura. Ofereça no meio, quando o
-marco `check-executavel` fechar: ele abre ao lado e usa a tabela na própria tarefa.
+Quatro minutos, e é material de trabalho, não de leitura. Ofereça no meio, quando o marco fechar:
+ele abre ao lado e usa a tabela na própria tarefa.
+
+**fechamento**
+
+- **Delba de Oliveira, *Building verification loops in Claude Code with skills*** — blog da Claude, jul/2026 · 5 min de leitura
+  https://claude.com/blog/building-verification-loops-in-claude-code-with-skills
+  O time do Claude Code encadeando revisão, simplificação e verificação como skills: o loop fechado virando hábito que sobrevive à sessão, não um comando solto.
+
+Ofereça no fechamento, depois do `fechar-o-loop`. Puxa o gancho para a 1.8 sem antecipá-la; não
+explique o que é skill aqui.

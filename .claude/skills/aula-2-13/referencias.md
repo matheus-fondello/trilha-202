@@ -49,4 +49,13 @@ não é dado público, e que a foto da conta dele guardada sem motivo é matéri
 
 ## Sugerida
 
-Nenhuma nesta aula: a matéria é lista e lei, e o subagente é quem lê a lista inteira.
+**marco `quem-ve-o-que`**
+
+- **Aikido Security, *Broken Access Control Explained: OWASP Top 10 A01 Explained with Examples*** — YouTube, set/2024 · 7 min 3 s no total, trecho de 4 min 22 s, de 0:00 a 4:22
+  https://www.youtube.com/watch?v=vUFVxoV5y_I&hl=en&persist_hl=1
+  Controle de acesso quebrado com o vazamento de 2022 da Optus, quase dez milhões de clientes: um identificador sequencial numa API sem checar quem pede, a mesma forma do Carlos trocando o número no endereço da Renata.
+
+Ofereça logo depois do cenário do Carlos e da Renata. Corte em 4:22: dali em diante é
+demonstração da ferramenta paga da empresa. A Optus admitiu o erro depois da investigação
+regulatória; é caso real, não fofoca. As listas continuam sendo o corpo da aula; o vídeo é a
+consequência de "ID adivinhável é porta" numa empresa de verdade.

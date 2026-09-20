@@ -55,14 +55,22 @@ seção e conte quantos subtítulos existem antes de a lista acabar. "Auth não 
 opinião sua quando ele vê o inventário do que teria que acertar sozinho, e cada item ali já foi
 motivo de vazamento em alguma empresa.
 
-## Sugerida
+## Sugeridas
+
+**marco `banco`**
 
 - **Fireship, *SQL Explained in 100 Seconds*** — YouTube, abr/2021 · 2 min 23 s
   https://www.youtube.com/watch?v=zsjvFFKOm3c&hl=en&persist_hl=1
   Em dois minutos mostra tabela, linha, coluna e uma consulta rodando, que é o que ele precisa reconhecer para conferir o agente.
 
-Ofereça no painel logo depois do marco `banco`, antes de entrar em schema. São dois minutos:
-pausa a aula sem custo e ele volta sabendo como uma consulta se parece, o que muda a conversa
-sobre "conferir o resultado" de abstrata para concreta. O vídeo é em inglês, rápido e com legenda
-automática ruim — avise, e ofereça repetir o trecho em vez de traduzir. Se ele recusar, não insista;
-nada mais na aula depende de ter visto.
+Ofereça no painel logo depois que o marco abrir, antes de entrar em schema. São dois minutos:
+pausa a aula sem custo e ele volta sabendo como uma consulta se parece. O vídeo é em inglês,
+rápido e com legenda automática ruim — avise, e ofereça repetir o trecho em vez de traduzir.
+
+- **CockroachDB, *What is a Foreign Key Constraint? Understanding Primary & Foreign Keys*** — YouTube, canal oficial, jul/2021 · 3 min 52 s
+  https://www.youtube.com/watch?v=5kiMg7GXAsY&hl=en&persist_hl=1
+  As duas tabelas lado a lado, a de muitos apontando para a de um: relação um-para-muitos e chave estrangeira no mesmo vídeo, que é a seta que o Fireship não desenha.
+
+Ofereça depois do Fireship, quando a relação entrar na conversa; os capítulos vão até 3:27, o
+resto é encerramento. Se ele recusar qualquer um dos dois, não insista; nada mais na aula
+depende de ter visto.

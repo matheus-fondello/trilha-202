@@ -37,18 +37,32 @@ e é lá que está o link, não aqui.
 Esta é a ponte que o material geral de prompt não dá. Quase tudo que existe sobre prompt
 foi escrito para chat; a aula é sobre falar com um agente que lê arquivo e roda comando.
 
+- **Anthropic, *Prompting best practices*, seção "Use examples effectively"** — documentação da plataforma Claude · 2 min a seção
+  https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#use-examples-effectively
+  Nomeia few-shot com todas as letras e dá a regra que a aula ensina: exemplo tem que ser relevante e diverso, senão o modelo copia um padrão que ninguém quis.
+
 **marco `iteracao`**
 
 - **Anthropic, *Best practices for prompt engineering for 2026*** — blog da Claude, nov/2025 · 12 min de leitura
   https://claude.com/blog/best-practices-for-prompt-engineering
   Tem uma seção inteira de erros comuns, que é o espelho dos antipadrões desta aula.
 
-## Sugerida
+## Sugeridas
+
+**marco `contexto-e-moldura`**
+
+- **Claude, *The CLAUDE.md file*** — canal oficial no YouTube, série Claude Code 101, mai/2026 · 3 min 1 s
+  https://www.youtube.com/watch?v=O0FGCxkHM-U&hl=en&persist_hl=1
+  O que entra no arquivo e como os escopos carregam, mostrado na tela: o primeiro tratamento visual do arquivo que ele só viu em texto na 1.2.
+
+Três minutos pausam a aula sem custo; ofereça quando o marco abrir. O vídeo não diz que o
+CLAUDE.md entra como mensagem de usuário e não como prompt de sistema; essa nuance continua sua.
+
+**fechamento**
 
 - **DAIR.AI, *Dicas gerais para projetar prompts*** — Prompt Engineering Guide, em português · 8 min de leitura
   https://www.promptingguide.ai/pt/introduction/tips
   Em português e na ordem certa: comece simples, seja específico, evite imprecisão, e a seção "Fazer ou não fazer?", que é o antipadrão desta aula com exemplo.
 
-Oito minutos e em português: cabe pausar, depois do marco `instrucao-clara`. Uma ressalva
-para você emendar em uma frase quando ele voltar: o texto foi escrito para prompt de chat,
-e o que ele opera é um agente. A tabela do `best-practices` acima faz essa ponte.
+Oito minutos e em português, mas escrito para prompt de chat, e o que ele opera é um agente.
+Ofereça no fechamento, com a ressalva numa frase; a tabela do `best-practices` acima é a ponte.

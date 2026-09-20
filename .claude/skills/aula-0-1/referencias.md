@@ -29,11 +29,23 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
   A prova de que a ferramenta muda toda semana, num lugar público. Serve para ele saber que não enlouqueceu.
 
-## Sugerida
-
 - **Lydia Hallie, *Choosing a Claude model and effort level in Claude Code*** — blog da Anthropic, jul/2026 · 5 min de leitura
   https://claude.com/blog/claude-model-and-effort-level-in-claude-code
-  Dá o critério de decisão que ele vai usar o resto da trilha: o agente não tentou o bastante, ou não sabia o bastante?
+  O critério de decisão em texto: o agente não tentou o bastante, ou não sabia o bastante? É a mesma coisa que o vídeo sugerido diz, para quem preferir ler.
 
-Esta aula é curta e a sugerida tem cinco minutos. Não pause no meio: ofereça no
-fechamento, junto com a despedida.
+- **Anthropic, *Interactive mode*, seção "Wait for a usage limit to reset"** — documentação do Claude Code · 3 min a seção
+  https://code.claude.com/docs/en/interactive-mode#wait-for-a-usage-limit-to-reset
+  O mecanismo exato do "nunca perde trabalho": o Claude Code espera sozinho, mostra quando volta e retoma do ponto em que parou, sem reenviar a última mensagem.
+
+A página em volta é uma referência enorme de atalhos; a âncora cai direto na seção, não precisa avisar.
+
+## Sugerida
+
+- **Claude, *Which Claude model should you use?*** — canal oficial no YouTube, set/2026 · 3 min 45 s
+  https://www.youtube.com/watch?v=71-8fJIGi34&hl=en&persist_hl=1
+  O time do produto dizendo o que decide o custo de uma tarefa e como escolher modelo e esforço: a recomendação de plano desta aula em vídeo, já com a família de modelos atual.
+
+Esta aula é curta e o vídeo tem menos de quatro minutos. Não pause no meio: ofereça no
+fechamento, junto com a despedida. Uns quarenta segundos do meio falam de configurar modelo
+padrão para a organização; diga que aquele trecho é para quem gerencia equipe e siga. O texto
+da Lydia Hallie, citado acima, diz o mesmo em cinco minutos de leitura para quem preferir ler.

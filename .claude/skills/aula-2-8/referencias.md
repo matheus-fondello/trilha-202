@@ -47,7 +47,19 @@ Só a primeira seção, "Idea honing", é desta aula; o resto (plano, TDD, ferra
 2.9 e da 2.10, e você diz isso ao soltar o link. A variante de uma pergunta por vez é boa para quem
 se perde com uma leva de perguntas de uma vez; mencione como opção, não como regra.
 
-## Sugerida
+## Sugeridas
+
+**marco `o-claude-te-entrevista`**
+
+- **Radek Sienkiewicz (VelvetShark), *Stop prompting Claude Code — let it interview you (the "spec" workflow)*** — YouTube, jan/2026 · 9 min 7 s no total, trecho de 4 min 44 s, de 0:00 a 4:44
+  https://www.youtube.com/watch?v=ob9WWuYlS5Q&hl=en&persist_hl=1
+  O prompt de entrevista rodando de verdade: uma frase vira spec depois de trinta e duas perguntas. É o que ele acabou de fazer, visto de fora, com número para calibrar expectativa.
+
+Corte em 4:44, "implementing the spec"; o que vem depois é reflexão de outro momento. Ofereça
+depois da entrevista dele, não antes, senão ele copia o prompt do vídeo em vez de escrever o
+dele. Inglês, sem legenda.
+
+**fechamento**
 
 - **Sean Grove, *The New Code*** — YouTube, canal AI Engineer, jul/2025 · 21 min 35 s
   https://www.youtube.com/watch?v=8rABwKRsec4&hl=en&persist_hl=1

@@ -46,7 +46,21 @@ O ponto pedagógico é a diferença entre percepção e medição, não "IA é r
 
 É longo e é só prévia nesta aula. Cita e segue; o assunto abre de verdade na 2.4.
 
-## Sugerida
+- **Wikipédia, *Ninety–ninety rule*** — artigo · 2 min de leitura
+  https://en.wikipedia.org/wiki/Ninety%E2%80%93ninety_rule
+  A frase de Tom Cargill (Bell Labs, 1985): os primeiros 90% do código levam 90% do tempo, e os 10% finais levam os outros 90%.
+
+O problema é mais velho que a IA; ela intensifica, não inventa. Tira a acusação de "discurso anti-IA" antes que ela apareça.
+
+## Sugeridas
+
+**marco `o-ciclo`**
+
+- **Fireship, *DevOps CI/CD Explained in 100 Seconds*** — YouTube, mar/2020 · 1 min 55 s
+  https://www.youtube.com/watch?v=scEDHsr3APg&hl=en&persist_hl=1
+  A esteira que sustenta o "posso colocar em produção agora": integrar, testar, empacotar, publicar, em animação. É a metade do ciclo que a IA não acelerou, desenhada.
+
+Ofereça antes do Fowler, como aquecimento visual; os dois juntos dão seis minutos.
 
 - **Martin Fowler, *Continuous Delivery*** — martinfowler.com, mai/2013, atualizado ago/2014 · ~4 min
   https://martinfowler.com/bliki/ContinuousDelivery.html

@@ -38,11 +38,39 @@ trabalho perigoso pede isolamento".
   https://platform.claude.com/docs/en/about-claude/models/choosing-a-model
   Como escolher sem ter benchmark próprio, e o ponto que quase ninguém sabe: ajustar o esforço costuma render mais que trocar de modelo.
 
-## Sugerida
+- **Claude, *Which Claude model should you use?*** — canal oficial no YouTube, set/2026 · 3 min 45 s
+  https://www.youtube.com/watch?v=71-8fJIGi34&hl=en&persist_hl=1
+  O que decide o custo de uma tarefa e quando escolher modelo e esforço: é a régua do marco, oficial e atual.
+
+Foi a sugerida do fechamento da 0.1. Se ele viu, cite e siga; se não viu, é a hora, mas não faça dele a terceira pausa da aula.
+
+## Sugeridas
+
+Dois vídeos oficiais curtos no meio, um por marco, e o texto de engenharia no fechamento.
+
+**marco `auto-mode`**
+
+- **Claude, *How auto mode works with Claude Code*** — canal oficial no YouTube, ago/2026 · 5 min 42 s no total, trecho de 3 min, de 0:44 a 3:33
+  https://www.youtube.com/watch?v=b8SV4U6fEIc&hl=en&persist_hl=1&t=44s
+  O classificador como um segundo leitor que aprova em vez de você, e por que o agente nunca aprova a própria ação, com tela.
+
+Diga o corte: de 0:44 a 3:33, e volta. De 3:33 a 4:49 é configuração de regras para equipe, que é
+o marco `manual-e-allowlist`; ofereça como segundo corte só se ele estiver interessado.
+
+**marco `plan-mode`**
+
+- **Claude, *The Explore → Plan → Code → Commit workflow in Claude Code*** — canal oficial no YouTube, série Claude Code 101, mai/2026 · 3 min 11 s
+  https://www.youtube.com/watch?v=xJQuF02NAK8&hl=en&persist_hl=1
+  Plan mode no lugar dele: uma fase de entender antes da fase de mexer, com critério de sucesso escrito antes de codar.
+
+O vídeo vende o fluxo inteiro e o fim fala de revisão por subagente, que é matéria da 1.11; emende
+numa frase. Ele não diz "plano não é permissão", então a pergunta do marco continua sendo sua.
+
+**fechamento**
 
 - **John Hughes, *How we built Claude Code auto mode: a safer way to skip permissions*** — Anthropic, engenharia, mar/2026 · 12 min de leitura
   https://www.anthropic.com/engineering/claude-code-auto-mode
   Faz entender que o auto mode é um segundo modelo lendo por cima do ombro do primeiro. A melhor decisão de projeto está lá: o classificador não vê as mensagens do agente nem os resultados das ferramentas, só o que o usuário pediu e o comando a rodar — para que o agente não consiga argumentar em causa própria.
 
-Doze minutos, e é texto de engenharia. Ofereça no fechamento, para quem estiver curioso
-depois da discussão de confiança. Aluno que só quer operar não precisa.
+Doze minutos, e é texto de engenharia. Ofereça no fechamento, para quem estiver curioso depois da
+discussão de confiança e do vídeo. Aluno que só quer operar não precisa.
