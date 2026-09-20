@@ -34,6 +34,12 @@ trabalho perigoso pede isolamento".
 
 **marco `modelo-e-custo`**
 
+- **Anthropic, *Model configuration*** — documentação do Claude Code · consulta
+  https://code.claude.com/docs/en/model-config
+  A página que muda mais rápido e a única que vale como fonte: os apelidos do `/model` (`sonnet`, `opus`, `haiku`, `opusplan`, `best`), o padrão de cada plano, e os níveis de esforço com o que cada um serve.
+
+Confira aqui antes de afirmar nome, padrão ou nível; a aula diz "o Pro abre em Sonnet" e "o esforço padrão é alto" porque esta página dizia isso em setembro de 2026.
+
 - **Anthropic, *Choosing the right model*** — documentação da plataforma Claude · 6 min de leitura
   https://platform.claude.com/docs/en/about-claude/models/choosing-a-model
   Como escolher sem ter benchmark próprio, e o ponto que quase ninguém sabe: ajustar o esforço costuma render mais que trocar de modelo.

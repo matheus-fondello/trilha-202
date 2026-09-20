@@ -240,6 +240,10 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://code.claude.com/docs/en/permission-modes
   A página canônica: os seis modos, em qual a sessão começa conforme o plano, e os limiares em que o auto mode pausa e devolve a decisão para o aluno.
 
+- **Anthropic, *Model configuration*** — documentação do Claude Code · consulta
+  https://code.claude.com/docs/en/model-config
+  A página que muda mais rápido e a única que vale como fonte: os apelidos do `/model` (`sonnet`, `opus`, `haiku`, `opusplan`, `best`), o padrão de cada plano, e os níveis de esforço com o que cada um serve.
+
 - **Anthropic, *Choosing the right model*** — documentação da plataforma Claude · 6 min de leitura
   https://platform.claude.com/docs/en/about-claude/models/choosing-a-model
   Como escolher sem ter benchmark próprio, e o ponto que quase ninguém sabe: ajustar o esforço costuma render mais que trocar de modelo.
