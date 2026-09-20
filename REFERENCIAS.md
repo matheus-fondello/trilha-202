@@ -244,6 +244,10 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://code.claude.com/docs/en/model-config
   A página que muda mais rápido e a única que vale como fonte: os apelidos do `/model` (`sonnet`, `opus`, `haiku`, `opusplan`, `best`), o padrão de cada plano, e os níveis de esforço com o que cada um serve.
 
+- **Anthropic, *Claude Fable models on your plan*** — Central de Ajuda · 3 min de leitura
+  https://support.claude.com/en/articles/15424964-claude-fable-models-on-your-plan
+  O Fable em cada plano: em todo plano pago, nunca como padrão; no Pro fora do limite e cobrado em créditos, no Max até metade da cota semanal.
+
 - **Anthropic, *Choosing the right model*** — documentação da plataforma Claude · 6 min de leitura
   https://platform.claude.com/docs/en/about-claude/models/choosing-a-model
   Como escolher sem ter benchmark próprio, e o ponto que quase ninguém sabe: ajustar o esforço costuma render mais que trocar de modelo.

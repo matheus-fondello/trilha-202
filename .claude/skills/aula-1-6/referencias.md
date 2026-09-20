@@ -38,7 +38,11 @@ trabalho perigoso pede isolamento".
   https://code.claude.com/docs/en/model-config
   A página que muda mais rápido e a única que vale como fonte: os apelidos do `/model` (`sonnet`, `opus`, `haiku`, `opusplan`, `best`), o padrão de cada plano, e os níveis de esforço com o que cada um serve.
 
-Confira aqui antes de afirmar nome, padrão ou nível; a aula diz "o Pro abre em Sonnet" e "o esforço padrão é alto" porque esta página dizia isso em setembro de 2026.
+- **Anthropic, *Claude Fable models on your plan*** — Central de Ajuda · 3 min de leitura
+  https://support.claude.com/en/articles/15424964-claude-fable-models-on-your-plan
+  O Fable em cada plano: em todo plano pago, nunca como padrão; no Pro fora do limite e cobrado em créditos, no Max até metade da cota semanal.
+
+Confira as duas antes de afirmar nome, padrão, nível ou cobrança; a aula diz "o Pro abre em Sonnet", "o esforço padrão é alto" e "o Fable é cobrado à parte no Pro" porque estas páginas diziam isso em setembro de 2026.
 
 - **Anthropic, *Choosing the right model*** — documentação da plataforma Claude · 6 min de leitura
   https://platform.claude.com/docs/en/about-claude/models/choosing-a-model
