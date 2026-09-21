@@ -12,18 +12,20 @@ Contexto para discorrer, do seu jeito: tudo na trilha até aqui nasceu da mão d
 
 O tropeço de partida é matéria: `npm start` roda com `--env-file=.env`, o arquivo não vem no repositório, e a primeira tentativa morre com erro do Node. A resposta está no README, numa seção "Configuração" perto do fim, fora do passo a passo de rodar: **deixe acontecer** e não resgate antes de ele voltar ao README.
 
-Seis issues abertas: minúsculas não são encontradas; a página de "não encontrado" assusta; data em formato de computador; carga horária não aparece; mostrar os módulos concluídos; revogado aparece como válido. Sorteie uma ou deixe ele escolher; a mesma serve a vários, porque cada PR fica numa cópia. **Você não tem o gabarito:** conhece a forma, não a resposta. Cada issue tem uma última frase que importa, e é nela que a pressa falha; o CONTRIBUTING diz onde a coisa mora e o que não se toca; o caminho errado típico é reescrever ou duplicar em vez de encaixar. Julgue comportamento — mapa antes de mexer, diff pequeno, teste novo, testes velhos verdes, evidência sem você pedir —, não o diff perfeito.
+Seis issues abertas: minúsculas não são encontradas; a página de "não encontrado" assusta; data em formato de computador; carga horária não aparece; mostrar os módulos concluídos; revogado aparece como válido. Sorteie uma ou deixe ele escolher; a mesma serve a vários, porque cada PR fica numa cópia. **Você não tem o gabarito:** conhece a forma, não a resposta. Você sabe, e não avisa: a última frase de cada issue é onde a pressa falha, e teste verde não pega tudo. O CONTRIBUTING diz onde a coisa mora e o que não se toca; o caminho errado típico é reescrever ou duplicar em vez de encaixar. Julgue comportamento — mapa antes de mexer, diff pequeno, teste novo, testes velhos verdes, evidência sem você pedir —, não o diff perfeito.
+
+Sala e oficina. Fica para depois: pedido que vira spec, que é a 2.8.
 
 ## Antes de começar
 
-Ele **não faz fork e não abre PR na 202**: clona, sobe para um repositório vazio da conta dele (receita da 2.5, histórico preservado) e abre o PR de branch para `main` na própria cópia. Não há comando para registrar isso, e não invente um: ele cola a URL do PR aqui. A issue abre no painel pelo link do `referencias.md`.
+Ele **não faz fork e não abre PR na 202**: clona, cria um repositório vazio na conta dele, troca o remoto e sobe (o histórico vem junto). Push e remoto ele viu na 2.5; clonar e trocar remoto é novo, e é a oficina que faz. O PR é de branch para `main` na própria cópia. Não há comando para registrar isso, e não invente um: ele cola a URL do PR aqui. A issue abre no painel pelo link do `referencias.md`.
 
 ## Marcos
 
 `node .claude/scripts/trilha.js milestone 2.7 <id>`:
 
-- `clonar-e-rodar`: a cópia está no GitHub e o projeto sobe na máquina dele. *Previsão, antes:* o repositório tem README, testes e CI verde; o que ele aposta que vai dar errado na primeira vez? Caça quem acha que README bom significa `npm install` e pronto.
-- `entender-sem-ler`: ele tem o mapa do projeto, vindo do agente e do `/init`, e diz o que faz o quê, onde mora a parte da issue dele e o que o CONTRIBUTING proíbe. Ler o código nunca foi a regra da trilha; verificar é.
+- `clonar-e-rodar`: a cópia está no GitHub e o projeto sobe na máquina dele. *Previsão, antes:* quando a P1 dele sobe numa máquina limpa, o que precisa existir antes de a página abrir? Caça quem acha que README bom significa `npm install` e pronto.
+- `entender-sem-ler`: ele tem o mapa do projeto, vindo do agente e do `/init`, e diz o que faz o quê, onde mora a parte da issue dele e o que o CONTRIBUTING proíbe, sem ter aberto um arquivo.
 - `mudar-pequeno`: a mudança encaixou no que já existia e ele diz o que decidiu não tocar. *Aplicação:* o agente resolve a issue em nove arquivos, com uma função nova que repete um ajudante de `src/`, e a página funciona. Ele aceita? Caça quem confunde "funcionou" com "pronto para revisão".
 - `provar`: testes antigos verdes, um teste novo no arquivo certo, a mudança vista na tela e o revisor adversarial da 1.3 sobre o diff. *Conceito:* `npm test` verde prova que o pedido da issue foi atendido? Caça quem toma suíte verde por prova do pedido: ela só protege o que já era testado.
 - `pr-como-conversa`: o PR diz o que mudou, por que mudou e como ele verificou, para quem não viu nada disso.

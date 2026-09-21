@@ -50,7 +50,7 @@ A segunda seção, sobre o que conta como pequeno, é a que responde "mas cabia 
 
 **marco `provar`**
 
-- **GitHub, *Verificações de status*** — GitHub Docs, em português · 6 min de leitura
+- **GitHub, *Verificações de status*** — GitHub Docs, em português · 5 min de leitura
   https://docs.github.com/pt/pull-requests/reference/status-checks
   Diz o que o sinal do CI no PR significa: que os commits atendem às condições do repositório, o que está rodando, o que passou e o que precisa de atenção.
 
@@ -66,16 +66,16 @@ Uma no meio, colada ao marco, e o resumo do Feathers no fechamento.
 
 **marco `pr-como-conversa`**
 
-- **GitHub, *Ajudando outras pessoas a revisar suas alterações*** — GitHub Docs, em português · 5 min de leitura
+- **GitHub, *Ajudando outras pessoas a revisar suas alterações*** — GitHub Docs, em português · 2 min a seção
   https://docs.github.com/pt/pull-requests/concepts/helping-others-review-your-changes#making-your-changes-easy-to-review
-  As quatro coisas que fazem um PR revisável, e são exatamente as da fluência: mantê-lo pequeno, dizer por que a mudança é necessária e o que mudou, apontar onde olhar primeiro, e revisar o próprio diff antes de pedir revisão a alguém.
+  O que faz um PR revisável, e é o que a fluência pede: mantê-lo pequeno, dar contexto e dizer onde olhar primeiro, revisar o próprio diff antes de pedir revisão a alguém, e olhar o que a mudança abre de segurança.
 
-Cinco minutos, antes de ele escrever a descrição, não depois. O trecho de revisar o
+Dois minutos, antes de ele escrever a descrição, não depois. O trecho de revisar o
 próprio PR primeiro é o que costuma cair melhor: é a auto-revisão da 1.3 dita pelo GitHub.
 
 **fechamento**
 
-- **Nicolas Carlo, *The key points of Working Effectively with Legacy Code*** — understandlegacycode.com, fev/2020 · ~10 min de leitura
+- **Nicolas Carlo, *The key points of Working Effectively with Legacy Code*** — understandlegacycode.com · ~10 min de leitura
   https://understandlegacycode.com/blog/key-points-of-working-effectively-with-legacy-code/
   O resumo do livro de Michael Feathers que a ementa cita: código sem teste é código legado, o dilema de que para testar é preciso mudar e para mudar com segurança é preciso testar, e as receitas de mudança mínima para encaixar o novo sem reescrever o velho.
 
