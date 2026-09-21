@@ -684,6 +684,44 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://vercel.com/docs/deployments/environments#preview-environment-pre-production
   Lista exatamente o que dispara um preview (commit fora da branch de produção, pull request, `vercel` sem `--prod`) e a diferença entre a URL da branch e a URL do commit.
 
+### 2.7 Projeto que não é seu
+
+**Sugerida**
+
+- **GitHub, *Ajudando outras pessoas a revisar suas alterações*** — GitHub Docs, em português · 5 min de leitura
+  https://docs.github.com/pt/pull-requests/concepts/helping-others-review-your-changes#making-your-changes-easy-to-review
+  As quatro coisas que fazem um PR revisável, e são exatamente as da fluência: mantê-lo pequeno, dizer por que a mudança é necessária e o que mudou, apontar onde olhar primeiro, e revisar o próprio diff antes de pedir revisão a alguém.
+
+- **Nicolas Carlo, *The key points of Working Effectively with Legacy Code*** — understandlegacycode.com, fev/2020 · ~10 min de leitura
+  https://understandlegacycode.com/blog/key-points-of-working-effectively-with-legacy-code/
+  O resumo do livro de Michael Feathers que a ementa cita: código sem teste é código legado, o dilema de que para testar é preciso mudar e para mudar com segurança é preciso testar, e as receitas de mudança mínima para encaixar o novo sem reescrever o velho.
+
+**Citadas na aula**
+
+- **202 Lab, *Verificador de certificados da 202*** — repositório no GitHub, Node com Express e EJS · README e CONTRIBUTING em ~8 min
+  https://github.com/matheus-fondello/202-certificados
+  O projeto da aula, com as seis issues abertas: é o código que confere se um certificado da trilha é verdadeiro, e é dele que sai a cópia do aluno.
+
+- **Anthropic, *Common workflows*, seção "Understand new codebases"** — documentação do Claude Code · 3 min a seção
+  https://code.claude.com/docs/en/common-workflows#understand-new-codebases
+  As perguntas que dão o mapa de um projeto que se acabou de abrir — visão geral, onde mora cada parte, como um fluxo atravessa o código — na forma de receita, em vez de "leia o repositório".
+
+- **Anthropic, *How Claude remembers your project*, seção "Set up a project CLAUDE.md"** — documentação do Claude Code · 2 min a seção
+  https://code.claude.com/docs/en/memory#set-up-a-project-claude-md
+  O que o `/init` faz quando o projeto não tem nada: analisa o repositório e escreve um CLAUDE.md com comandos de build, instruções de teste e as convenções que encontrou.
+
+- **Google, *Small CLs*** — guia de engenharia do Google, em inglês · ~8 min de leitura
+  https://google.github.io/eng-practices/review/developer/small-cls.html
+  A lista de por que mudança pequena vence: é revisada mais rápido e mais a fundo, introduz menos bug, desperdiça menos trabalho quando a direção estava errada e é mais simples de reverter.
+
+- **GitHub, *Verificações de status*** — GitHub Docs, em português · 6 min de leitura
+  https://docs.github.com/pt/pull-requests/reference/status-checks
+  Diz o que o sinal do CI no PR significa: que os commits atendem às condições do repositório, o que está rodando, o que passou e o que precisa de atenção.
+
+- **GitHub, *Como criar uma solicitação de pull*** — GitHub Docs, em português · 6 min de leitura
+  https://docs.github.com/pt/pull-requests/how-tos/create-pull-requests/creating-a-pull-request
+  O passo a passo do PR entre duas branches do mesmo repositório, que é o caso dele, e a nota de que fork só entra quando não se tem permissão de escrita — na cópia dele, tem.
+
 ### 2.8 O problema bem definido
 
 **Sugerida**
