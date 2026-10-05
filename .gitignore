@@ -10,3 +10,4 @@ credenciais.json
 .env.local
 *.tmp
 .DS_Store
+trilha/seq
