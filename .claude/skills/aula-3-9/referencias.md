@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três dos quatro links são documentação viva e mudam sem aviso: a Anthropic moveu a doc do Agent SDK
+Três das cinco citadas são documentação viva e mudam sem aviso: a Anthropic moveu a doc do Agent SDK
 para `code.claude.com` quando renomeou o Claude Code SDK, e o MCP versiona a doc por data de protocolo,
 então `/docs/learn/architecture` redireciona para a versão vigente. Se uma âncora não abrir na seção certa,
 mande o aluno rolar até o título em vez de improvisar outra URL. E note que o próprio artigo da Anthropic
@@ -28,7 +28,7 @@ entre ferramenta do cliente e ferramenta do servidor, que é a confusão mais co
   https://www.anthropic.com/engineering/writing-tools-for-agents
   A outra metade da história: como se escreve a ferramenta do lado do servidor para o modelo pedir bem, com seleção, descrição clara e resposta econômica em contexto.
 
-Para quem for construir ferramenta na P3; o aluno não escreve ferramenta nesta aula.
+Para quando ele for construir ferramenta num produto que precisa dela; a P3 não precisa, e o aluno não escreve ferramenta nesta aula.
 
 **marco `workflow-versus-agente`**
 

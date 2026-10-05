@@ -11,3 +11,6 @@ credenciais.json
 *.tmp
 .DS_Store
 trilha/seq
+
+# Saída de ferramentas de navegador de quem testa; não é da sala.
+.playwright-mcp/

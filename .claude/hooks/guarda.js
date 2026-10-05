@@ -47,7 +47,11 @@ const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS
 // ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça; e o
 // acesso à 202 é do aluno, e depois de colado não volta ao chat; e o banco do
 // quiz guarda o gabarito, que só sai pelo comando `quiz`, depois da resposta.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\](criterios|persona)\b|quiz[/\\][^/\\]+[/\\]banco\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
+// Sem distinguir maiúsculas, porque o disco do Windows e do Mac não distingue:
+// `praticas\P4\PERSONA` é o mesmo arquivo. O nome do arquivo codificado é o
+// nome inteiro (`persona`, não `persona-notas.md`): uma anotação do aluno numa
+// pasta parecida com a da sala é dele, e se lê.
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\\s]+[/\\](criterios|persona)(?![\w.-])|quiz[/\\][^/\\\s]+[/\\]banco(?![\w.-])|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/i;
 // `.\` e `./`: no Windows o tutor usa a ferramenta PowerShell, que escreve o
 // caminho com barra invertida.
 const CLI = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\]trilha\.js\b/;
@@ -94,11 +98,38 @@ function conferirArquivo(entrada) {
   bloquear(`\`${abs}\` está fora da sala, e você não escreve arquivo em lugar nenhum: nem na oficina, nem em outra pasta. Quem constrói é o aluno, com o outro Claude, na janela dele.`, 'Diga o que ele precisa fazer na oficina, em uma linha, e a aula segue.');
 }
 
+// Corta nos separadores de comando, mas não dentro de aspas: o `ideia` separa
+// hipóteses e nomes com `;`, e `nota` e `registrar feedback` levam texto livre,
+// que pode citar um arquivo do harness sem mexer nele. Com substituição de
+// comando (`$(...)` ou crase), ou aspas desbalanceadas, o texto entre aspas pode
+// rodar alguma coisa, e o corte volta a ser o de sempre, em todo separador.
 function segmentos(comando) {
-  return comando
-    .split(/&&|\|\||;|\||\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const simples = () => comando.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter(Boolean);
+  if (/\$\(|`/.test(comando)) return simples();
+  const partes = [];
+  let atual = '';
+  let aspa = null;
+  for (let i = 0; i < comando.length; i++) {
+    const c = comando[i];
+    if (aspa) {
+      atual += c;
+      if (c === '\\' && aspa === '"' && i + 1 < comando.length) { atual += comando[++i]; continue; }
+      if (c === aspa) aspa = null;
+      continue;
+    }
+    if (c === '"' || c === "'") { aspa = c; atual += c; continue; }
+    const dois = comando.slice(i, i + 2);
+    if (dois === '&&' || dois === '||') { partes.push(atual); atual = ''; i++; continue; }
+    if (c === ';' || c === '|' || c === '\n') { partes.push(atual); atual = ''; continue; }
+    atual += c;
+  }
+  if (aspa) return simples();
+  partes.push(atual);
+  return partes.map((s) => s.trim()).filter(Boolean);
+}
+
+function bloquearSigilo(seg) {
+  bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), o token de acesso à 202 é do aluno e não volta ao chat, o banco de um quiz só fala pelo comando \`quiz\` e depois da resposta gravada, a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada, e a persona de uma prática só abre pelo comando \`persona <prática>\`, durante a entrevista. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
 }
 
 function conferirBash(entrada) {
@@ -111,13 +142,16 @@ function conferirBash(entrada) {
     if (DEV.test(seg)) {
       bloquear(`\`${seg}\` é comando de teste do harness e não existe para o tutor. Quem testa roda no próprio terminal. Não rode, não sugira, não cole para o aluno rodar. Leia .claude/guarda.md.`);
     }
-    if (CLI.test(seg)) continue; // o CLI da trilha é o jeito certo de escrever
+    if (CLI.test(seg)) {
+      // O CLI da trilha é o jeito certo de escrever. Mas uma substituição de
+      // comando num argumento dele roda antes, e com o que rodar.
+      if (/\$\(|`/.test(seg) && SIGILO.test(seg.replace(CLI, ''))) bloquearSigilo(seg);
+      continue;
+    }
     if (LISTA_AMBIENTE.test(seg)) {
       bloquear(`\`${seg}\` lista as variáveis de ambiente, e o token de acesso à 202 do aluno pode estar entre elas. Ele não volta ao chat. Se precisa de uma variável, peça só ela pelo nome, e nunca a do token.`);
     }
-    if (SIGILO.test(seg)) {
-      bloquear(`\`${seg}\` lê o que não é seu: a fila guarda a avaliação, scripts e hooks são o código do harness, a régua da avaliação é de quem avalia (e quem avalia não é você), o token de acesso à 202 é do aluno e não volta ao chat, o banco de um quiz só fala pelo comando \`quiz\` e depois da resposta gravada, e a régua de uma prática só abre pelo comando \`criterios <prática>\` do CLI, depois da entrega registrada. Nota, critério e o que sobe para a 202 não aparecem no chat, para ninguém; e você não é engenheiro do harness. Leia .claude/guarda.md.`);
-    }
+    if (SIGILO.test(seg)) bloquearSigilo(seg);
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);
     }

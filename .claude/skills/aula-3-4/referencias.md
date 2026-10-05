@@ -67,7 +67,7 @@ Link solto no fechamento, nunca leitura na aula. É ensaio de opinião, escrito 
 **marco `reduzir`**
 
 - **IBM Technology (Martin Keen), *What is Prompt Caching? Optimize LLM Latency with AI Transformers*** — YouTube, canal oficial, fev/2026 · 9 min 6 s no total, trecho de 1 min 50 s, de 6:02 a 7:52
-  https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1&t=362s
   Um quadro com o prompt montado em camadas, instruções, documento, exemplos e pergunta, e o que acontece com o cache quando a pergunta vem no fim e quando vem no começo: a pergunta do marco, desenhada.
 
 Uma só sugerida. Ofereça no painel depois que ele responder a pergunta de conceito, como conferência, não como explicação. Comece em 6:02 ("when does an LLM know what gets cached?") e pare em 7:52: antes disso é o funcionamento interno do modelo, que a aula não usa, e depois vêm números que não batem com a Anthropic (um mínimo único de 1.024 tokens e um prazo de cinco a dez minutos); os números certos estão nas páginas citadas acima. O vídeo diz que a comparação é token a token; na Anthropic ela é feita por bloco até o ponto de cache, e o efeito na ordem do prompt é o mesmo. Em inglês, com legenda em inglês.

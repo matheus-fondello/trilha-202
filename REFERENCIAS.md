@@ -1081,7 +1081,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 **Sugerida**
 
 - **IBM Technology (Martin Keen), *What is Prompt Caching? Optimize LLM Latency with AI Transformers*** — YouTube, canal oficial, fev/2026 · 9 min 6 s no total, trecho de 1 min 50 s, de 6:02 a 7:52
-  https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1&t=362s
   Um quadro com o prompt montado em camadas, instruções, documento, exemplos e pergunta, e o que acontece com o cache quando a pergunta vem no fim e quando vem no começo: a pergunta do marco, desenhada.
 
 **Citadas na aula**
@@ -1208,7 +1208,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 - **Simon Willison, *Superhuman AI exfiltrates emails*** — simonwillison.net, jan/2026 · ~2 min de leitura
   https://simonwillison.net/2026/Jan/12/superhuman-ai-exfiltrates-emails/
-  A tríade inteira num caso real de cliente de e-mail: o usuário pede o resumo da caixa, um e-mail plantado faz o assistente mandar dados financeiros, jurídicos e médicos para um formulário do atacante por uma imagem que a tela carrega; a causa era a regra que deixava carregar a imagem, e o conserto fechou essa saída.
+  A tríade inteira num caso real de cliente de e-mail: o usuário pede o resumo da caixa, um e-mail plantado faz o assistente mandar dados financeiros, jurídicos e médicos para um formulário do atacante por uma imagem que a tela carrega; a causa foi a regra que deixava a tela carregar a imagem, e a empresa publicou um conserto.
 
 - **OWASP, *LLM02:2025 Sensitive Information Disclosure* — seção "Example Attack Scenarios"** — genai.owasp.org, edição 2025 · ~6 min de leitura
   https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/#user-content-example-attack-scenarios
@@ -1222,7 +1222,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/#scope-of-the-problem
   O princípio comum de um artigo de pesquisadores da IBM, da Invariant Labs, da ETH Zurich, do Google e da Microsoft: depois que o modelo leu conteúdo não confiável, ele precisa estar preso de forma que seja impossível esse conteúdo disparar uma ação com consequência.
 
-- **Anthropic, *Making Claude Code more secure and autonomous with sandboxing* — seção "Keeping users secure on Claude Code"** — Anthropic Engineering, out/2025 · ~2 min de leitura (a seção)
+- **Anthropic, *Beyond permission prompts: making Claude Code more secure and autonomous* — seção "Keeping users secure on Claude Code"** — Anthropic Engineering, out/2025 · ~2 min de leitura (a seção)
   https://www.anthropic.com/engineering/claude-code-sandboxing#keeping-users-secure-on-claude-code
   O nome do carimbo: clicar "aprovar" o tempo todo leva à fadiga de aprovação, em que a pessoa deixa de prestar atenção no que aprova — e isso deixa o sistema menos seguro, não mais.
 
@@ -1280,7 +1280,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 **Sugerida**
 
-- **IBM Technology, *Is RAG Still Needed? Choosing the Best Approach for LLMs*** — YouTube, canal oficial, mar/2026 · 11 min 10 s, em inglês com legenda automática
+- **IBM Technology, *Is RAG Still Needed? Choosing the Best Approach for LLMs*** — YouTube, canal oficial, mar/2026 · 11 min 9 s, em inglês, com legenda em inglês
   https://www.youtube.com/watch?v=UabBYexBD4k&hl=en&persist_hl=1
   RAG e contexto longo lado a lado, com capítulos sobre onde cada um ganha e onde falha, da "loteria da recuperação" ao problema do ruído, até a escolha por caso.
 
@@ -1389,7 +1389,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 **Sugerida**
 
 - **Rob Fitzpatrick, *[The Mom Test] AI can't run your customer interviews (but it \*can\* help in other ways)*** — YouTube, jun/2026 · 7 min 3 s, o trecho de 2:14 a 5:41
-  https://www.youtube.com/watch?v=uUr0zxUqIGA&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=uUr0zxUqIGA&hl=en&persist_hl=1&t=134s
   O autor dizendo onde o modelo ajuda: ensaiar a conversa antes e, depois, ler a transcrição como treinador ("não me diga o que isso significa para o meu negócio; me mostre onde eu comecei a vender").
 
 **Citadas na aula**
@@ -1399,14 +1399,14 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   O autor dizendo que "a gente se fala de novo qualquer hora?" recebe sim e por isso não vale nada, e que o pedido vale mais quanto mais concreto for o gatilho da próxima conversa.
 
 - **Rob Fitzpatrick, *[The Mom Test] Finding Customers With Problems Worth Solving?*** — YouTube, jun/2026 · 4 min 31 s, o trecho de 2:48 ao fim
-  https://www.youtube.com/watch?v=2IKTpN7oFco&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=2IKTpN7oFco&hl=en&persist_hl=1&t=168s
   O par "quem e onde": um tipo de pessoa e o lugar onde se acha essa pessoa, e a preferência por quem já gasta esforço tentando resolver o problema.
 
 - **Rob Fitzpatrick, *[The Mom Test] "Keeping it casual" in B2B? It still works (and is often optimal)*** — YouTube, jun/2026 · 7 min, o trecho até 1:37
   https://www.youtube.com/watch?v=xJ35YAvOULQ&hl=en&persist_hl=1
   Por que formalidade atrapalha: quanto mais cara de reunião, mais a pessoa entra em modo negociação e se defende; e conversa informal custa menos quando você descobre que falou com a pessoa errada.
 
-- **Teresa Torres, *Interview Snapshot* — seção "The Memorable Quote"** — Product Talk, fev/2024 · ~3 min de leitura (a seção)
+- **Teresa Torres, *The Interview Snapshot* — seção "The Memorable Quote"** — Product Talk, fev/2024 · ~3 min de leitura (a seção)
   https://www.producttalk.org/interview-snapshot/#the-memorable-quote
   A frase da pessoa guardada como ela disse, separada do que o time concluiu, que mora noutra seção da mesma ficha: é a anotação literal da aula com forma.
 
@@ -1457,7 +1457,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 **Sugerida**
 
 - **Jared Friedman, *How to Get and Evaluate Startup Ideas* — trecho "4 most common mistakes", de 1:44 a 6:29** — Y Combinator, YouTube, nov/2022 · 4 min 45 s (o vídeo tem 32 min 21 s)
-  https://www.youtube.com/watch?v=Th8JoIan4dg&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=Th8JoIan4dg&hl=en&persist_hl=1&t=104s
   Um sócio da YC chama de solução em busca de problema o "IA é legal, onde eu aplico IA?". Diz que pobreza global é abstrata demais para começar e mostra o app de combinar o fim de semana com os amigos, que todo mundo tenta e ninguém faz dar certo.
 
 **Citadas na aula**
@@ -1471,7 +1471,7 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   O autor do Mom Test pergunta se você sabe contar o que a pessoa faz hoje, por que não faz melhor e o que já tentou. Diz também que quem nunca tentou nada talvez não se importe: é a terceira hipótese, e o alerta do "nada".
 
 - **Rob Fitzpatrick, *Impatience is killing your customer learning* — trecho de 3:32 a 4:45** — YouTube, canal do autor, fev/2025 · 1 min 15 s (o vídeo tem 6 min 12 s)
-  https://www.youtube.com/watch?v=jgZalrJPKko&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=jgZalrJPKko&hl=en&persist_hl=1&t=212s
   O que ele mais viu acontecer: a descoberta raramente joga a ideia fora, e muitas vezes mostra que um dos públicos se importa muito mais que os outros. A ideia muda de versão e não morre.
 
 - **Teresa Torres, *Continuous Discovery*** — Product Talk, glossário, atualizado em set/2026 · ~1 min de leitura

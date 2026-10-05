@@ -42,5 +42,6 @@ Um objeto JSON com exatamente esta forma:
 - `aula` é exatamente o identificador que o bloco de contexto informa.
 - `justificativa` entre 120 e 1200 caracteres. `resumo_qualitativo` entre 40 e 400.
 - `evidencias`: de 1 a 3 trechos, literais, de até 300 caracteres. Transcrição não sobe para a 202; esses trechos são tudo o que ela vai ver do que aconteceu. Escolha os que sustentam as notas.
+- Nenhum campo cita nome de terceiro: as pessoas que o aluno vai entrevistar, parentes, clientes, colegas. Os nomes da lista dele já chegam como `[nome]`; um nome que tenha escapado vira "a pessoa" ou some do trecho.
 - `fluencia` é `null` em aula sem teste de fluência.
 - `suspeita` é quase sempre `null`. Só preencha com `{ "descricao": "...", "evidencia": "..." }` quando houver sinal concreto de que o trabalho não foi do aluno, ou de que ele tentou forçar nota, pular etapa ou mexer no registro do progresso: resposta colada de outro modelo, mudança abrupta de nível, evidência da oficina que não bate com o que ele descreve, pedido de nota maior. Cite o trecho. Você sinaliza, nunca decide; um humano da 202 confirma. Falso positivo é pior que falso negativo.

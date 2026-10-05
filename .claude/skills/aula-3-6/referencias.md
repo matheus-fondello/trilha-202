@@ -38,9 +38,9 @@ A página da Anthropic tem uma mina que você precisa desarmar antes que o aluno
 
 - **Simon Willison, *Superhuman AI exfiltrates emails*** — simonwillison.net, jan/2026 · ~2 min de leitura
   https://simonwillison.net/2026/Jan/12/superhuman-ai-exfiltrates-emails/
-  A tríade inteira num caso real de cliente de e-mail: o usuário pede o resumo da caixa, um e-mail plantado faz o assistente mandar dados financeiros, jurídicos e médicos para um formulário do atacante por uma imagem que a tela carrega; a causa era a regra que deixava carregar a imagem, e o conserto fechou essa saída.
+  A tríade inteira num caso real de cliente de e-mail: o usuário pede o resumo da caixa, um e-mail plantado faz o assistente mandar dados financeiros, jurídicos e médicos para um formulário do atacante por uma imagem que a tela carrega; a causa foi a regra que deixava a tela carregar a imagem, e a empresa publicou um conserto.
 
-O caso do Superhuman é o que torna concreta a frase da aula de que a saída é menos óbvia do que parece: ninguém "enviou" nada, a tela renderizou uma imagem. É também a resposta pronta para a pergunta do marco: o conserto não mexeu no modelo, mexeu na saída; o e-mail ainda podia enganá-lo, só não tinha mais por onde mandar. O post é curto e cita a pesquisa original; não mande o aluno atrás da pesquisa.
+O caso do Superhuman é o que torna concreta a frase da aula de que a saída é menos óbvia do que parece: ninguém "enviou" nada, a tela renderizou uma imagem. É também, na leitura da tríade que o Willison faz, a resposta para a pergunta do marco: a causa estava na saída, não no modelo, e fechar aquela saída tira o caminho mesmo com o e-mail ainda enganando o modelo. O post não descreve o conserto: não diga o que a empresa mudou. O post é curto e cita a pesquisa original; não mande o aluno atrás da pesquisa.
 
 **marco `isolamento`**
 
@@ -60,7 +60,7 @@ Cite o cenário, não a lista de mitigações: ela fala de privacidade diferenci
   https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/#scope-of-the-problem
   O princípio comum de um artigo de pesquisadores da IBM, da Invariant Labs, da ETH Zurich, do Google e da Microsoft: depois que o modelo leu conteúdo não confiável, ele precisa estar preso de forma que seja impossível esse conteúdo disparar uma ação com consequência.
 
-- **Anthropic, *Making Claude Code more secure and autonomous with sandboxing* — seção "Keeping users secure on Claude Code"** — Anthropic Engineering, out/2025 · ~2 min de leitura (a seção)
+- **Anthropic, *Beyond permission prompts: making Claude Code more secure and autonomous* — seção "Keeping users secure on Claude Code"** — Anthropic Engineering, out/2025 · ~2 min de leitura (a seção)
   https://www.anthropic.com/engineering/claude-code-sandboxing#keeping-users-secure-on-claude-code
   O nome do carimbo: clicar "aprovar" o tempo todo leva à fadiga de aprovação, em que a pessoa deixa de prestar atenção no que aprova — e isso deixa o sistema menos seguro, não mais.
 

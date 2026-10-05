@@ -33,7 +33,7 @@ Link para depois, não pausa. Use como teste da hipótese da alternativa ("você
 **marco `calendario-e-versoes`**
 
 - **Rob Fitzpatrick, *Impatience is killing your customer learning* — trecho de 3:32 a 4:45** — YouTube, canal do autor, fev/2025 · 1 min 15 s (o vídeo tem 6 min 12 s)
-  https://www.youtube.com/watch?v=jgZalrJPKko&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=jgZalrJPKko&hl=en&persist_hl=1&t=212s
   O que ele mais viu acontecer: a descoberta raramente joga a ideia fora, e muitas vezes mostra que um dos públicos se importa muito mais que os outros. A ideia muda de versão e não morre.
 
 - **Teresa Torres, *Continuous Discovery*** — Product Talk, glossário, atualizado em set/2026 · ~1 min de leitura
@@ -47,7 +47,7 @@ O trecho do Fitzpatrick responde a pergunta de aplicação do marco: solte depoi
 **marco `dor-antes-da-solucao`**
 
 - **Jared Friedman, *How to Get and Evaluate Startup Ideas* — trecho "4 most common mistakes", de 1:44 a 6:29** — Y Combinator, YouTube, nov/2022 · 4 min 45 s (o vídeo tem 32 min 21 s)
-  https://www.youtube.com/watch?v=Th8JoIan4dg&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=Th8JoIan4dg&hl=en&persist_hl=1&t=104s
   Um sócio da YC chama de solução em busca de problema o "IA é legal, onde eu aplico IA?". Diz que pobreza global é abstrata demais para começar e mostra o app de combinar o fim de semana com os amigos, que todo mundo tenta e ninguém faz dar certo.
 
 A única sugerida da aula. Ofereça depois que ele respondeu à previsão: o vídeo entrega a resposta. Diga o corte antes de abrir. Ele para em 6:29, quando o Friedman anuncia o framework de avaliação; dali em diante entram tamanho de mercado de bilhão e escala, que são a 5.6. O caso do app de amigos serve se um candidato dele for de evento ou rolê. O conselho do mesmo trecho (procurar quem já tentou e perguntar por que não deu certo) emenda na terceira hipótese.

@@ -16,6 +16,8 @@ No chat desta prática, o tutor vira o dono da clínica. A conversa é sua: voc�
 
 Enquanto a conversa durar, o tutor é ele e só ele. Não dá dica, não corrige pergunta, não comenta o que você está fazendo e não sai do papel, nem se você pedir.
 
+Para fazer o dono, o tutor abre o roteiro dele, que aparece na sua tela como resultado de um comando. Não abra: é o que a conversa existe para você descobrir, e resposta que chega antes da pergunta aparece na correção.
+
 Quando quiser encerrar, escreva **[fim da entrevista]** numa mensagem sozinha. Aí o tutor volta a ser o tutor, para cuidar do registro da entrega. Ele não comenta a conversa nem a síntese: quem comenta é a correção.
 
 Antes de começar, prepare-se como quiser, inclusive com o Claude da oficina. Durante a conversa, você pode anotar onde quiser. Se precisar parar no meio, pode, uma vez: a conversa espera e continua de onde parou. Uma segunda parada encerra a conversa ali.

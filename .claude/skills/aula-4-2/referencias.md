@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados para a aula inteira. Tudo aqui está em inglês; o livro, citado na 4.1, tem edição em português linkada na página oficial dele. Não mande o aluno para resumo nem PDF de terceiro. Os vídeos do Rob Fitzpatrick são respostas a perguntas de alunos dele, gravadas sem roteiro: abrem com o nome de quem perguntou e às vezes divagam, então diga sempre o trecho. E nenhum exemplo das referências é de negócio parecido com o do Valdir; se o aluno quiser ver uma entrevista de verdade antes do role-play, o lugar é o vídeo do fechamento, não você improvisando uma.
+Três cuidados para a aula inteira. Tudo aqui está em inglês; o livro, citado na 4.1, tem edição em português linkada na página oficial dele. Não mande o aluno para resumo nem PDF de terceiro. Os vídeos do Rob Fitzpatrick são respostas a perguntas de alunos dele, gravadas sem roteiro: abrem com o nome de quem perguntou e às vezes divagam, então diga sempre o trecho. E nenhum exemplo das referências é de negócio parecido com o do Valdir; se o aluno quiser ver uma entrevista de verdade antes do role-play, o lugar é o trecho do Alströmer (3:23 a 8:35), listado no fechamento, que você pode oferecer antes do role-play se ele pedir, não você improvisando uma.
 
 ## Citadas
 
@@ -21,7 +21,7 @@ A ideia do marco é do capítulo "Commitment and advancement" do *The Mom Test*,
 **marco `preparar`**
 
 - **Rob Fitzpatrick, *[The Mom Test] Finding Customers With Problems Worth Solving?*** — YouTube, jun/2026 · 4 min 31 s, o trecho de 2:48 ao fim
-  https://www.youtube.com/watch?v=2IKTpN7oFco&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=2IKTpN7oFco&hl=en&persist_hl=1&t=168s
   O par "quem e onde": um tipo de pessoa e o lugar onde se acha essa pessoa, e a preferência por quem já gasta esforço tentando resolver o problema.
 
 É a ideia do marco (um tipo de pessoa não é ninguém sem o lugar onde ela está) dita pelo autor; antes de 2:48 ele fala de escolher segmento de que você gosta, que é critério da 4.4.
@@ -32,7 +32,7 @@ A ideia do marco é do capítulo "Commitment and advancement" do *The Mom Test*,
   https://www.youtube.com/watch?v=xJ35YAvOULQ&hl=en&persist_hl=1
   Por que formalidade atrapalha: quanto mais cara de reunião, mais a pessoa entra em modo negociação e se defende; e conversa informal custa menos quando você descobre que falou com a pessoa errada.
 
-- **Teresa Torres, *Interview Snapshot* — seção "The Memorable Quote"** — Product Talk, fev/2024 · ~3 min de leitura (a seção)
+- **Teresa Torres, *The Interview Snapshot* — seção "The Memorable Quote"** — Product Talk, fev/2024 · ~3 min de leitura (a seção)
   https://www.producttalk.org/interview-snapshot/#the-memorable-quote
   A frase da pessoa guardada como ela disse, separada do que o time concluiu, que mora noutra seção da mesma ficha: é a anotação literal da aula com forma.
 
@@ -59,7 +59,7 @@ O vídeo já apareceu na 4.1, por outro trecho; diga isso ao aluno, e que hoje v
 **marco `com-ia`**
 
 - **Rob Fitzpatrick, *[The Mom Test] AI can't run your customer interviews (but it \*can\* help in other ways)*** — YouTube, jun/2026 · 7 min 3 s, o trecho de 2:14 a 5:41
-  https://www.youtube.com/watch?v=uUr0zxUqIGA&hl=en&persist_hl=1
+  https://www.youtube.com/watch?v=uUr0zxUqIGA&hl=en&persist_hl=1&t=134s
   O autor dizendo onde o modelo ajuda: ensaiar a conversa antes e, depois, ler a transcrição como treinador ("não me diga o que isso significa para o meu negócio; me mostre onde eu comecei a vender").
 
 Ofereça depois da pergunta do marco, nunca antes, senão o vídeo responde por ele. São três minutos e meio que fecham a aula pelo outro lado: o ensaio com observador que ele descreve é o role-play que vem em seguida, e o pedido que ele faz ao agente é o "peça o que contradiz" da aula. Antes de 2:14 é sobre por que a IA não pode conduzir a entrevista, e depois de 5:41 é ideia de produto dele; e ele menciona um conjunto de skills que está escrevendo, que não foi conferido: não prometa.

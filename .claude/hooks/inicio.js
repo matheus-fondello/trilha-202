@@ -27,6 +27,9 @@ async function main() {
       turnos.fechar(e, { interrompido: true, tarde: true });
       estadoLib.fecharSessao(e, e.sessao_atual.ultima_atividade || e.sessao_atual.inicio, 'recuperada');
     }
+    // Material novo depois da última unidade: a da vez passa a ser a primeira
+    // aberta, antes de a sessão nascer etiquetada com ela.
+    estadoLib.avancarSeConcluida(e);
     if (!e.sessao_atual || e.sessao_atual.id !== entrada.session_id) {
       // Só o registro. Contar a sessão, abrir a aula e enfileirar é trabalho do
       // primeiro turno (lib/estado.js, contarSessao): abrir a janela não é aula.

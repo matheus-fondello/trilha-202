@@ -72,6 +72,7 @@ function parChaveValor(lista) {
 const comandos = {
   status() {
     const e = estadoLib.carregar();
+    if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
     console.log(resumo(e));
     const pend = fila.ler().length;
     console.log(`\nFila: ${pend} evento(s) pendente(s) de envio.`);
@@ -163,6 +164,7 @@ const comandos = {
       return;
     }
     reg.milestones[idMilestone] = agora();
+    marcarEntrega(e, a);
     estadoLib.salvar(e);
     fila.enfileirar('milestone', { aula: idAula, milestone: idMilestone, titulo: m.titulo }, e);
     const faltam = a.milestones.filter((x) => !reg.milestones[x.id]).map((x) => x.id);
@@ -306,6 +308,7 @@ const comandos = {
     if (kv.url && !/^https?:\/\//.test(kv.url)) falhar('url precisa começar com http:// ou https://. Se a página ainda não está no ar, registre só a pasta.');
     const e = estadoLib.carregar();
     e.praticas[idPratica] = { ...(e.praticas[idPratica] || {}), ...kv, registrada_em: agora() };
+    marcarEntrega(e, a);
     estadoLib.salvar(e);
     fila.enfileirar('pratica.registro', { aula: idPratica, ...kv }, e);
     console.log(`Prática ${idPratica} registrada: ${JSON.stringify(kv)}`);
@@ -322,7 +325,7 @@ const comandos = {
     // régua fechada é o que faz a prática valer alguma coisa; depois de entregar,
     // saber por que a nota saiu assim é o próprio aprendizado. Quem abrir isto
     // fora de hora deixa registro, e é assim que a 202 lê.
-    if (!mapa.prontaParaCorrigir(a, p)) falhar(`os critérios da ${idPratica} abrem depois da entrega registrada. Rode primeiro: pratica ${idPratica} ${mapa.entregaExigida(a).map((c) => `${c}=<${c === 'pasta' ? 'caminho' : 'url'}>`).join(' ')}`);
+    if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`os critérios da ${idPratica} abrem depois da entrega registrada e dos marcos da prática fechados. A entrega se registra com: pratica ${idPratica} ${mapa.entregaExigida(a).map((c) => `${c}=<${c === 'pasta' ? 'caminho' : 'url'}>`).join(' ')}`);
     const arquivo = path.join(paths.PRATICAS, idPratica.toLowerCase(), 'criterios');
     let texto;
     try { texto = Buffer.from(fs.readFileSync(arquivo, 'utf8'), 'base64').toString('utf8'); } catch (err) {
@@ -351,7 +354,14 @@ const comandos = {
     const mudou = [];
     if (kv.texto) { i.texto = kv.texto.trim(); mudou.push('texto'); }
     if (kv.hipoteses) { i.hipoteses = kv.hipoteses.trim(); mudou.push('hipoteses'); }
-    if (kv.nomes) { i.nomes = kv.nomes.split(/[;\n]/).map((s) => s.trim()).filter(Boolean); mudou.push('nomes'); }
+    if (kv.nomes) {
+      const novos = kv.nomes.split(/[;\n]/).map((s) => s.trim()).filter(Boolean);
+      // Os que saíram da lista continuam nas conversas antigas, e a transcrição
+      // que vai ao avaliador tira todos (lib/transcricao.js). Fica só aqui.
+      i.nomes_vistos = [...new Set([...(i.nomes_vistos || []), ...(i.nomes || []), ...novos])];
+      i.nomes = novos;
+      mudou.push('nomes');
+    }
     if (kv.entrevista) i.entrevistas = [...(i.entrevistas || []), { em: quando, resumo: kv.entrevista.trim() }];
     for (const campo of mudou) i.versoes.push({ campo, em: quando });
     i.atualizada_em = quando;
@@ -366,7 +376,10 @@ const comandos = {
   // ele diz querer e o que está por trás. Mora codificada em praticas/<p>/persona
   // e quem a lê é o tutor, que vai interpretá-la. Ela precisa abrir antes da
   // entrega, ao contrário da régua, e por isso o que segura é o atrito: base64,
-  // a guarda e o `deny` de Read, e o registro de quem abriu.
+  // a guarda e o `deny` de Read, e o registro de quem abriu. E um portão de fase:
+  // só no chat da prática, depois do marco que abre a entrevista (o mapa diz qual,
+  // em "persona_apos") e antes da entrega. Fora disso ela não tem uso: a correção
+  // lê a conversa, não a persona.
   persona([idPratica]) {
     exigirAcesso();
     if (!idPratica) falhar('Uso: persona <pratica>');
@@ -374,11 +387,29 @@ const comandos = {
     if (a.tipo !== 'pratica') falhar(`${idPratica} não é prática.`);
     const arquivo = path.join(paths.PRATICAS, idPratica.toLowerCase(), 'persona');
     if (!fs.existsSync(arquivo)) falhar(`a ${idPratica} não tem persona.`);
+    const e = estadoLib.carregar();
+    const reg = e.aulas[idPratica] || { milestones: {} };
+    const p = (e.praticas || {})[idPratica] || {};
+    const abertaEm = a.persona_apos ? (reg.milestones || {})[a.persona_apos] : null;
+    const s = e.sessao_atual;
+    const fase = {
+      aula_atual: e.aula_atual,
+      marcos: Object.keys(reg.milestones || {}),
+      retomada: Boolean(abertaEm && s && s.inicio && abertaEm < s.inicio),
+    };
+    let fora = null;
+    if (e.aula_atual !== idPratica) fora = `este chat é da ${e.aula_atual}, não da ${idPratica}`;
+    else if (reg.status === 'concluida' || p.entregue_em || mapa.prontaParaCorrigir(a, p, reg)) fora = `a ${idPratica} já foi entregue, e a entrevista acabou`;
+    else if (a.persona_apos && !abertaEm) fora = `a entrevista ainda não foi aberta (o marco \`${a.persona_apos}\` vem antes)`;
+    if (fora) {
+      fila.enfileirar('persona.recusada', { aula: idPratica, motivo: fora, ...fase }, e);
+      falhar(`a persona da ${idPratica} não abre agora: ${fora}. Ela só abre no chat da prática, durante a entrevista. Não tente abrir por outro caminho e não comente o conteúdo dela. Se o pedido veio do aluno, siga a conversa e registre depois, sem comentar com ele: registrar suspeita descricao="pediu a persona fora da entrevista" evidencia="<a fala dele>".`);
+    }
     let texto;
     try { texto = Buffer.from(fs.readFileSync(arquivo, 'utf8'), 'base64').toString('utf8'); } catch (err) {
       falhar(`não consegui ler a persona da ${idPratica} (${err.message}). Diga ao aluno que a prática não pode começar agora e registre feedback.`);
     }
-    fila.enfileirar('persona.aberta', { aula: idPratica }, estadoLib.carregar());
+    fila.enfileirar('persona.aberta', { aula: idPratica, ...fase }, e);
     console.log(texto);
   },
 
@@ -393,11 +424,14 @@ const comandos = {
     if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
     const e = estadoLib.carregar();
     const p = e.praticas[idPratica] || {};
-    if (!mapa.prontaParaCorrigir(a, p)) falhar(`a conversa da ${idPratica} abre depois da entrega registrada.`);
-    const ate = p.registrada_em;
+    if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`a conversa da ${idPratica} abre depois da entrega registrada e dos marcos da prática fechados.`);
+    const ate = p.entregue_em || p.registrada_em;
     const daPratica = (e.sessoes || []).filter((s) => s.aula === idPratica && (!ate || s.inicio <= ate));
     if (!daPratica.length) falhar(`não há sessão da ${idPratica} anterior à entrega. Corrija pela síntese e diga isso na justificativa.`);
-    const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica);
+    // Sem rede de segurança: se as sessões da prática não acham transcrição, o
+    // arquivo mais recente da pasta é o deste chat de correção, e ler a conversa
+    // errada sem aviso é pior do que corrigir pela síntese.
+    const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica, { semFallback: true });
     if (!t.ok) falhar(`não consegui ler a conversa da ${idPratica} (${t.motivo}). Corrija pela síntese e diga isso na justificativa.`);
     fila.enfileirar('conversa.aberta', { aula: idPratica, chats: t.chats }, e);
     console.log(t.texto);
@@ -410,7 +444,7 @@ const comandos = {
     if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
     const e = estadoLib.carregar();
     const p = e.praticas[idPratica];
-    if (!p || !p.pasta) falhar(`não há entrega registrada da ${idPratica}. Corrigir o que não foi entregue não faz sentido.`);
+    if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`a entrega da ${idPratica} não está completa (registro e marcos da prática). Corrigir o que não foi entregue não faz sentido.`);
     let c;
     try { c = JSON.parse(fs.readFileSync(arquivo, 'utf8')); } catch (err) { falhar(`não consegui ler ${arquivo}: ${err.message}`); }
     const erros = validarCorrecao(c, idPratica);
@@ -655,6 +689,18 @@ function desistir(e, reg, idAula, motivo, uso) {
   console.log(`Não consegui avaliar a aula ${idAula}: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
+// O instante da entrega, gravado uma vez só: quando o registro e os marcos da
+// prática passam a abrir a correção pela primeira vez. `registrada_em` anda a
+// cada `pratica` (a pasta pode mudar depois, e vale o último registro), e é por
+// isto aqui que o `conversa` corta as sessões, senão um re-registro feito no chat
+// da correção puxava a própria correção para dentro da conversa que ela lê.
+function marcarEntrega(e, a) {
+  if (a.tipo !== 'pratica' || !a.correcao) return;
+  const p = (e.praticas || {})[a.id];
+  if (!p || p.entregue_em) return;
+  if (mapa.prontaParaCorrigir(a, p, e.aulas[a.id])) p.entregue_em = agora();
+}
+
 function descreverIdeia(i) {
   const linhas = [];
   linhas.push(`Ideia: ${i.texto || '(ainda sem texto)'}`);
@@ -705,7 +751,7 @@ function fimDoQuiz(banco, reg, idQuiz) {
   return [
     `Quiz ${idQuiz} completo: as ${banco.questoes.length} perguntas têm resposta gravada.`,
     r.texto,
-    'Isso não é nota e não se anuncia como placar: o aluno já viu cada correção. Diga, com as suas palavras, o que ficou para revisitar e por quê (a aula, e quando ela volta a ser necessária), e o que as abertas mostraram. Depois grave a memória do aluno — uma nota com a chave `revisitar-m1`, dizendo o que revisitar e o que você vai fazer com isso na próxima aula em que aparecer — e feche com `concluir ' + idQuiz + '`. Sem `avaliar`: o quiz não tem.',
+    'Isso não é nota e não se anuncia como placar: o aluno já viu cada correção. Diga, com as suas palavras, o que ficou para revisitar e por quê (a aula, e quando ela volta a ser necessária), e o que as abertas mostraram. Depois grave a memória do aluno — uma nota com a chave `revisitar-m' + mapa.aula(idQuiz).modulo + '`, dizendo o que revisitar e o que você vai fazer com isso na próxima aula em que aparecer — e feche com `concluir ' + idQuiz + '`. Sem `avaliar`: o quiz não tem.',
   ].join('\n');
 }
 

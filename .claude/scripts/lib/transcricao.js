@@ -19,9 +19,11 @@ const paths = require('./paths');
 // determina o custo da avaliação; aula de uma hora cabe com folga.
 const LIMITE = 240000;
 
-// O Claude Code guarda as transcrições em ~/.claude/projects/<caminho achatado>.
+// O Claude Code guarda as transcrições em ~/.claude/projects/<caminho achatado>,
+// e achata trocando todo caractere que não é letra ASCII ou dígito por hífen: no
+// Windows `C:\Users\x` vira `C--Users-x`, e "Área" vira "-rea".
 function pastaDoProjeto(raiz = paths.RAIZ) {
-  return path.join(os.homedir(), '.claude', 'projects', raiz.replace(/[/\\.]/g, '-'));
+  return path.join(os.homedir(), '.claude', 'projects', raiz.replace(/[^A-Za-z0-9]/g, '-'));
 }
 
 // Na ordem: o caminho que o hook recebeu do Claude Code (é o exato), o arquivo
@@ -54,13 +56,16 @@ function maisRecente() {
 // Uma aula longa pode acontecer em dois chats, e o avaliador precisa da aula
 // inteira: cada sessão tem a sua transcrição, e elas entram na ordem em que
 // aconteceram. A sessão aberta é a última — é ela que está acontecendo agora.
-function arquivosDaAula(e, idAula) {
+function arquivosDaAula(e, idAula, { semFallback = false } = {}) {
   const anteriores = (e.sessoes || []).filter((s) => s.aula === idAula).map(localizar);
   const atual = e.sessao_atual && e.sessao_atual.aula === idAula ? localizar(e.sessao_atual) : null;
   const lista = [...anteriores, atual].filter(Boolean);
   const unicos = [...new Set(lista)];
   // Nenhuma sessão etiquetada: harness antigo ou estado mexido à mão. Melhor a
-  // sessão mais recente desta pasta do que avaliação nenhuma.
+  // sessão mais recente desta pasta do que avaliação nenhuma. Quem lê a conversa
+  // de outro chat (o `conversa` da correção) pede sem isso: o mais recente seria
+  // o próprio chat dele.
+  if (!unicos.length && semFallback) return [];
   if (!unicos.length) {
     const ultimo = localizar(e.sessao_atual) || maisRecente();
     return ultimo ? [ultimo] : [];
@@ -82,10 +87,34 @@ function umaLinha(texto, max) {
   return t.length > max ? t.slice(0, max) + '…' : t;
 }
 
-function resumoDeFerramenta(bloco) {
+// Os nomes da lista de entrevistas (a da 4.4) são de terceiros e ficam só nesta
+// máquina. A transcrição vai ao avaliador, e as evidências dele sobem literais:
+// os nomes saem antes, trocados por [nome], na fala do aluno, no comando `ideia`
+// e na saída dele. Sai o item inteiro, o nome sem o parêntese ("Ana Souza
+// (prima)") e cada parte com três letras ou mais, que é como ele vai aparecer na
+// conversa: "falei com a Ana".
+const PARTICULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'di', 'del', 'van', 'von']);
+function tiradorDeNomes(e) {
+  const i = (e && e.ideia) || {};
+  const termos = new Set();
+  for (const bruto of [...(i.nomes || []), ...(i.nomes_vistos || [])]) {
+    const nome = String(bruto).trim();
+    if (!nome) continue;
+    termos.add(nome);
+    const sem = nome.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+    if (sem) termos.add(sem);
+    for (const parte of sem.split(/\s+/)) if (parte.length >= 3 && !PARTICULAS.has(parte.toLowerCase())) termos.add(parte);
+  }
+  if (!termos.size) return (t) => t;
+  const alternativas = [...termos].sort((a, b) => b.length - a.length).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternativas.join('|')})(?![\\p{L}\\p{N}])`, 'giu');
+  return (t) => String(t).replace(re, '[nome]');
+}
+
+function resumoDeFerramenta(bloco, tirar = (t) => t) {
   const nome = bloco.name || 'ferramenta';
   const entrada = bloco.input || {};
-  if (nome === 'Bash' && entrada.command) return umaLinha(entrada.command, 200);
+  if ((nome === 'Bash' || nome === 'PowerShell') && entrada.command) return umaLinha(tirar(entrada.command), 200);
   if (entrada.file_path) return `${nome} ${entrada.file_path}`;
   return nome;
 }
@@ -97,7 +126,7 @@ function blocos(conteudo) {
 
 // Uma linha por fala. O avaliador precisa saber quem disse o quê e em que ordem;
 // não precisa de timestamp, uuid nem do resto do envelope.
-function converter(bruto) {
+function converter(bruto, tirar = (t) => t) {
   const linhas = [];
   for (const linha of bruto.split('\n')) {
     if (!linha.trim()) continue;
@@ -108,13 +137,13 @@ function converter(bruto) {
     if (!msg || (ev.type !== 'user' && ev.type !== 'assistant')) continue;
     for (const b of blocos(msg.content)) {
       if (b.type === 'text') {
-        const texto = limpar(b.text);
+        const texto = tirar(limpar(b.text));
         if (texto) linhas.push(`${ev.type === 'user' ? 'ALUNO' : 'TUTOR'}: ${texto}`);
       } else if (b.type === 'tool_use') {
-        linhas.push(`  [tutor rodou: ${resumoDeFerramenta(b)}]`);
+        linhas.push(`  [tutor rodou: ${resumoDeFerramenta(b, tirar)}]`);
       } else if (b.type === 'tool_result') {
         const c = typeof b.content === 'string' ? b.content : blocos(b.content).map((x) => x.text || '').join(' ');
-        const texto = limpar(c);
+        const texto = tirar(limpar(c));
         if (texto) linhas.push(`  [resposta: ${umaLinha(texto, 200)}]`);
       }
       // thinking fica de fora: é raciocínio do tutor, não evidência sobre o aluno.
@@ -131,14 +160,16 @@ function cortar(texto, limite = LIMITE) {
   return texto.slice(0, metade) + '\n\n[...trecho do meio da aula omitido por tamanho...]\n\n' + texto.slice(-metade);
 }
 
-function ler(e, idAula, limite = LIMITE) {
-  const arquivos = arquivosDaAula(e, idAula);
+function ler(e, idAula, opcoes = {}) {
+  const { limite = LIMITE, semFallback = false } = typeof opcoes === 'number' ? { limite: opcoes } : opcoes;
+  const arquivos = arquivosDaAula(e, idAula, { semFallback });
   if (!arquivos.length) return { ok: false, motivo: 'não encontrei a transcrição desta sessão' };
+  const tirar = tiradorDeNomes(e);
   const partes = [];
   for (const arquivo of arquivos) {
     let bruto;
     try { bruto = fs.readFileSync(arquivo, 'utf8'); } catch { continue; }
-    const convertido = converter(bruto);
+    const convertido = converter(bruto, tirar);
     if (convertido.trim()) partes.push(convertido);
   }
   if (!partes.length) return { ok: false, motivo: 'não consegui ler a transcrição desta sessão' };
@@ -150,4 +181,4 @@ function ler(e, idAula, limite = LIMITE) {
   return { ok: true, arquivos, texto, caracteres: texto.length, chats: partes.length };
 }
 
-module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, LIMITE };
+module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, tiradorDeNomes, LIMITE };

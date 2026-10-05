@@ -90,6 +90,25 @@ function abrirAula(e, idAula) {
   return true;
 }
 
+// A unidade atual concluída, com uma seguinte no mapa, é material que chegou
+// depois: o `concluir` da última unidade não tinha para onde avançar, e o
+// `git pull` trouxe o módulo novo. Sem isto o resumo voltava a apresentar a
+// unidade fechada como a da vez, e nenhum comando do tutor saía dela. Avança
+// para a primeira não concluída depois dela. Devolve se mudou.
+function avancarSeConcluida(e) {
+  let mudou = false;
+  for (;;) {
+    const reg = (e.aulas || {})[e.aula_atual];
+    if (!reg || reg.status !== 'concluida') break;
+    let prox;
+    try { prox = mapa.proxima(e.aula_atual); } catch { prox = null; }
+    if (!prox) break;
+    e.aula_atual = prox.id;
+    mudou = true;
+  }
+  return mudou;
+}
+
 // Quando a sessão acabou de verdade. Silêncio longo é terminal esquecido aberto,
 // não aula: passado o limite, ela fecha na última atividade. Sem isso uma P0 de
 // duas horas fecha com 710 minutos.
@@ -138,4 +157,4 @@ function fecharSessao(e, fimIso, motivo) {
   return registro;
 }
 
-module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, fecharSessao, fimEfetivo, MINUTOS_VIVA };
+module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, fecharSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };

@@ -72,7 +72,7 @@ Não há vídeo curto colado a um marco, e a busca foi feita. O vídeo curto ofi
 
 **no fechamento**
 
-- **IBM Technology, *Is RAG Still Needed? Choosing the Best Approach for LLMs*** — YouTube, canal oficial, mar/2026 · 11 min 10 s, em inglês com legenda automática
+- **IBM Technology, *Is RAG Still Needed? Choosing the Best Approach for LLMs*** — YouTube, canal oficial, mar/2026 · 11 min 9 s, em inglês, com legenda em inglês
   https://www.youtube.com/watch?v=UabBYexBD4k&hl=en&persist_hl=1
   RAG e contexto longo lado a lado, com capítulos sobre onde cada um ganha e onde falha, da "loteria da recuperação" ao problema do ruído, até a escolha por caso.
 

@@ -54,11 +54,17 @@ function entregaExigida(a) {
   return Array.isArray(a.entrega) && a.entrega.length ? a.entrega : ENTREGA_PADRAO;
 }
 
-// Quando a correção pode abrir. Sem lista declarada continua sendo pasta e URL,
-// como sempre foi: o repositório é cobrado no `concluir`, não aqui.
-function prontaParaCorrigir(a, p) {
+// Quando a correção pode abrir: a entrega registrada e os marcos da prática
+// todos fechados. Sem lista declarada a entrega continua sendo pasta e URL, como
+// sempre foi: o repositório é cobrado no `concluir`, não aqui. Os marcos contam
+// porque registrar a entrega não é o fim da prática: na P4 a pasta pode entrar
+// antes da entrevista acabar, e um chat que morre entre o `pratica` e o último
+// marco volta para a skill da prática, que fecha o marco, e não cai na correção.
+function prontaParaCorrigir(a, p, reg) {
   const campos = Array.isArray(a.entrega) && a.entrega.length ? a.entrega : ['pasta', 'url'];
-  return campos.every((c) => Boolean((p || {})[c]));
+  if (!campos.every((c) => Boolean((p || {})[c]))) return false;
+  const feitos = (reg && reg.milestones) || {};
+  return (a.milestones || []).every((m) => Boolean(feitos[m.id]));
 }
 
 module.exports = { carregar, todas, aula, proxima, skillExiste, escrita, entregaExigida, prontaParaCorrigir };

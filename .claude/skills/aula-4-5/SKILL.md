@@ -14,7 +14,7 @@ Sala. Fica para depois: mercado e ICP (4.6), preço (5.1), canal e funil (5.4), 
 
 ## Antes de começar
 
-A cobrança da entrevista segue o resumo; se ele fez uma, use o que ela trouxe no `dor-real`. Se a aula mudar a ideia, registre a versão nova com `ideia texto=`; mudar é dado.
+A cobrança da entrevista segue o resumo; se ele fez uma, use o que ela trouxe no `dor-real`. Se a aula mudar a ideia, registre a versão nova com `ideia texto=` e, se a dor ou a alternativa mudou, `hipoteses="<quem; dor; alternativa>"` inteiras; mudar é dado.
 
 ## Marcos
 

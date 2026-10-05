@@ -55,7 +55,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
   // ainda não corrigida, este chat é a correção, com outra skill. A separação é a
   // 1.3 aplicada ao próprio harness: quem corrige não é quem acompanhou o trabalho.
   const entrega = (e.praticas || {})[a.id] || {};
-  const emCorrecao = a.tipo === 'pratica' && a.correcao && mapa.prontaParaCorrigir(a, entrega) && !entrega.corrigida_em;
+  const emCorrecao = a.tipo === 'pratica' && a.correcao && mapa.prontaParaCorrigir(a, entrega, reg) && !entrega.corrigida_em;
   const linhas = [];
 
   linhas.push('# Estado da trilha (gerado pelo harness, não editado pelo aluno)');
@@ -136,16 +136,26 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`${idP}: ${p.pasta}${p.url ? ' — no ar em ' + p.url : ''}${p.repo ? ' — ' + p.repo : ''}${p.corrigida_em ? '' : ' (ainda não corrigida)'}`);
   }
 
+  // Da 3.3 à P3 o sistema do aluno chama a Anthropic com a chave dele, e a
+  // primeira chamada já exige conta com saldo. Quem paga é decisão aberta da 202:
+  // a regra mora aqui, no estado, para o tutor não improvisar uma promessa.
+  if (a.modulo === 3 && !['3.1', '3.2', 'Q3'].includes(a.id) && !emCorrecao) {
+    linhas.push('Chave e crédito da API: a P3 chama a Anthropic com a chave dele, criada na 3.3, e a conta precisa de saldo, porque cada chamada, o eval incluído, gasta (a assinatura do Claude Code não dá crédito de API). Quem paga é decisão da 202, ainda aberta: não prometa crédito, reembolso nem chave da 202, e não diga que não haverá; se ele perguntar, diga que não sabe e que a 202 responde. Destrave com o que ele tiver. O limite de gasto mensal da conta é processo, e você ajuda a achá-lo pela função, sem inventar nome de botão; o teto por cliente dentro do sistema é decisão dele e não se mistura com isso.');
+  }
+
   // A ideia do aluno nasce na 4.4 e é o objeto das fluências do trilho de negócio.
   // Do M4 ao M5 também correm as três entrevistas reais da P5, e é na abertura de
-  // cada sessão que o tutor pergunta por elas.
+  // cada sessão de aula ou de quiz que o tutor pergunta por elas. Na prática não:
+  // a conversa da prática é o que a correção lê (e, na P4, é a entrevista
+  // simulada), e o chat da correção não pede nada ao aluno.
   if (e.ideia && e.ideia.texto) {
     linhas.push(`Ideia do aluno (da 4.4; as fluências do negócio são sobre ela): ${e.ideia.texto.replace(/\s+/g, ' ')}`);
     if (e.ideia.hipoteses) linhas.push(`  Hipóteses: ${e.ideia.hipoteses.replace(/\s+/g, ' ')}`);
     if (a.modulo === 4 || a.modulo === 5) {
       const feitas = (e.ideia.entrevistas || []).length;
       const nomes = (e.ideia.nomes || []).length;
-      linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}`);
+      if (a.tipo === 'pratica') linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas. Neste chat não se pergunta por elas.`);
+      else linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}`);
     }
   } else if (a.modulo === 4 && a.id !== '4.1' && a.id !== '4.2' && a.id !== '4.3') {
     linhas.push('Ideia do aluno: ainda não registrada. Ela nasce na 4.4, com `ideia texto="..." hipoteses="..." nomes="..."`.');

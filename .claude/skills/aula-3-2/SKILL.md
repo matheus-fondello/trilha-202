@@ -17,7 +17,7 @@ Sala. Sem oficina hoje: a mão na massa começa na 3.3, com a primeira chamada.
 `node .claude/scripts/trilha.js milestone 3.2 <id>`:
 
 - `duas-coisas-diferentes`: ele sabe o que muda quando a IA sai da mão dele e entra no produto. *Conceito:* a feature dele vai de cem para dez mil usos por dia numa semana; o que acontece com a conta dela, e o que aconteceria com a assinatura do Claude Code dele no mesmo período? Caça quem acha que é a mesma conta com outro nome.
-- `formatos-de-feature`: ele nomeia os seis formatos e reconhece produtos que já usou em cada um.
+- `formatos-de-feature`: ele encaixa produtos que já usou nos formatos e diz qual é o mais arriscado.
 - `quando-faz-sentido`: ele decide com critério, não por entusiasmo.
 - `o-que-muda-no-produto`: ele cita latência, incerteza e custo por uso como coisas que aparecem para o cliente. *Aplicação:* a feature dele leva oito segundos para responder; o que aparece na tela nesse tempo, e o que aparece quando ela erra? Caça quem trata latência e incerteza como problema técnico e não como tela.
 
