@@ -32,6 +32,7 @@ const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
+const { contextoDaAula } = require('./lib/contexto');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const { agora, minutosEntre, relativo } = require('./lib/util');
@@ -206,7 +207,7 @@ const comandos = {
     const r = avaliador.avaliar({
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
-      validar: (av) => validarAvaliacao(av, idAula),
+      validar: (av) => validarAvaliacao(av, idAula, t.texto),
     });
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
@@ -546,24 +547,6 @@ const comandos = {
   },
 };
 
-// O contexto que o avaliador não tem como deduzir da transcrição: qual unidade
-// é esta, o que ela se propunha a cobrir e o que ficou registrado como fato.
-function contextoDaAula(e, a, reg) {
-  const fechados = (a.milestones || []).map((m) => `${reg.milestones[m.id] ? 'fechado' : 'PENDENTE'} — ${m.id}: ${m.titulo}`);
-  const fluencia = !a.fluencia
-    ? 'Esta aula não tem teste de fluência (o campo "fluencia" da avaliação vai como null).'
-    : reg.fluencia
-      ? `Fluência registrada: ${reg.fluencia.passou ? 'passou' : 'não passou'} em ${reg.fluencia.tentativas} tentativa(s).`
-      : 'Esta aula tem teste de fluência, mas ele não chegou a ser registrado.';
-  return [
-    `- Unidade: ${a.id} — ${a.titulo}`,
-    a.objetivo ? `- Objetivo: ${a.objetivo}` : null,
-    `- Marcos da aula:\n    ${fechados.join('\n    ')}`,
-    `- ${fluencia}`,
-    `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1}.`,
-  ].filter(Boolean).join('\n');
-}
-
 // Avaliação que não sai não trava a aula: essa é a regra da casa. Fica o registro
 // do motivo, o `concluir` passa com aviso, e a 202 sabe que aquela aula não tem
 // nota e por quê. O tutor lê um recado que não o convida a contornar nada.
@@ -617,7 +600,9 @@ function fimDoQuiz(banco, reg, idQuiz) {
   ].join('\n');
 }
 
-function validarAvaliacao(av, idAula) {
+// `texto` é a transcrição que o avaliador leu. Sem ela (só em teste), a evidência
+// é conferida pela forma e não pelo conteúdo.
+function validarAvaliacao(av, idAula, texto) {
   const erros = [];
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
@@ -630,7 +615,15 @@ function validarAvaliacao(av, idAula) {
   if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 5 linhas (mínimo 120 caracteres)');
   if (av.justificativa && av.justificativa.length > 1200) erros.push('"justificativa" longa demais (máximo 1200 caracteres)');
   if (!Array.isArray(av.evidencias) || av.evidencias.length < 1 || av.evidencias.length > 3) erros.push('"evidencias" deve ter de 1 a 3 trechos');
-  else for (const ev of av.evidencias) if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+  else {
+    const falas = texto ? transcricao.falasDoAluno(texto) : null;
+    for (const ev of av.evidencias) {
+      if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+      else if (falas !== null && !transcricao.evidenciaNaTranscricao(ev, falas)) {
+        erros.push(`a evidência "${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}" não está em nenhuma fala do aluno. Copie o trecho exatamente como aparece numa linha ALUNO, sem parafrasear e sem juntar falas do tutor; use "..." para pular um pedaço`);
+      }
+    }
+  }
   if (typeof av.resumo_qualitativo !== 'string' || av.resumo_qualitativo.length < 40 || av.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
   if (av.fluencia !== null && av.fluencia !== undefined) {
     if (typeof av.fluencia.passou !== 'boolean') erros.push('fluencia.passou deve ser booleano');
