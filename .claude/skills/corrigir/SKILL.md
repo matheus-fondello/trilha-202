@@ -14,7 +14,7 @@ Isso muda o seu tom, não a sua pessoa: você continua o professor dele. Não vi
 
 1. Cumprimente em duas linhas e diga o que vai acontecer: você vai olhar o que ele entregou com calma e volta com uma leitura. Não peça nada a ele — está tudo registrado.
 2. `node .claude/scripts/trilha.js criterios <P>`. Sai a régua: o que ler, em que ordem, os critérios e a calibragem. Siga o recorte de leitura que ela dá e não vá além dele.
-3. Corrija. Abra a página no painel pela URL registrada, leia o que os critérios mandam ler, e forme juízo antes de escrever qualquer coisa.
+3. Corrija. Abra a página no painel pela URL registrada, se a prática tiver uma; se a régua mandar ler a conversa, `conversa <P>`. Leia o que os critérios mandam ler, e forme juízo antes de escrever qualquer coisa.
 4. Escreva o JSON em `trilha/tmp/correcao-<P>.json` e registre com `corrigir <P> trilha/tmp/correcao-<P>.json`. O script valida a forma, codifica, enfileira e apaga o arquivo.
 5. Devolva o feedback ao aluno **com as suas palavras**, na conversa — não cole o JSON, não mostre critério, não mostre nota, não diga que existe uma nota. O campo `feedback_aluno` é o roteiro do que dizer, não um texto para colar.
 6. `concluir <P>` e despedida, com o gancho do que vem a seguir.

@@ -1116,7 +1116,24 @@
       "titulo": "The Mom Test",
       "skill": "aula-4-1",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "opiniao-nao-vale",
+          "titulo": "Por que a opinião educada não vale"
+        },
+        {
+          "id": "as-tres-regras",
+          "titulo": "As três regras do Mom Test"
+        },
+        {
+          "id": "boas-perguntas",
+          "titulo": "Boas perguntas: último episódio, custo, o que tentou"
+        },
+        {
+          "id": "perguntas-ruins",
+          "titulo": "Perguntas ruins: usaria, pagaria, função, ideia antes"
+        }
+      ]
     },
     {
       "id": "4.2",
@@ -1125,7 +1142,24 @@
       "titulo": "Conduzir discovery",
       "skill": "aula-4-2",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "compromisso-e-avanco",
+          "titulo": "O que uma conversa boa deixa na mão"
+        },
+        {
+          "id": "preparar",
+          "titulo": "Três hipóteses que podem cair e quem procurar"
+        },
+        {
+          "id": "conduzir-e-encerrar",
+          "titulo": "Informal e neutro, próximo passo pedido, anotação literal"
+        },
+        {
+          "id": "com-ia",
+          "titulo": "O Claude prepara e sintetiza, e concorda"
+        }
+      ]
     },
     {
       "id": "4.3",
@@ -1134,7 +1168,24 @@
       "titulo": "Jobs to be done",
       "skill": "aula-4-3",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "milkshake",
+          "titulo": "Situação prediz a compra, não o perfil"
+        },
+        {
+          "id": "job-e-camadas",
+          "titulo": "Job como progresso, três camadas, sem solução"
+        },
+        {
+          "id": "quatro-forcas",
+          "titulo": "Quatro forças e as que seguram a troca"
+        },
+        {
+          "id": "extrair-da-entrevista",
+          "titulo": "Frase-job e linha do tempo da troca"
+        }
+      ]
     },
     {
       "id": "4.4",
@@ -1143,7 +1194,24 @@
       "titulo": "Escolher o seu problema",
       "skill": "aula-4-4",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "dor-antes-da-solucao",
+          "titulo": "A ideia nasce hoje e começa pela dor"
+        },
+        {
+          "id": "criterios",
+          "titulo": "Os quatro critérios sobre os candidatos"
+        },
+        {
+          "id": "hipoteses-e-nomes",
+          "titulo": "Três hipóteses desmentíveis e dez nomes"
+        },
+        {
+          "id": "calendario-e-versoes",
+          "titulo": "Uma entrevista por semana e a ideia em versões"
+        }
+      ]
     },
     {
       "id": "4.5",
@@ -1152,7 +1220,28 @@
       "titulo": "Problem-solution fit e MVP",
       "skill": "aula-4-5",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "dor-real",
+          "titulo": "Dor real e alternativa atual"
+        },
+        {
+          "id": "problema-errado",
+          "titulo": "Construir bem o que ninguém tem"
+        },
+        {
+          "id": "hipotese-e-mvp",
+          "titulo": "Hipótese que mata e os quatro formatos de MVP"
+        },
+        {
+          "id": "subtracao",
+          "titulo": "Escopo por subtração, com motivo"
+        },
+        {
+          "id": "fluxo-antes-de-tela",
+          "titulo": "Fluxo antes de tela, passos à mão"
+        }
+      ]
     },
     {
       "id": "4.6",
@@ -1161,7 +1250,28 @@
       "titulo": "Mercado, ICP e beachhead",
       "skill": "aula-4-6",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "mercado-de-verdade",
+          "titulo": "Mercado por job, dinheiro e referência entre pares"
+        },
+        {
+          "id": "de-baixo-para-cima",
+          "titulo": "TAM, SAM e SOM por unidade, com origem"
+        },
+        {
+          "id": "icp-como-filtro",
+          "titulo": "ICP que recusa quem pagaria; quem paga e quem usa"
+        },
+        {
+          "id": "beachhead-e-abismo",
+          "titulo": "Primeiro mercado pequeno e a prova que não atravessa"
+        },
+        {
+          "id": "icp-muda-o-produto",
+          "titulo": "Feature, preço, canal e copy mudam por beachhead"
+        }
+      ]
     },
     {
       "id": "P4",
@@ -1173,7 +1283,24 @@
       "correcao": true,
       "entrega": ["pasta"],
       "criterios": ["perguntas", "conclusoes", "protocolo"],
-      "milestones": null
+      "milestones": [
+        {
+          "id": "brief-lido",
+          "titulo": "Brief lido"
+        },
+        {
+          "id": "entrevista-aberta",
+          "titulo": "Entrevista aberta"
+        },
+        {
+          "id": "entrevista-encerrada",
+          "titulo": "Entrevista encerrada"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Síntese na pasta, registrada"
+        }
+      ]
     },
     {
       "id": "Q4",

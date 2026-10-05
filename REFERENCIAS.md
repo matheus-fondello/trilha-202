@@ -1359,3 +1359,189 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 - **Model Context Protocol, *Architecture overview*** — modelcontextprotocol.io · ~2 min de leitura (a seção)
   https://modelcontextprotocol.io/docs/learn/architecture#primitives
   Define as três primitivas do servidor — tools, resources, prompts — que é o que separa MCP de "mais um jeito de chamar API".
+
+## Módulo 4
+
+### 4.1 The Mom Test
+
+**Sugerida**
+
+- **Rob Fitzpatrick, *[Remote Mom Test 1] Reminder of the Mom Test and intro to remote custdev*** — YouTube, canal Rob Fitzpatrick, mar/2020 · 4 min 39 s no total, trecho de 1 min 23 s, de 0:46 a 2:09
+  https://www.youtube.com/watch?v=bcWqxq2fJgY&hl=en&persist_hl=1&t=46s
+  O autor em um minuto e meio: não pergunte sobre a sua ideia, porque ela põe o seu ego na mesa e a pessoa se retrai, e ninguém prevê o próprio comportamento; pergunte o que ela já faz.
+
+**Citadas na aula**
+
+- **Rob Fitzpatrick, *The Mom Test*** — página oficial do livro, momtestbook.com · livro de ~130 páginas, duas horas de leitura
+  https://www.momtestbook.com/
+  A fonte da aula: o manual de conversa com cliente para quando todo mundo está sendo educado com você, escrito por um programador que foi empurrado para falar com cliente.
+
+- **Rob Fitzpatrick, *[The Mom Test] 0% Bias Isn't Realistic*** — YouTube, canal Rob Fitzpatrick, jul/2026 · 4 min 25 s, em inglês
+  https://www.youtube.com/watch?v=TCNV-pemGl8&hl=en&persist_hl=1
+  O próprio autor dizendo que uma pergunta indutora para mudar de assunto é aceitável se o que vem depois for história concreta, e que conversa com zero viés não chega a lugar nenhum.
+
+- **Gustaf Alströmer, *How To Talk To Users*** — Y Combinator, Startup School, YouTube, dez/2022 · 17 min 31 s no total, trecho de 3 min 59 s, de 8:42 a 12:41
+  https://www.youtube.com/watch?v=z1iF1c8w5Lg&hl=en&persist_hl=1&t=522s
+  Seis perguntas boas, as que descarrilam a entrevista ("vai usar?", "que funções melhorariam?"), e dois casos de pedido de função que escondia outra dor: o Gmail lento e os hóspedes do Airbnb que queriam o telefone do anfitrião.
+
+### 4.2 Conduzir discovery
+
+**Sugerida**
+
+- **Rob Fitzpatrick, *[The Mom Test] AI can't run your customer interviews (but it \*can\* help in other ways)*** — YouTube, jun/2026 · 7 min 3 s, o trecho de 2:14 a 5:41
+  https://www.youtube.com/watch?v=uUr0zxUqIGA&hl=en&persist_hl=1
+  O autor dizendo onde o modelo ajuda: ensaiar a conversa antes e, depois, ler a transcrição como treinador ("não me diga o que isso significa para o meu negócio; me mostre onde eu comecei a vender").
+
+**Citadas na aula**
+
+- **Rob Fitzpatrick, *[Mom Test Q&A] Open learning + hard commitment in single meeting?*** — YouTube, set/2025 · 4 min 51 s, só o começo até 1:10
+  https://www.youtube.com/watch?v=ldy5S1JPVKA&hl=en&persist_hl=1
+  O autor dizendo que "a gente se fala de novo qualquer hora?" recebe sim e por isso não vale nada, e que o pedido vale mais quanto mais concreto for o gatilho da próxima conversa.
+
+- **Rob Fitzpatrick, *[The Mom Test] Finding Customers With Problems Worth Solving?*** — YouTube, jun/2026 · 4 min 31 s, o trecho de 2:48 ao fim
+  https://www.youtube.com/watch?v=2IKTpN7oFco&hl=en&persist_hl=1
+  O par "quem e onde": um tipo de pessoa e o lugar onde se acha essa pessoa, e a preferência por quem já gasta esforço tentando resolver o problema.
+
+- **Rob Fitzpatrick, *[The Mom Test] "Keeping it casual" in B2B? It still works (and is often optimal)*** — YouTube, jun/2026 · 7 min, o trecho até 1:37
+  https://www.youtube.com/watch?v=xJ35YAvOULQ&hl=en&persist_hl=1
+  Por que formalidade atrapalha: quanto mais cara de reunião, mais a pessoa entra em modo negociação e se defende; e conversa informal custa menos quando você descobre que falou com a pessoa errada.
+
+- **Teresa Torres, *Interview Snapshot* — seção "The Memorable Quote"** — Product Talk, fev/2024 · ~3 min de leitura (a seção)
+  https://www.producttalk.org/interview-snapshot/#the-memorable-quote
+  A frase da pessoa guardada como ela disse, separada do que o time concluiu, que mora noutra seção da mesma ficha: é a anotação literal da aula com forma.
+
+- **Sharma e outros (Anthropic), *Towards Understanding Sycophancy in Language Models* — seção 3.1, "AI Assistants Can Give Biased Feedback"** — arXiv, out/2023 · ~3 min de leitura (a seção)
+  https://arxiv.org/html/2310.13548#S3.SS1
+  O mesmo texto avaliado sem opinião e com o usuário dizendo que gosta, não gosta, escreveu ou não escreveu. O parecer acompanha a opinião, não o texto.
+
+- **Gustaf Alströmer (Y Combinator), *How To Talk To Users | Startup School*, a partir de "Who should I talk to?"** — YouTube, dez/2022 · 17 min 31 s, o trecho de 3:23 a 8:35
+  https://www.youtube.com/watch?v=z1iF1c8w5Lg&hl=en&persist_hl=1&t=203s
+  Um sócio da YC passando a conversa inteira, de quem procurar e como abordar até o que fazer com as anotações, com uma entrevista encenada no meio.
+
+### 4.3 Jobs to be done
+
+**Sugerida**
+
+- **Clayton Christensen Institute, *What is Jobs to Be Done Theory?*** — canal oficial do Christensen Institute no YouTube, abr/2024 · 4 min 54 s
+  https://www.youtube.com/watch?v=k01edeNOC_U&hl=en&persist_hl=1
+  Em cinco minutos: o job como progresso mais circunstância, as quatro forças, por que perfil não prediz escolha, e o caso do Moesta com aposentados que não compravam apartamento por acabamento, e sim travavam na mudança.
+
+**Citadas na aula**
+
+- **Carmen Nobel, *Clay Christensen's Milkshake Marketing*** — HBS Working Knowledge, fev/2011 · ~7 min de leitura
+  https://www.library.hbs.edu/working-knowledge/clay-christensens-milkshake-marketing
+  O caso contado inteiro e de graça: 40% dos milkshakes vendidos logo cedo, para viagem, o trajeto chato e uma mão livre, e o outro job, o agrado que o pai compra para o filho.
+
+- **Clayton Christensen Institute, *Jobs to Be Done Theory* — seção "Definition"** — christenseninstitute.org, atualizado em mai/2025 · ~2 min de leitura (a seção)
+  https://www.christenseninstitute.org/theory/jobs-to-be-done/
+  A definição dita pelo instituto do Christensen: progresso numa circunstância, nas dimensões funcional, social e emocional, contra demografia e atributo de produto.
+
+- **Clayton M. Christensen, Taddy Hall, Karen Dillon e David S. Duncan, *Competing Against Luck*** — página oficial do livro, Christensen Institute, out/2016 · ~2 min de leitura
+  https://www.christenseninstitute.org/books/competing-against-luck/
+  O livro em que a teoria do job foi escrita por inteiro; a página resume a tese em um parágrafo: cliente não compra produto, contrata para um job.
+
+- **Bob Moesta e Chris Spiek, *The Four Forces of Progress*** — jobstobedone.org, página sem data, conferida em out/2026 · ~4 min de leitura
+  https://jobstobedone.org/the-four-forces/
+  As quatro forças pelos dois que as nomearam, com a desigualdade da troca escrita e a frase que é o marco: a maioria dos times só mexe na atração e ignora as duas que seguram.
+
+- **Bob Moesta e Chris Spiek, *The Timeline: From First Thought to Purchase*** — jobstobedone.org, página sem data, conferida em out/2026 · ~6 min de leitura
+  https://jobstobedone.org/the-timeline/
+  A linha do tempo da troca, marco a marco, e o aviso que vale para a fluência: o primeiro pensamento quase sempre vem antes do que a pessoa conta.
+
+- **Alan Klement, *Designing features using Job Stories* — seção "Enter the Job Story"** — Inside Intercom, dez/2013 · ~7 min de leitura
+  https://www.intercom.com/blog/using-job-stories-design-features-ui-ux/#enter-the-job-story
+  O texto que popularizou a job story, proposta antes pelo Paul Adams no mesmo blog: "When ___, I want to ___, so I can ___": situação, motivação, resultado, no lugar de "como persona, quero funcionalidade".
+
+### 4.4 Escolher o seu problema
+
+**Sugerida**
+
+- **Jared Friedman, *How to Get and Evaluate Startup Ideas* — trecho "4 most common mistakes", de 1:44 a 6:29** — Y Combinator, YouTube, nov/2022 · 4 min 45 s (o vídeo tem 32 min 21 s)
+  https://www.youtube.com/watch?v=Th8JoIan4dg&hl=en&persist_hl=1
+  Um sócio da YC chama de solução em busca de problema o "IA é legal, onde eu aplico IA?". Diz que pobreza global é abstrata demais para começar e mostra o app de combinar o fim de semana com os amigos, que todo mundo tenta e ninguém faz dar certo.
+
+**Citadas na aula**
+
+- **Paul Graham, *How to Get Startup Ideas* — seções "Problems" e "Noticing"** — paulgraham.com, nov/2012 · ~30 min de leitura (o ensaio inteiro), em inglês
+  https://paulgraham.com/startupideas.html
+  Dá nome à ideia inventada que soa plausível e ninguém quer ("made-up" ou "sitcom"). Tem a confissão do próprio autor, que perdeu seis meses pondo galerias de arte na internet sem que elas quisessem, e manda prestar atenção ao que incomoda no dia a dia.
+
+- **Rob Fitzpatrick, *[Mom Test] Mini-workshop to find critical gaps in your customer understanding* — trecho de 0:00 a 3:07** — YouTube, canal do autor, jan/2026 · 3 min (o vídeo tem 7 min 30 s)
+  https://www.youtube.com/watch?v=tOojBwR8cis&hl=en&persist_hl=1
+  O autor do Mom Test pergunta se você sabe contar o que a pessoa faz hoje, por que não faz melhor e o que já tentou. Diz também que quem nunca tentou nada talvez não se importe: é a terceira hipótese, e o alerta do "nada".
+
+- **Rob Fitzpatrick, *Impatience is killing your customer learning* — trecho de 3:32 a 4:45** — YouTube, canal do autor, fev/2025 · 1 min 15 s (o vídeo tem 6 min 12 s)
+  https://www.youtube.com/watch?v=jgZalrJPKko&hl=en&persist_hl=1
+  O que ele mais viu acontecer: a descoberta raramente joga a ideia fora, e muitas vezes mostra que um dos públicos se importa muito mais que os outros. A ideia muda de versão e não morre.
+
+- **Teresa Torres, *Continuous Discovery*** — Product Talk, glossário, atualizado em set/2026 · ~1 min de leitura
+  https://www.producttalk.org/glossary-discovery-continuous-discovery/
+  A definição de quem popularizou o hábito: contato toda semana, pequeno e frequente, e não uma rodada grande de pesquisa uma vez. É o ritmo de uma entrevista por semana.
+
+### 4.5 Problem-solution fit e MVP
+
+**Sugerida**
+
+- **Steve Blank, *The Art of the MVP. 2 Minutes to See Why*** — canal de Steve Blank, YouTube, jan/2015 · 1 min 44 s
+  https://www.youtube.com/watch?v=Fj0qsAyKPN8&hl=en&persist_hl=1
+  O autor da referência da ementa, em menos de dois minutos: MVP não é produto mínimo, nem lista de features cortada no prazo; é o que sai de conversar e iterar sobre a dor. E para o mercado novo, pergunte como a pessoa gasta o tempo hoje e o que usa para resolver.
+
+**Citadas na aula**
+
+- **Kevin Hale, *How to Evaluate Startup Ideas* — trecho "The problem"** — Y Combinator, Startup School, YouTube, jul/2019 · 26 min 38 s (o trecho tem 1 min 25 s)
+  https://www.youtube.com/watch?v=DOtCl5PU8F0&hl=en&persist_hl=1&t=405s
+  Um sócio da YC lista o que faz um problema valer empresa: urgente, caro, obrigatório, frequente. É a régua dos três adjetivos da aula dita por quem avalia os pedidos que chegam à YC.
+
+- **Eric Ries, *Minimum Viable Product: a guide*** — Startup Lessons Learned, ago/2009 · ~6 min de leitura
+  https://www.startuplessonslearned.com/2009/08/minimum-viable-product-guide.html
+  A definição original, e ela não fala de tamanho: o MVP é a versão que traz o máximo de aprendizado validado sobre o cliente com o mínimo de esforço.
+
+- **Eric Ries, *How DropBox Started As A Minimal Viable Product*** — TechCrunch, out/2011, trecho do livro *The Lean Startup* · ~5 min de leitura
+  https://techcrunch.com/2011/10/19/dropbox-minimal-viable-product/
+  O vídeo que mostrava um produto que ainda não funcionava, e a lista de espera que foi de 5 mil a 75 mil numa noite. Ries chama a hipótese testada de "salto de fé": é a hipótese que mata, com outro nome.
+
+- **Manuel Rosso, *Concierge MVP: learning from early adopters at Food on the Table*** — SlideShare, slides da conferência Startup Lessons Learned, mar/2011 · 9 slides
+  https://www.slideshare.net/slideshow/manuel-rosso-food-on-the-table/7239850
+  O fundador contando o concierge por dentro: atendimento cara a cara, plano de refeições e lista de compras mandados por e-mail, nada de código antes de alguém adotar à mão.
+
+- **Steve Blank, *Perfection By Subtraction – The Minimum Feature Set*** — steveblank.com, mar/2010 · ~6 min de leitura
+  https://steveblank.com/2010/03/04/perfection-by-subtraction-the-minimum-feature-set/
+  A referência da ementa. O conjunto mínimo é o menor problema que o cliente pagaria para resolver, e o inimigo nomeado é a lista de features em que cada item traz "mais um cliente".
+
+- **Jeff Patton, *The New User Story Backlog is a Map*** — jpattonassociates.com, out/2008, atualizado em abr/2023 · ~12 min de leitura
+  https://jpattonassociates.com/the-new-backlog/
+  O mapa da jornada: as atividades da pessoa em fila da esquerda para a direita, e o primeiro corte é o que atravessa o fluxo inteiro de ponta a ponta, não uma tela terminada.
+
+### 4.6 Mercado, ICP e beachhead
+
+**Sugerida**
+
+- **Geoffrey Moore com Lenny Rachitsky, *Geoffrey Moore on finding your beachhead, crossing the chasm, and dominating a market*, trecho "Finding your beachhead segment"** — Lenny's Podcast, YouTube, jan/2024 · 1h24min no total, trecho de 3 min 30 s, de 5:58 a 9:28
+  https://www.youtube.com/watch?v=RBbINB5HSHk&hl=en&persist_hl=1&t=358s
+  O autor do livro explicando por que o primeiro mercado é pequeno: ser peixe grande no lago, chegar a 30 ou 50% do segmento, e o mecanismo por baixo, que é o pragmático comprar o que vê o colega comprando.
+
+**Citadas na aula**
+
+- **Bill Aulet, *Disciplined Entrepreneurship*, passo 2 "Beachhead Market"** — d-eship.com, site oficial do livro, sem data · ~6 min de leitura
+  https://www.d-eship.com/step2/
+  As três condições que fazem de um grupo um mercado: o mesmo produto, o mesmo jeito de vender e gente que conversa entre si. Se os clientes não se falam, a venda não se espalha.
+
+- **Bill Aulet, *Disciplined Entrepreneurship*, passo 4 "Beachhead Total Addressable Market (TAM)"** — d-eship.com, site oficial do livro, sem data · ~6 min de leitura
+  https://www.d-eship.com/step4/
+  Conta de baixo para cima feita por quem escreveu o método: clientes identificados em conversa, depois a densidade (quantos usuários por unidade contável) para estender a conta aos que ele não conheceu.
+
+- **Governo Federal, *Mapa de Empresas*** — gov.br, em português, dados atualizados todo mês · consulta, não leitura
+  https://www.gov.br/empresas-e-negocios/pt-br/mapa-de-empresas
+  Fonte pública para contar empresas com CNPJ por município e atividade econômica: é o lugar de onde sai a primeira linha da conta de quem vende para negócio.
+
+- **Kiran Shahid, *Ideal customer profiles and buyer personas: How are they different?*, seção "What is an ideal customer profile?"** — HubSpot Blog, atualizado em set/2025 · ~4 min de leitura (a seção)
+  https://blog.hubspot.com/customers/ideal-customer-profiles-and-buyer-personas-are-they-different#what-is-an-icp
+  O ICP escrito como critérios com valor (faturamento mínimo, setor, se tem sistema e gente para implantar, urgência da dor) e tratado como o primeiro filtro de qualificação, que descarta quem nunca vai fechar.
+
+- **Bill Aulet, *Disciplined Entrepreneurship*, passo 12 "Decision-Making Unit (DMU)"** — d-eship.com, site oficial do livro, sem data · ~5 min de leitura
+  https://www.d-eship.com/step12/
+  Quem usa, quem defende e quem assina o cheque, separados: no consumo os papéis costumam cair na mesma pessoa, na venda para empresa se espalham por três ou mais.
+
+- **Geoffrey A. Moore, *Crossing the Chasm*** — geoffreyamoore.com, página do livro no site do autor; 3ª edição, HarperBusiness, 2014
+  https://geoffreyamoore.com/book/crossing-the-chasm/
+  A fonte do abismo: a passagem dos primeiros compradores visionários para a maioria pragmática, e a escolha de um mercado-alvo como o jeito de atravessar.
