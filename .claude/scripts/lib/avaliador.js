@@ -25,7 +25,13 @@ const REGUA = path.join(paths.RAIZ, '.claude', 'avaliador', 'regua.md');
 const MODELO = 'sonnet';
 const TIMEOUT_MS = 4 * 60 * 1000;
 const TENTATIVAS = 2;
-const BIN = process.platform === 'win32' ? 'claude.cmd' : 'claude';
+// No Windows o Claude Code pode estar instalado como claude.exe (instalador
+// nativo) ou como claude.cmd (npm). O .exe roda sem shell, o que preserva o
+// argumento vazio de --setting-sources; o .cmd só roda via shell, que não põe
+// aspas sozinho, então o argumento vazio vai como "" na linha de comando.
+const CANDIDATOS = process.platform === 'win32'
+  ? [{ bin: 'claude.exe', shell: false }, { bin: 'claude.cmd', shell: true }]
+  : [{ bin: 'claude', shell: false }];
 const SEM_FERRAMENTAS = 'Bash,Edit,Write,MultiEdit,NotebookEdit,Read,Glob,Grep,Task,WebFetch,WebSearch';
 
 function regua() {
@@ -51,10 +57,12 @@ function chamar(prompt) {
     timeout: TIMEOUT_MS,
     maxBuffer: 64 * 1024 * 1024,
     cwd: os.tmpdir(),
-    shell: process.platform === 'win32',
   };
-  let r = spawnSync(BIN, args, opcoes);
-  if (r.error && r.error.code === 'ENOENT' && BIN !== 'claude') r = spawnSync('claude', args, opcoes);
+  let r;
+  for (const { bin, shell } of CANDIDATOS) {
+    r = spawnSync(bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
+    if (!(r.error && r.error.code === 'ENOENT')) break;
+  }
   if (r.error) {
     const motivo = r.error.code === 'ENOENT'
       ? 'não encontrei o comando `claude` nesta máquina'
