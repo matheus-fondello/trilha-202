@@ -27,7 +27,7 @@ const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
-const { enviar, enviarAgora } = require('./lib/enviar');
+const { enviar, enviarAgora, prazoDeEnvio } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
@@ -806,7 +806,7 @@ function validarAvaliacao(av, idAula, texto) {
     await comandos[comando](args);
     // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
-    if (SOBEM_NA_HORA.has(comando)) await enviarAgora();
+    if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
   } catch (err) {
     falhar(err.message);
   }

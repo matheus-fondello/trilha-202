@@ -164,7 +164,22 @@ function marcarFalha(e) {
 // em qualquer máquina. Os hooks continuam tentando também, mas numa sala onde
 // eles não rodam (configuração da máquina, versão, sistema) o progresso sobe
 // igual. Nunca lança e nunca imprime nada: o comando já disse o que tinha a dizer.
-async function enviarAgora({ timeoutMs = 2000 } = {}) {
+// Quanto o envio depois de um comando espera pela resposta. Dois segundos na
+// aula, porque o tutor está esperando o comando terminar. Mas medido em 05/10:
+// o CRM frio leva 1,8 s só para responder 401, e um envio de verdade, que grava
+// e projeta, passa disso. A 1.1 reavaliada às 14:57 estourou os 2 s, e a 1.2 às
+// 14:58 caiu na espera de dois minutos depois da falha - as duas notas ficaram
+// no disco até um `enviar` à mão. `avaliar` e `corrigir` já levam um ou dois
+// minutos, e são os eventos que mais importam: oito segundos a mais ali não
+// pesam em ninguém.
+const PRAZO_PADRAO_MS = 2000;
+const PRAZO_POR_COMANDO_MS = { avaliar: 8000, corrigir: 8000 };
+
+function prazoDeEnvio(comando) {
+  return PRAZO_POR_COMANDO_MS[comando] || PRAZO_PADRAO_MS;
+}
+
+async function enviarAgora({ timeoutMs = PRAZO_PADRAO_MS } = {}) {
   try {
     const e = estadoLib.carregar();
     if (!acesso.conectado(e)) return null;
@@ -176,4 +191,4 @@ async function enviarAgora({ timeoutMs = 2000 } = {}) {
   }
 }
 
-module.exports = { enviar, enviarAgora, ESPERA_APOS_FALHA_MS };
+module.exports = { enviar, enviarAgora, prazoDeEnvio, ESPERA_APOS_FALHA_MS };
