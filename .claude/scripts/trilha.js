@@ -211,8 +211,17 @@ const comandos = {
     });
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
+    // Versão 2 do contrato (05/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
+    // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
+    // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
+    // de ela ficar perdida numa frase da justificativa.
+    const payload = {
+      versao: 2,
+      ...r.avaliacao,
+      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas } : null,
+    };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
-    const b64 = Buffer.from(JSON.stringify(r.avaliacao), 'utf8').toString('base64');
+    const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
@@ -606,14 +615,16 @@ function validarAvaliacao(av, idAula, texto) {
   const erros = [];
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
-  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia'];
+  // `dominio` é da versão 2 do contrato (05/10): o único critério que diz o que
+  // o aluno aprendeu, e não como ele conversou.
+  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio'];
   if (!av.criterios || typeof av.criterios !== 'object') erros.push('falta "criterios"');
   else for (const c of criterios) {
     const v = av.criterios[c];
     if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${c} deve ser inteiro de 1 a 5`);
   }
   if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 5 linhas (mínimo 120 caracteres)');
-  if (av.justificativa && av.justificativa.length > 1200) erros.push('"justificativa" longa demais (máximo 1200 caracteres)');
+  if (av.justificativa && av.justificativa.length > 1500) erros.push('"justificativa" longa demais (máximo 1500 caracteres)');
   if (!Array.isArray(av.evidencias) || av.evidencias.length < 1 || av.evidencias.length > 3) erros.push('"evidencias" deve ter de 1 a 3 trechos');
   else {
     const falas = texto ? transcricao.falasDoAluno(texto) : null;

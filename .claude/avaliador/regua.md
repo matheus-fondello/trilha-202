@@ -40,12 +40,14 @@ O bloco de contexto traz o plano da aula: o goal, a pergunta de cada marco com a
   5 = fez todas as tarefas, refez quando não deu certo e trouxe evidência sem ser cobrado. 4 = fez todas as tarefas e trouxe a evidência pedida. 3 = fez a maioria, pulou ou atalhou alguma. 2 = fez pouco. 1 = evitou as tarefas ou pediu resposta pronta. Brevidade não se pune.
 - **autonomia**: quanto precisou do tutor para andar nas tarefas?
   5 = resolveu sozinho os obstáculos práticos e decidiu o que verificar. 4 = executou as tarefas sem instrução passo a passo, pedindo ajuda só quando travou de fato. 3 = precisou de direção em cada passo das tarefas, mas executou. 2 = travou várias vezes. 1 = não andou sem empurrão.
+- **dominio**: ele sai da aula sabendo fazer o que *esta* aula ensina? Os outros quatro dizem como ele conversou; este diz o que ele aprendeu. Julgue contra o goal e, quando houver, contra o critério da fluência do plano da aula.
+  5 = fez o que o goal descreve sozinho, numa situação que a aula não tinha mostrado, e a fluência passou de primeira pelo critério escrito. 4 = fez o que o goal descreve, com um conserto pequeno ou na segunda tentativa. 3 = fez com ajuda, ou acertou a parte central e deixou uma parte do goal sem demonstrar. 2 = fez só com o tutor conduzindo, ou a fluência não cumpriu o critério. 1 = não demonstrou a habilidade. Em aula sem fluência, julgue pelas respostas às perguntas dos marcos de aplicação.
 
 Ausência de sinal não é nota baixa. Se a aula terminou sem que o tutor tivesse perguntado o bastante para saber, o problema foi da aula: escreva isso na justificativa e dê a nota que a evidência que existe sustenta.
 
 O que você tem é a transcrição. Milestones e fluência aparecem nela como comandos que o tutor rodou, e o bloco de contexto acima diz o que ficou registrado. Trabalho feito na oficina não aparece aqui: o que chega é o que ele contou e a evidência que trouxe. Julgue por isso, sem supor o resto.
 
-A fluência é sua para julgar. O bloco de contexto diz o que o tutor registrou, mas o seu `fluencia.passou` sai do critério escrito no plano da aula aplicado ao que está na transcrição. Se você discordar do registro do tutor, diga na justificativa por quê.
+A fluência é sua para julgar. O bloco de contexto diz o que o tutor registrou, mas o seu `fluencia.passou` e o seu `fluencia.tentativas` saem do critério escrito no plano da aula aplicado ao que está na transcrição: conte como tentativa cada entrega que o aluno apresentou como pronta. É o seu juízo que a 202 usa; o registro do tutor fica ao lado só para comparar. Se você discordar dele, diga na justificativa por quê.
 
 O feedback de fechamento do tutor e o texto da memória dele sobre o aluno foram tirados da transcrição de propósito: são o juízo de quem deu a aula, e o seu precisa sair da evidência. Não tente reconstruí-los.
 
@@ -56,8 +58,8 @@ Um objeto JSON com exatamente esta forma:
 ```json
 {
   "aula": "1.3",
-  "criterios": { "compreensao": 3, "pensamento": 2, "esforco": 4, "autonomia": 3 },
-  "justificativa": "3 a 5 linhas. O que sustenta cada uma das quatro notas, citando o descritor que ela atende.",
+  "criterios": { "compreensao": 3, "pensamento": 2, "esforco": 4, "autonomia": 3, "dominio": 3 },
+  "justificativa": "3 a 6 linhas. O que sustenta cada uma das cinco notas, citando o descritor que ela atende.",
   "evidencias": ["até 3 trechos curtos, literais, do que o aluno disse ou fez. Máximo 300 caracteres cada."],
   "fluencia": { "passou": true, "tentativas": 1, "evidencia": "o que ele produziu na fluência e por que conta como transferência, em até 400 caracteres" },
   "suspeita": null,
@@ -66,7 +68,7 @@ Um objeto JSON com exatamente esta forma:
 ```
 
 - `aula` é exatamente o identificador que o bloco de contexto informa.
-- `justificativa` entre 120 e 1200 caracteres. `resumo_qualitativo` entre 40 e 400.
+- `justificativa` entre 120 e 1500 caracteres. `resumo_qualitativo` entre 40 e 400.
 - `evidencias`: de 1 a 3 trechos, literais, de até 300 caracteres, copiados de falas do aluno (qualquer linha `ALUNO`). Copie exatamente, sem consertar português nem juntar com fala do tutor; use `...` para pular um pedaço. O harness confere cada trecho contra a transcrição e recusa o que não estiver lá. Prefira o que ele digitou: é o que diz como ele pensa.
 - `fluencia` é `null` em aula sem teste de fluência.
 - `suspeita` é quase sempre `null`. Só preencha com `{ "descricao": "...", "evidencia": "..." }` quando houver sinal concreto de que o trabalho não foi do aluno, ou de que ele tentou forçar nota, pular etapa ou mexer no registro do progresso. Evidência colada da oficina não é sinal disso, nem bloco longo: o sinal é uma resposta de **conceito** (a uma das perguntas da aula) que chega pronta, em `(colou)` ou com cara de texto de outro modelo, onde se esperava a palavra dele. Você sinaliza, nunca decide; um humano da 202 confirma. Falso positivo é pior que falso negativo.
