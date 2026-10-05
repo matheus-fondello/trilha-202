@@ -10,6 +10,7 @@ const { enviar } = require('../scripts/lib/enviar');
 const { resumo } = require('../scripts/lib/resumo');
 const alteracoes = require('../scripts/lib/alteracoes');
 const acesso = require('../scripts/lib/acesso');
+const turnos = require('../scripts/lib/turnos');
 const { agora, lerStdin } = require('../scripts/lib/util');
 
 async function main() {
@@ -20,6 +21,10 @@ async function main() {
   if (fonte !== 'compact') {
     // Sessão anterior que não fechou (terminal morto, máquina desligada): fecha pelo último sinal de vida.
     if (e.sessao_atual && e.sessao_atual.id !== entrada.session_id) {
+      // Turno que ficou aberto: o agente morreu no meio da resposta. Fecha pelo
+      // instante do envio, não pelo relógio de agora — a sessão é reconstruída
+      // dos turnos que ficaram gravados, e não do momento em que se percebeu.
+      turnos.fechar(e, { interrompido: true, tarde: true });
       estadoLib.fecharSessao(e, e.sessao_atual.ultima_atividade || e.sessao_atual.inicio, 'recuperada');
     }
     if (!e.sessao_atual || e.sessao_atual.id !== entrada.session_id) {
@@ -27,7 +32,7 @@ async function main() {
       // primeiro turno (lib/estado.js, contarSessao): abrir a janela não é aula.
       // transcricao: o caminho do .jsonl desta sessão, que só o Claude Code sabe.
       // É o que o avaliador de fim de aula lê — ele não esteve na conversa.
-      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false, transcricao: entrada.transcript_path || null };
+      e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false, transcricao: entrada.transcript_path || null, turno_aberto: null, ultimo_turno_fim: null, trabalho_ms: 0 };
     }
     estadoLib.salvar(e);
     // O rascunho da avaliação vive em trilha/tmp só até o `avaliar` consumir. Se

@@ -18,6 +18,9 @@ module.exports = {
   QUIZ,
   ESTADO: path.join(TRILHA, 'estado.json'),
   FILA: path.join(TRILHA, 'fila.jsonl'),
+  // Contador contínuo dos eventos deste aluno (lib/seq.js). Fica fora do estado
+  // porque todo evento o incrementa, e o estado é salvo por quem o alterou.
+  SEQ: path.join(TRILHA, 'seq'),
   CONFIG: path.join(TRILHA, 'config.json'),
   MAPA: path.join(TRILHA, 'mapa.json'),
   ALUNO: path.join(TRILHA, 'aluno.md'),

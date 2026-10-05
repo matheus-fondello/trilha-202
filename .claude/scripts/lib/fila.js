@@ -6,6 +6,7 @@ const path = require('path');
 const { FILA, CONFIG } = require('./paths');
 const { agora, id, lerJson } = require('./util');
 const git = require('./git');
+const seq = require('./seq');
 
 function versaoHarness() {
   try { return lerJson(CONFIG).harness.versao; } catch { return 'desconhecida'; }
@@ -26,6 +27,9 @@ function integridade() {
 function enfileirar(tipo, dados, estado) {
   const ev = {
     id: id(),
+    // Contínuo entre sessões: buraco na sequência é evento que não chegou, e o
+    // servidor marca a sessão como incompleta em vez de somar errado calado.
+    seq: seq.proximo(),
     ts: agora(),
     tipo,
     aula: (dados && dados.aula) || (estado && estado.aula_atual) || null,

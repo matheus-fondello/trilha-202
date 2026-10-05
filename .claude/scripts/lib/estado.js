@@ -5,6 +5,7 @@ const mapa = require('./mapa');
 const { existsSync } = require('fs');
 const fila = require('./fila');
 const acesso = require('./acesso');
+const { monoMs, bootMs } = require('./relogio');
 
 // Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
 const MINUTOS_VIVA = 30;
@@ -16,7 +17,7 @@ function padrao() {
     aluno: { email: null, nome: null, id: null },
     aula_atual: mapa.todas()[0].id,
     aulas: {},          // por id: { status, iniciada_em, concluida_em, milestones: {id: ts}, fluencia, avaliada_em, sessoes }
-    sessao_atual: null, // { id, inicio, ultima_atividade, aula, turnos, fonte, contada, transcricao }
+    sessao_atual: null, // { id, inicio, ultima_atividade, aula, turnos, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }
     sessoes: [],        // histórico: { id, inicio, fim, minutos, aula, turnos, fechada_por, transcricao }
     oficina: null,      // caminho da pasta irmã onde o aluno pratica
     praticas: {},       // por id: { url, registrada_em }
@@ -67,7 +68,10 @@ function contarSessao(e) {
   const reg = registroAula(e, s.aula);
   reg.sessoes = (reg.sessoes || 0) + 1;
   abrirAula(e, s.aula);
-  fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula }, e);
+  // mono_ms e boot_ms ancoram o relógio monotônico dos turnos: o servidor liga a
+  // contagem monotônica ao horário real desta sessão, e vê pelo boot se a máquina
+  // reiniciou entre dois trechos (o monotônico recomeça do zero).
+  fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula, mono_ms: monoMs(), boot_ms: bootMs() }, e);
   return true;
 }
 
@@ -104,14 +108,26 @@ function fecharSessao(e, fimIso, motivo) {
   const s = e.sessao_atual;
   if (!s) return null;
   if (s.contada === false) { e.sessao_atual = null; return null; }
+  // Com turnos medidos, o fim é o último turno e os minutos são a soma do
+  // trabalho, sem a espera entre um turno e outro: é o que impede uma sessão de
+  // doze horas com vinte turnos de virar 733 minutos de aula, e uma sessão
+  // recuperada de fechar com o fim igual ao início. Os dois vêm do estado, que
+  // sobrevive ao envio da fila. Sem turnos medidos (harness antigo), vale o
+  // relógio, como antes.
+  // O sinal mais novo dos dois: numa sessão recuperada, o último que se observou
+  // pode ser o envio que ficou sem resposta, e não o fim do turno anterior.
+  const sinais = [s.ultimo_turno_fim, s.ultima_atividade].filter(Boolean).sort();
+  const fim = s.turnos ? (sinais[sinais.length - 1] || fimIso) : fimIso;
   const registro = {
     id: s.id,
     inicio: s.inicio,
-    fim: fimIso,
-    minutos: Math.max(0, minutosEntre(s.inicio, fimIso)),
+    fim,
+    minutos: s.trabalho_ms ? Math.round(s.trabalho_ms / 60000) : Math.max(0, minutosEntre(s.inicio, fim)),
     aula: s.aula,
     turnos: s.turnos || 0,
     fechada_por: motivo,
+    // O bruto, em milissegundos, para o servidor não depender do arredondamento.
+    trabalho_ms: s.trabalho_ms || 0,
   };
   // O caminho da transcrição fica na máquina e não sobe: ele carrega o nome de
   // usuário do aluno, e a 202 não tem o que fazer com ele. Quem precisa dele é o
