@@ -1076,6 +1076,252 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
   A tese é o marco `prompt-por-chamada` dito pelo time que escreve isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado.
 
+### 3.4 Custo, teto e observabilidade
+
+**Sugerida**
+
+- **IBM Technology (Martin Keen), *What is Prompt Caching? Optimize LLM Latency with AI Transformers*** — YouTube, canal oficial, fev/2026 · 9 min 6 s no total, trecho de 1 min 50 s, de 6:02 a 7:52
+  https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1
+  Um quadro com o prompt montado em camadas, instruções, documento, exemplos e pergunta, e o que acontece com o cache quando a pergunta vem no fim e quando vem no começo: a pergunta do marco, desenhada.
+
+**Citadas na aula**
+
+- **Anthropic, *Preços* — seção "Preços dos modelos"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a tabela e as notas abaixo dela)
+  https://platform.claude.com/docs/pt-BR/about-claude/pricing#model-pricing
+  A tabela oficial em dólar por milhão de tokens, com entrada, saída e as colunas de cache de cada modelo: a saída custa várias vezes a entrada.
+
+- **Anthropic, *Contagem de tokens* — seção "Como contar os tokens de uma mensagem"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/token-counting#how-to-count-message-tokens
+  Um endpoint que recebe o mesmo pedido da chamada e devolve só quantos tokens de entrada ele tem, sem chamar o modelo: o jeito de pesar cada pedaço do prompt separado.
+
+- **Anthropic, *Cache de prompt* — seção "Como o cache de prompt funciona"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#how-prompt-caching-works
+  O mecanismo em três passos: o sistema procura um prefixo idêntico do prompt já guardado, usa se achar e guarda se não achar; vale cinco minutos e renova a cada uso.
+
+- **Anthropic, *Cache de prompt* — seção "Limitações do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#cache-limitations
+  O tamanho mínimo que o cache aceita, modelo por modelo, e a frase que mais importa: abaixo dele o pedido roda sem cache e nenhum erro é retornado.
+
+- **Anthropic, *Processamento em lote* — seção "Limitações de lotes"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/batch-processing#batch-limitations
+  O preço do desconto, escrito: a maioria dos lotes termina em até uma hora, mas o resultado pode levar até 24, e o lote que não termina nesse prazo expira.
+
+- **Anthropic, *Cache de prompt* — seção "Acompanhando o desempenho do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#tracking-cache-performance
+  Os três campos de entrada que o `usage` devolve com o cache ligado, e a soma que dá a entrada total: com cache, `input_tokens` é só o que vem depois do ponto de cache.
+
+- **Anthropic, *Limites de taxa* — seção "Definindo seu próprio limite de gastos"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/api/rate-limits#setting-your-own-spend-limit
+  O teto mensal de gasto que o console oferece e o que acontece quando ele bate: as chamadas da conta passam a voltar com erro até o limite subir ou o mês virar.
+
+- **Ethan Ding, *tokens are getting more expensive*** — mandates (Substack), jul/2025 · ~9 min de leitura, em inglês
+  https://ethanding.substack.com/p/ai-subscriptions-get-short-squeezed
+  Por que preço fixo com uso desigual come a margem: o usuário pesado consome muitas vezes o que paga, e uma das saídas que o autor discute é cobrar pelo uso, que é o que o lançamento extra da Denise já faz.
+
+### 3.5 Saída confiável e experiência
+
+**Sugerida**
+
+- **Samhita Tankala (NN/g), *Skeleton Screens vs. Progress Bars vs. Spinners*** — YouTube, canal oficial NNgroup, set/2024 · 3 min 30 s, em inglês
+  https://www.youtube.com/watch?v=4GWqJEfzvmg&hl=en&persist_hl=1
+  Os três jeitos de mostrar espera e quando cada um serve: abaixo de 1 s nenhum, até 10 s esqueleto ou spinner, acima disso barra com estimativa.
+
+**Citadas na aula**
+
+- **Anthropic, *Saídas estruturadas* — seção "Por que usar saídas estruturadas"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#why-use-structured-outputs
+  A lista do que dá errado quando a forma é só pedida no prompt — JSON que não abre, campo faltando, tipo trocado — e o que muda quando a API força a forma.
+
+- **Anthropic, *Saídas estruturadas* — seção "Limitações do JSON Schema"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#json-schema-limitations
+  Restrição numérica (`minimum`, `maximum`) e de tamanho de texto não entram no schema forçado: o "valor maior que zero" da regra do negócio não tem como ser garantido pela API, só pela validação dele.
+
+- **Anthropic, *Saídas estruturadas* — seção "Saídas inválidas"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#invalid-outputs
+  A própria documentação admite os buracos da forma forçada: a recusa vem com status 200 e pode não bater com o schema, a resposta cortada no `max_tokens` vem incompleta, e valor de `enum` pode voltar com maiúscula trocada sem erro nenhum.
+
+- **Anthropic, *Motivos de parada e fallback* — seção "Referência rápida"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/handling-stop-reasons#quick-reference
+  Uma tabela: cada valor de `stop_reason`, quando acontece e o que fazer. É o mapa do "por que parou" que vem em toda resposta.
+
+- **Anthropic, *Motivos de parada e fallback* — seção "Motivos de parada vs. erros"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/handling-stop-reasons#stop-reasons-vs-errors
+  A separação que o marco precisa: motivo de parada vem numa resposta que deu certo, erro vem como status 4xx ou 5xx. São dois caminhos no código dele, e cada um tem destino diferente.
+
+- **Anthropic, *Erros da Claude API* — seção "Erros HTTP"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/api/errors#http-errors
+  Cada código com o que significa, e no fim o parágrafo que importa: os SDKs oficiais já repetem sozinhos, duas vezes, as falhas passageiras (conexão, limite de taxa, 5xx).
+
+- **Anthropic, *Glossário* — seção "Temperature"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/about-claude/glossary#temperature
+  Dois parágrafos, e o segundo é a frase oficial: mesmo com a temperatura em zero, os resultados não são totalmente determinísticos, e entradas idênticas podem produzir saídas diferentes.
+
+- **Jakob Nielsen, *Response Times: The 3 Important Limits*** — Nielsen Norman Group, 1993, revisado em jan/2024 · ~4 min de leitura, em inglês
+  https://www.nngroup.com/articles/response-times-3-important-limits/
+  Os três limites que ninguém revogou: até 0,1 s parece instantâneo, até 1 s o raciocínio não se interrompe, passando de 10 s a pessoa vai fazer outra coisa e precisa saber quando volta.
+
+- **React, *useOptimistic* — seção "Optimistic delete with error recovery"** — React Docs, sem data · ~3 min de leitura (a seção), em inglês
+  https://react.dev/reference/react/useOptimistic#optimistic-delete-with-error-recovery
+  O otimismo com rede de segurança: o item sai da lista na hora do clique e, se a gravação falhar, volta com a mensagem de erro. É a resposta certa para a pergunta do marco.
+
+- **Google PAIR, *Explainability + Trust* — seção "Determine if you should show confidence"** — People + AI Guidebook, 2019 · ~3 min de leitura (a seção e as duas seguintes), em inglês
+  https://pair.withgoogle.com/chapter/explainability-trust/#determine-if-you-should-show-confidence
+  Contra a tentação do percentual de confiança: 85,8% contra 87% não muda a decisão de ninguém, e confiança alta enganosa faz aceitar sem olhar. Logo abaixo, a alternativa por categoria, cada uma dizendo o que fazer.
+
+- **Tim Neusesser e Evan Sunwall, *Error-Message Guidelines* — seção "Communication Guidelines"** — Nielsen Norman Group, mai/2023 · ~3 min de leitura (a seção), em inglês
+  https://www.nngroup.com/articles/error-message-guidelines/#toc-communication-guidelines-2
+  "Ocorreu um erro" não diz nada: a mensagem descreve o problema exato, sem jargão, e oferece o que fazer em seguida. É o estado de erro da tela dele, escrito.
+
+- **Eugene Yan, *Patterns for Building LLM-based Systems & Products* — seções "Defensive UX" e "Collect user feedback"** — eugeneyan.com, jul/2023 · ~10 min de leitura (as duas seções; o texto inteiro tem 66 min), em inglês
+  https://eugeneyan.com/writing/llm-patterns/#defensive-ux-to-anticipate--handle-errors-gracefully
+  A aula inteira por quem constrói isso em produção: o produto que assume de saída que o modelo vai errar e desenha para isso, e a correção de quem usa como o dado que alimenta o eval.
+
+### 3.6 Segurança de IA
+
+**Sugerida**
+
+- **Microsoft Developer, *Episode 4: Indirect Prompt Injection Explained*, série AI Red Teaming 101** — YouTube, canal oficial, jul/2025 · 6 min 28 s no total, trecho de 3 min 25 s, de 0:00 a 3:25
+  https://www.youtube.com/watch?v=s_Ztu6c-IGQ&hl=en&persist_hl=1
+  Gary Lopez, do time de red team da Microsoft, mostra o prompt do sistema, a mensagem do usuário e o dado de fora colados numa coisa só antes de chegar ao modelo, e um e-mail plantado que manda procurar outros e-mails e mandar o conteúdo para fora: o modelo não vê a diferença.
+
+**Citadas na aula**
+
+- **Anthropic, *Mitigar jailbreaks e injeções de prompt* — seção "Injeção indireta de prompt"** — Claude Platform Docs, em português, sem data · ~5 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks#indirect-prompt-injection
+  A distinção da aula na voz de quem faz o modelo: na direta o adversário é o usuário, na indireta é o conteúdo de terceiros que o modelo lê em nome dele — e a seção manda limitar o acesso para que uma injeção bem-sucedida cause o mínimo de dano, e fecha mandando atacar o próprio sistema com conteúdo plantado antes de pôr no ar, que é a prova de hoje.
+
+- **OWASP, *LLM01:2025 Prompt Injection*** — genai.owasp.org, edição 2025 · ~8 min de leitura
+  https://genai.owasp.org/llmrisk/llm01-prompt-injection/
+  O primeiro item da lista, com a frase que fecha a questão do filtro: dado o funcionamento probabilístico dos modelos, não está claro que exista prevenção infalível.
+
+- **Simon Willison, *The lethal trifecta for AI agents* — seção "Guardrails won't protect you"** — simonwillison.net, jun/2025 · ~1 min de leitura (a seção)
+  https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/#guardrails
+  O argumento do 95% em quatro linhas: produto de guardrail promete pegar quase todos os ataques, e em segurança de aplicação web isso é nota de reprovação.
+
+- **Anthropic, *Mitigating the risk of prompt injections in browser use* — seção "Claude's progress on browser use robustness"** — Anthropic Research, nov/2025 · ~6 min de leitura, em inglês
+  https://www.anthropic.com/research/prompt-injection-defenses#claudes-progress-on-browser-use-robustness
+  A própria Anthropic, ao anunciar 1% de ataques bem-sucedidos, escreve que isso ainda é risco relevante e que nenhum agente é imune.
+
+- **Simon Willison, *The lethal trifecta for AI agents: private data, untrusted content, and external communication*** — simonwillison.net, jun/2025 · ~7 min de leitura
+  https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/
+  A referência da ementa: as três pernas nomeadas, a lista de caminhos para fora (uma chamada de API, carregar uma imagem, até um link para o usuário clicar), e a observação de que os fornecedores consertaram quase todos os casos fechando a saída.
+
+- **Simon Willison, *Superhuman AI exfiltrates emails*** — simonwillison.net, jan/2026 · ~2 min de leitura
+  https://simonwillison.net/2026/Jan/12/superhuman-ai-exfiltrates-emails/
+  A tríade inteira num caso real de cliente de e-mail: o usuário pede o resumo da caixa, um e-mail plantado faz o assistente mandar dados financeiros, jurídicos e médicos para um formulário do atacante por uma imagem que a tela carrega; a causa era a regra que deixava carregar a imagem, e o conserto fechou essa saída.
+
+- **OWASP, *LLM02:2025 Sensitive Information Disclosure* — seção "Example Attack Scenarios"** — genai.owasp.org, edição 2025 · ~6 min de leitura
+  https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/#user-content-example-attack-scenarios
+  O primeiro cenário é o do marco, em uma linha: um usuário recebe na resposta o dado pessoal de outro usuário. A página também trata do dado que entra no treino e reaparece na saída.
+
+- **OWASP, *LLM06:2025 Excessive Agency* — seção "Prevention and Mitigation Strategies"** — genai.owasp.org, edição 2025 · ~7 min de leitura
+  https://genai.owasp.org/llmrisk/llm062025-excessive-agency/#user-content-prevention-and-mitigation-strategies
+  Duas mitigações que são o marco: pôr uma pessoa para aprovar ação de alto impacto antes de ela acontecer, e fazer a autorização no sistema de baixo em vez de deixar o modelo decidir se uma ação é permitida.
+
+- **Simon Willison, *Design Patterns for Securing LLM Agents against Prompt Injections* — seção "The scope of the problem"** — simonwillison.net, jun/2025 · ~3 min de leitura (a seção)
+  https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/#scope-of-the-problem
+  O princípio comum de um artigo de pesquisadores da IBM, da Invariant Labs, da ETH Zurich, do Google e da Microsoft: depois que o modelo leu conteúdo não confiável, ele precisa estar preso de forma que seja impossível esse conteúdo disparar uma ação com consequência.
+
+- **Anthropic, *Making Claude Code more secure and autonomous with sandboxing* — seção "Keeping users secure on Claude Code"** — Anthropic Engineering, out/2025 · ~2 min de leitura (a seção)
+  https://www.anthropic.com/engineering/claude-code-sandboxing#keeping-users-secure-on-claude-code
+  O nome do carimbo: clicar "aprovar" o tempo todo leva à fadiga de aprovação, em que a pessoa deixa de prestar atenção no que aprova — e isso deixa o sistema menos seguro, não mais.
+
+- **OWASP, *2025 Top 10 Risk & Mitigations for LLMs and Gen AI Apps*** — genai.owasp.org, edição 2025 · ~5 min a página inicial
+  https://genai.owasp.org/llm-top-10/
+  A lista que a 2.13 apresentou como aviso e que aqui vira checklist: injeção, vazamento de informação sensível e agência excessiva são os três de hoje; os outros sete ficam para quem quiser, depois.
+
+### 3.7 Evals
+
+**Sugerida**
+
+- **Hamel Husain, *How To Approach Your AI Evals*, trecho de 2:14 ao fim** — YouTube, canal do autor, jun/2026 · 4 min 18 s no total, trecho de 2 min
+  https://www.youtube.com/watch?v=DZxaPNYi_k0&hl=en&persist_hl=1&t=134s
+  O autor do texto da aula separando teste por código de modelo como juiz, e dizendo que o juiz erra com frequência e se mede contra rótulo de gente antes de ganhar confiança.
+
+- **Hamel Husain, *Your AI Product Needs Evals*** — hamel.dev, mar/2024 · ~25 min de leitura
+  https://hamel.dev/blog/posts/evals/
+  O texto nomeado na ementa, inteiro: os três níveis de eval, o caso real de um assistente de imobiliária que empacou porque cada falha consertada fazia surgir outra, e o método que montaram em torno do eval para sair disso.
+
+**Citadas na aula**
+
+- **Hamel Husain, *Your AI Product Needs Evals* — seção "Step 1: Write Scoped Tests"** — hamel.dev, mar/2024 · ~2 min de leitura (a seção)
+  https://hamel.dev/blog/posts/evals/#step-1-write-scoped-tests
+  Quebrar a feature em cenários e escrever um teste para cada um: o exemplo dele é um imóvel encontrado, vários e nenhum, que é o mesmo desenho da mensagem clara, da que vira mais de um lançamento e da que não vira nenhum.
+
+- **Mikaela Grace, Jeremy Hadfield, Rodrigo Olivares e Jiri De Jonghe, *Demystifying evals for AI agents* — seção "Collect tasks for the initial eval dataset"** — Anthropic Engineering, jan/2026, atualizado em mar/2026 · ~3 min de leitura (a seção)
+  https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents#collect-tasks-for-the-initial-eval-dataset
+  Vinte a cinquenta casos simples bastam para começar; um bom caso é aquele em que dois especialistas chegariam sozinhos ao mesmo veredito; e o conjunto testa o que deve acontecer e o que não deve.
+
+- **Anthropic, *Defina critérios de sucesso e crie avaliações* — seção "Avalie suas avaliações"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção e as dicas logo abaixo)
+  https://platform.claude.com/docs/pt-BR/test-and-evaluate/develop-tests#grade-your-evaluations
+  Os três jeitos de dar a nota — por código, por gente, por modelo — com a regra de escolher o mais rápido e confiável que der conta, e o exemplo do juiz que responde só "correct" ou "incorrect".
+
+- **Hamel Husain, *A Field Guide to Rapidly Improving AI Products* — seção "Creating Trustworthy Evaluation Systems"** — hamel.dev, mar/2025 · ~4 min de leitura (os itens 1 a 3)
+  https://hamel.dev/blog/posts/field-guide/#creating-trustworthy-evaluation-systems
+  Por que passa ou não passa ganha de escala de 1 a 5, e como medir se o juiz concorda com a pessoa antes de confiar nele: "a 10% increase in passing outputs is immediately meaningful".
+
+- **Grace, Hadfield, Olivares e De Jonghe, *Demystifying evals for AI agents* — seção "Capability vs. regression evals"** — Anthropic Engineering, jan/2026 · ~1 min de leitura (a seção)
+  https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents#capability-vs-regression-evals
+  A diferença entre o eval que mede o que o sistema ainda não faz e o que guarda o que ele já fazia, que deve passar quase sempre: queda ali é sinal de que algo quebrou.
+
+- **Grace, Hadfield, Olivares e De Jonghe, *Demystifying evals for AI agents* — seção "How to think about non-determinism in evaluations for agents"** — Anthropic Engineering, jan/2026 · menos de 1 min (só o primeiro parágrafo)
+  https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents#how-to-think-about-non-determinism-in-evaluations-for-agents
+  Um caso que passou numa rodada pode falhar na seguinte sem nada ter mudado: é a razão de rodar duas vezes antes de chamar diferença de melhora.
+
+- **Grace, Hadfield, Olivares e De Jonghe, *Demystifying evals for AI agents* — seção "Maintain and use the eval long-term"** — Anthropic Engineering, jan/2026 · ~3 min de leitura (a seção)
+  https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents#maintain-and-use-the-eval-long-term
+  "Eval-driven development": escrever o eval do que o sistema ainda não faz e iterar até ele passar, e manter o eval como se mantém teste unitário.
+
+- **Hamel Husain, *Your AI Product Needs Evals* — seção "Step 3: Run & Track Your Tests Regularly"** — hamel.dev, mar/2024 · ~1 min de leitura (a seção)
+  https://hamel.dev/blog/posts/evals/#step-3-run-track-your-tests-regularly
+  Rodar os testes do jeito que der menos atrito na stack que já existe, e guardar o resultado ao longo do tempo para ver se está melhorando.
+
+### 3.8 Recuperação e memória
+
+**Sugerida**
+
+- **IBM Technology, *Is RAG Still Needed? Choosing the Best Approach for LLMs*** — YouTube, canal oficial, mar/2026 · 11 min 10 s, em inglês com legenda automática
+  https://www.youtube.com/watch?v=UabBYexBD4k&hl=en&persist_hl=1
+  RAG e contexto longo lado a lado, com capítulos sobre onde cada um ganha e onde falha, da "loteria da recuperação" ao problema do ruído, até a escolha por caso.
+
+**Citadas na aula**
+
+- **Daniel Ford (Anthropic), *Introducing Contextual Retrieval* — seção "A primer on RAG: scaling to larger knowledge bases"** — Anthropic Engineering, set/2024 · ~3 min de leitura (a seção), em inglês
+  https://www.anthropic.com/engineering/contextual-retrieval#a-primer-on-rag-scaling-to-larger-knowledge-bases
+  O RAG de vetor em três passos e, logo depois, o caso em que o vetor erra: um código exato, "TS-999", que só a busca por texto acha. É o "marcão" da P3 com outro nome.
+
+- **Anthropic, *Embeddings* — seção "Como obter embeddings com a Anthropic"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/embeddings#how-to-get-embeddings-with-anthropic
+  A Anthropic não tem modelo de embedding próprio: buscar por vetor é outro fornecedor, outra chave e outra conta. É o custo concreto de escolher o jeito caro quando a chave resolve.
+
+- **Daniel Ford (Anthropic), *Introducing Contextual Retrieval* — seção "A note on simply using a longer prompt"** — Anthropic Engineering, set/2024 · ~1 min de leitura (a seção), em inglês
+  https://www.anthropic.com/engineering/contextual-retrieval#a-note-on-simply-using-a-longer-prompt
+  A frase que a aula usa: abaixo de duzentos mil tokens, umas quinhentas páginas, ponha o acervo inteiro no prompt, sem RAG. Três parágrafos, e o primeiro começa dizendo que às vezes a solução mais simples é a melhor.
+
+- **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "Why context engineering is important to building capable agents"** — Anthropic Engineering, set/2025 · ~2 min de leitura (a seção), em inglês
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents#why-context-engineering-is-important-to-building-capable-agents
+  O *context rot* dito pela Anthropic: quanto mais tokens na janela, pior o modelo recupera o que está nela, e contexto vira recurso finito com retorno decrescente. É o "caber não é valer".
+
+- **Simon Willison, *I really don’t like ChatGPT’s new memory dossier* — seção "We’re losing control of the context"** — simonwillison.net, mai/2025 · ~2 min de leitura (a seção), ~10 min o texto, em inglês
+  https://simonwillison.net/2025/May/21/chatgpt-new-memory/#we-re-losing-control-of-the-context
+  Um usuário avançado descobrindo que a memória que o produto escreveu sozinho mudou respostas sem ele saber, e pedindo memória por projeto. "Quem escreve" e "onde", vistos do lado de quem usa.
+
+- **Harrison Chase, *Memory for agents*** — LangChain Blog, out/2024 · ~6 min de leitura, em inglês
+  https://www.langchain.com/blog/memory-for-agents
+  Memória é específica de cada aplicação: o que guardar depende do produto. E dá o vocabulário: a memória "episódica", exemplos de casos que deram certo postos no prompt, é o que o histórico aprovado da P3 é.
+
+- **Anthropic, *Cache de prompt* — seção "Práticas recomendadas para um cache eficaz"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#best-practices-for-effective-caching
+  Volta da 3.4, não matéria nova: prefixo estático, sufixo variável, e o sufixo nomeado com todas as letras, "contexto por solicitação" e "a mensagem recebida". É a ordem da aula escrita pela documentação.
+
+- **Anthropic, *Melhores práticas de prompting* — seção "Prompting de contexto longo"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-engineering/claude-prompting-best-practices#long-context-prompting
+  Dados longos acima, pergunta no fim, e cada documento na sua tag com a fonte ao lado. É a ordem da montagem e a tag por documento, ditas pela documentação.
+
+- **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "Context retrieval and agentic search"** — Anthropic Engineering, set/2025 · ~5 min de leitura (a seção), em inglês
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents#context-retrieval-and-agentic-search
+  Buscar antes da chamada contra deixar o agente buscar na hora, com ferramenta, guardando só referências leves, e o meio-termo híbrido. É a ponte para a 3.9.
+
 ### 3.9 Ferramentas e agentes no produto
 
 **Sugerida**

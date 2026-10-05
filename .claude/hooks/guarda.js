@@ -47,7 +47,7 @@ const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS
 // ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça; e o
 // acesso à 202 é do aluno, e depois de colado não volta ao chat; e o banco do
 // quiz guarda o gabarito, que só sai pelo comando `quiz`, depois da resposta.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\]criterios\b|quiz[/\\][^/\\]+[/\\]banco\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
+const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\]+[/\\](criterios|persona)\b|quiz[/\\][^/\\]+[/\\]banco\b|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/;
 // `.\` e `./`: no Windows o tutor usa a ferramenta PowerShell, que escreve o
 // caminho com barra invertida.
 const CLI = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\]trilha\.js\b/;

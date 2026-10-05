@@ -902,7 +902,28 @@
       "titulo": "Custo, teto e observabilidade",
       "skill": "aula-3-4",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "tokens-e-preco",
+          "titulo": "O que entra na conta de uma chamada e quanto vale cada lado"
+        },
+        {
+          "id": "custo-por-execucao",
+          "titulo": "Decompor o custo de uma mensagem e achar o cliente pesado"
+        },
+        {
+          "id": "reduzir",
+          "titulo": "Cache, lote e modelo menor: qual cabe na P3 e o que cada um troca"
+        },
+        {
+          "id": "teto-e-log",
+          "titulo": "Teto conferido antes da chamada, e uma linha de log por chamada"
+        },
+        {
+          "id": "margem",
+          "titulo": "Custo por mensagem contra os R$ 3 do extra e o preço dos planos"
+        }
+      ]
     },
     {
       "id": "3.5",
@@ -911,7 +932,28 @@
       "titulo": "Saída confiável e experiência",
       "skill": "aula-3-5",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "schema",
+          "titulo": "Pedir, forçar e validar a forma"
+        },
+        {
+          "id": "quando-quebra",
+          "titulo": "Jeitos de quebrar, repetição e fallback"
+        },
+        {
+          "id": "determinismo",
+          "titulo": "Regra em código, leitura no modelo"
+        },
+        {
+          "id": "latencia-percebida",
+          "titulo": "Onde alguém espera e os estados do clique"
+        },
+        {
+          "id": "errar-com-graca",
+          "titulo": "Não entendido, assumido e correção guardada"
+        }
+      ]
     },
     {
       "id": "3.6",
@@ -920,7 +962,28 @@
       "titulo": "Segurança de IA",
       "skill": "aula-3-6",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "injecao",
+          "titulo": "Por que conteúdo vira instrução e por que nenhum filtro resolve"
+        },
+        {
+          "id": "triade-letal",
+          "titulo": "As três pernas; cortar uma tira o caminho, não a injeção"
+        },
+        {
+          "id": "isolamento",
+          "titulo": "O que entra no contexto pode sair: fila e chamada"
+        },
+        {
+          "id": "humano-no-loop",
+          "titulo": "O que o modelo nunca faz sozinho, com a trava no código"
+        },
+        {
+          "id": "prova-hostil",
+          "titulo": "Entrada hostil passou pelo sistema e o corte segurou"
+        }
+      ]
     },
     {
       "id": "3.7",
@@ -929,7 +992,28 @@
       "titulo": "Evals",
       "skill": "aula-3-7",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "conjunto-de-casos",
+          "titulo": "Casos com esperado escrito pelas regras, antes da saída"
+        },
+        {
+          "id": "metrica",
+          "titulo": "O que conta como acerto e onde cabe cada métrica"
+        },
+        {
+          "id": "regressao",
+          "titulo": "Medir antes, uma mudança, ler caso a caso"
+        },
+        {
+          "id": "eval-e-tdd",
+          "titulo": "Eval como TDD: quando o esperado muda"
+        },
+        {
+          "id": "eval-rodando",
+          "titulo": "Eval rodando por script e dando número"
+        }
+      ]
     },
     {
       "id": "3.8",
@@ -938,7 +1022,24 @@
       "titulo": "Recuperação e memória",
       "skill": "aula-3-8",
       "fluencia": true,
-      "milestones": null
+      "milestones": [
+        {
+          "id": "recuperar",
+          "titulo": "Três jeitos de buscar, o mais simples que resolve"
+        },
+        {
+          "id": "quando-cabe-tudo",
+          "titulo": "Quando o acervo inteiro basta; caber não é valer"
+        },
+        {
+          "id": "memoria-por-usuario",
+          "titulo": "O que guardar, onde e quem escreve"
+        },
+        {
+          "id": "contexto-em-producao",
+          "titulo": "Chamada montada com o recuperado, como dado, medida"
+        }
+      ]
     },
     {
       "id": "3.9",
@@ -988,6 +1089,83 @@
       "titulo": "Quiz do módulo 3",
       "skill": "quiz-m3",
       "fluencia": false,
+      "avaliacao": false,
+      "milestones": null
+    },
+    {
+      "id": "4.1",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "The Mom Test",
+      "skill": "aula-4-1",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "4.2",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "Conduzir discovery",
+      "skill": "aula-4-2",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "4.3",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "Jobs to be done",
+      "skill": "aula-4-3",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "4.4",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "Escolher o seu problema",
+      "skill": "aula-4-4",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "4.5",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "Problem-solution fit e MVP",
+      "skill": "aula-4-5",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "4.6",
+      "modulo": 4,
+      "tipo": "aula",
+      "titulo": "Mercado, ICP e beachhead",
+      "skill": "aula-4-6",
+      "fluencia": true,
+      "milestones": null
+    },
+    {
+      "id": "P4",
+      "modulo": 4,
+      "tipo": "pratica",
+      "titulo": "Discovery simulado com persona",
+      "skill": "pratica-p4",
+      "fluencia": false,
+      "correcao": true,
+      "entrega": ["pasta"],
+      "criterios": ["perguntas", "conclusoes", "protocolo"],
+      "milestones": null
+    },
+    {
+      "id": "Q4",
+      "modulo": 4,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 4",
+      "skill": "quiz-m4",
+      "fluencia": false,
+      "avaliacao": false,
       "milestones": null
     }
   ]

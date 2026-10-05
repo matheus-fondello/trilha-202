@@ -13,6 +13,8 @@
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
 //   node .claude/scripts/trilha.js criterios <pratica>
+//   node .claude/scripts/trilha.js persona <pratica>
+//   node .claude/scripts/trilha.js conversa <pratica>
 //   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
 //   node .claude/scripts/trilha.js quiz <Q> | quiz <Q> responder <n> <letra>          (aberta: responder <n> arquivo=<txt> | texto="...")
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
@@ -42,7 +44,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'persona', 'conversa', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -250,8 +252,15 @@ const comandos = {
       const p = e.praticas[idAula] || {};
       if (!p.pasta) problemas.push(`prática sem pasta registrada (pratica ${idAula} pasta=<caminho>)`);
       if (a.correcao) {
-        if (!p.url) problemas.push(`prática sem URL da página no ar (pratica ${idAula} url=...)`);
-        if (!p.repo) problemas.push(`prática sem repositório público (pratica ${idAula} repo=...)`);
+        // O que cada prática entrega está no mapa: a P1 à P3 entregam página e
+        // repositório; a P4 entrega uma conversa e uma síntese, e não tem nenhum dos dois.
+        const falta = {
+          url: `prática sem URL da página no ar (pratica ${idAula} url=...)`,
+          repo: `prática sem repositório público (pratica ${idAula} repo=...)`,
+        };
+        for (const campo of mapa.entregaExigida(a)) {
+          if (campo !== 'pasta' && !p[campo]) problemas.push(falta[campo] || `prática sem ${campo} registrado (pratica ${idAula} ${campo}=...)`);
+        }
         if (!p.corrigida_em) problemas.push('correção não registrada (skill corrigir, em chat separado do da prática)');
       }
     } else if (a.avaliacao !== false && !reg.avaliada_em) {
@@ -312,7 +321,7 @@ const comandos = {
     // régua fechada é o que faz a prática valer alguma coisa; depois de entregar,
     // saber por que a nota saiu assim é o próprio aprendizado. Quem abrir isto
     // fora de hora deixa registro, e é assim que a 202 lê.
-    if (!p.pasta || !p.url) falhar(`os critérios da ${idPratica} abrem depois da entrega registrada. Rode primeiro: pratica ${idPratica} pasta=<caminho> url=<url> repo=<url>`);
+    if (!mapa.prontaParaCorrigir(a, p)) falhar(`os critérios da ${idPratica} abrem depois da entrega registrada. Rode primeiro: pratica ${idPratica} ${mapa.entregaExigida(a).map((c) => `${c}=<${c === 'pasta' ? 'caminho' : 'url'}>`).join(' ')}`);
     const arquivo = path.join(paths.PRATICAS, idPratica.toLowerCase(), 'criterios');
     let texto;
     try { texto = Buffer.from(fs.readFileSync(arquivo, 'utf8'), 'base64').toString('utf8'); } catch (err) {
@@ -320,6 +329,47 @@ const comandos = {
     }
     fila.enfileirar('criterios.abertos', { aula: idPratica }, e);
     console.log(texto);
+  },
+
+  // A persona de uma prática de discovery, a P4: quem é o dono do negócio, o que
+  // ele diz querer e o que está por trás. Mora codificada em praticas/<p>/persona
+  // e quem a lê é o tutor, que vai interpretá-la. Ela precisa abrir antes da
+  // entrega, ao contrário da régua, e por isso o que segura é o atrito: base64,
+  // a guarda e o `deny` de Read, e o registro de quem abriu.
+  persona([idPratica]) {
+    exigirAcesso();
+    if (!idPratica) falhar('Uso: persona <pratica>');
+    const a = mapa.aula(idPratica);
+    if (a.tipo !== 'pratica') falhar(`${idPratica} não é prática.`);
+    const arquivo = path.join(paths.PRATICAS, idPratica.toLowerCase(), 'persona');
+    if (!fs.existsSync(arquivo)) falhar(`a ${idPratica} não tem persona.`);
+    let texto;
+    try { texto = Buffer.from(fs.readFileSync(arquivo, 'utf8'), 'base64').toString('utf8'); } catch (err) {
+      falhar(`não consegui ler a persona da ${idPratica} (${err.message}). Diga ao aluno que a prática não pode começar agora e registre feedback.`);
+    }
+    fila.enfileirar('persona.aberta', { aula: idPratica }, estadoLib.carregar());
+    console.log(texto);
+  },
+
+  // A conversa de uma prática que entrega conversa: o que o aluno e a persona
+  // disseram, para quem corrige ler. Abre depois da entrega registrada, como os
+  // critérios, e só com as sessões da prática: a da própria correção também é
+  // desta unidade, e entraria se ninguém a separasse.
+  conversa([idPratica]) {
+    exigirAcesso();
+    if (!idPratica) falhar('Uso: conversa <pratica>');
+    const a = mapa.aula(idPratica);
+    if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
+    const e = estadoLib.carregar();
+    const p = e.praticas[idPratica] || {};
+    if (!mapa.prontaParaCorrigir(a, p)) falhar(`a conversa da ${idPratica} abre depois da entrega registrada.`);
+    const ate = p.registrada_em;
+    const daPratica = (e.sessoes || []).filter((s) => s.aula === idPratica && (!ate || s.inicio <= ate));
+    if (!daPratica.length) falhar(`não há sessão da ${idPratica} anterior à entrega. Corrija pela síntese e diga isso na justificativa.`);
+    const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica);
+    if (!t.ok) falhar(`não consegui ler a conversa da ${idPratica} (${t.motivo}). Corrija pela síntese e diga isso na justificativa.`);
+    fila.enfileirar('conversa.aberta', { aula: idPratica, chats: t.chats }, e);
+    console.log(t.texto);
   },
 
   corrigir([idPratica, arquivo]) {

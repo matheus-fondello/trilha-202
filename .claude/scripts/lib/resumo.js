@@ -55,7 +55,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
   // ainda não corrigida, este chat é a correção, com outra skill. A separação é a
   // 1.3 aplicada ao próprio harness: quem corrige não é quem acompanhou o trabalho.
   const entrega = (e.praticas || {})[a.id] || {};
-  const emCorrecao = a.tipo === 'pratica' && a.correcao && Boolean(entrega.pasta && entrega.url) && !entrega.corrigida_em;
+  const emCorrecao = a.tipo === 'pratica' && a.correcao && mapa.prontaParaCorrigir(a, entrega) && !entrega.corrigida_em;
   const linhas = [];
 
   linhas.push('# Estado da trilha (gerado pelo harness, não editado pelo aluno)');
@@ -92,11 +92,14 @@ function resumo(e, { fonte = 'startup' } = {}) {
       } else if (emCorrecao) {
         linhas.push('Fase: CORREÇÃO. A entrega já está registrada:');
         linhas.push(`  pasta ${entrega.pasta}`);
-        linhas.push(`  no ar em ${entrega.url}`);
-        linhas.push(`  repositório ${entrega.repo || 'não registrado'}`);
-        linhas.push('Este chat não é a prática: você não conduziu o trabalho, não vai reabri-lo e não vai ajudar a melhorar a página agora. Você corrige o que foi entregue e devolve o feedback.');
+        const exigida = mapa.entregaExigida(a);
+        if (exigida.includes('url') || entrega.url) linhas.push(`  no ar em ${entrega.url || 'não registrado'}`);
+        if (exigida.includes('repo') || entrega.repo) linhas.push(`  repositório ${entrega.repo || 'não registrado'}`);
+        linhas.push('Este chat não é a prática: você não conduziu o trabalho, não vai reabri-lo e não vai ajudar a melhorar o que ele fez agora. Você corrige o que foi entregue e devolve o feedback.');
       } else {
-        linhas.push('Prática: sem fluência e sem avaliação de fim de aula. Fecha em duas fases — a entrega (pasta, URL no ar e repositório público) e, num chat separado, a correção.');
+        const exigida = mapa.entregaExigida(a);
+        const partes = exigida.map((c) => (c === 'pasta' ? 'pasta' : c === 'url' ? 'URL no ar' : c === 'repo' ? 'repositório público' : c)).join(', ');
+        linhas.push(`Prática: sem fluência e sem avaliação de fim de aula. Fecha em duas fases — a entrega (${partes}) e, num chat separado, a correção.`);
       }
     } else {
       if (a.fluencia) {
