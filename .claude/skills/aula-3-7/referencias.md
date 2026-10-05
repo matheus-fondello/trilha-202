@@ -22,7 +22,7 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents#collect-tasks-for-the-initial-eval-dataset
   Vinte a cinquenta casos simples bastam para começar; um bom caso é aquele em que dois especialistas chegariam sozinhos ao mesmo veredito; e o conjunto testa o que deve acontecer e o que não deve.
 
-A tese do Hamel que a aula cita, a de que produto de IA que empaca quase sempre empacou por falta de eval, está no primeiro parágrafo do artigo; a seção daqui é a parte que ele usa hoje. Pare a leitura antes do "Step 2", que é onde entra a geração sintética, e não abra o código de exemplo da seção: o desenho é o que interessa. No da Anthropic, o "Step 3" é o argumento da mensagem que não vira lançamento: conjunto que só testa um lado ensina o sistema a errar para o outro.
+A tese do Hamel, a de que produto de IA que empaca quase sempre empacou por falta de eval, está no primeiro parágrafo do artigo; a seção daqui é a parte que ele usa hoje. Pare a leitura antes do "Step 2", que é onde entra a geração sintética, e não abra o código de exemplo da seção: o desenho é o que interessa. No da Anthropic, o "Step 3" é o argumento da mensagem que não vira lançamento: conjunto que só testa um lado ensina o sistema a errar para o outro.
 
 **marco `metrica`**
 
