@@ -70,7 +70,13 @@ O Q3 e o Q4 rodam igual e têm tamanho próprio: o Q3 tem dez perguntas (oito fe
 
 ## P3: a chave de API
 
-A P3 nasce na 3.3 e cresce até a 3.8, sobre a chave de API da Anthropic do próprio aluno, com saldo: a assinatura do Claude Code não dá esse crédito. Quem paga ainda não está decidido, e o tutor foi instruído a não prometer nada. A 3.3 registra a P3 com pasta e repositório, sem URL: confira que isso não abre a correção (`criterios P3` recusa) e que a URL só entra no fechamento, na `pratica-p3`.
+A P3 nasce na 3.3 e cresce até a 3.8 sobre uma chave gratuita do próprio aluno: a do Gemini, criada no Google AI Studio, sem cartão, com o Groq de alternativa. Ninguém paga nada; o custo continua sendo matéria como "quanto custaria no plano pago". Para testar, crie uma chave gratuita sua, ponha no `.env` da oficina e confira:
+
+- o tutor não pede a chave no chat, não cita limite nem preço de memória e manda ler o limite do projeto no AI Studio;
+- o 429 pode aparecer de verdade ao rodar o eval de vinte casos de uma vez, e a mensagem não some: espera e passa, ou cai na fila como não processada; na 3.5 ele também existe simulado num teste;
+- na correção, num chat novo, o corretor roda os testes e o eval na pasta registrada, abre a URL só para olhar e manda o `curl` do README contra a URL registrada; não pede senha nem usuário de teste, e um `curl` para outro endereço é bloqueado pela guarda.
+
+A 3.3 registra a P3 com pasta e repositório, sem URL: confira que isso não abre a correção (`criterios P3` recusa) e que a URL só entra no fechamento, na `pratica-p3`.
 
 ## P4: entrevista com persona
 

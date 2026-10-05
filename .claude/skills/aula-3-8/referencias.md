@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados que valem para a aula inteira. A documentação vive em `platform.claude.com`, e as páginas em português têm as âncoras em inglês: use as URLs exatas daqui, porque âncora traduzida não dá erro, a página abre no topo e ninguém percebe. O endereço antigo das dicas de contexto longo (`.../prompt-engineering/long-context-tips`) ainda redireciona, mas para dentro de uma página de nove mil palavras; não escreva ele. Segundo: o texto da Anthropic sobre recuperação aparece duas vezes nesta aula, e ele existe para vender uma técnica mais pesada (embeddings contextualizados, reranking) que a P3 não precisa. Cite só as duas seções indicadas e não deixe o resto do artigo virar sugestão de arquitetura. Terceiro: quase todo material sobre RAG explica RAG pelo vetor, inclusive o da Anthropic. A aula diz o contrário, que RAG é "busca e põe no prompt" e vetor é um dos jeitos. Quando citar, diga isso antes que a página diga outra coisa.
+Três cuidados que valem para a aula inteira. A P3 roda em API gratuita: o caminho recomendado é o Gemini, com chave do Google AI Studio, e o Groq é a alternativa. A documentação de API citada aqui é a do Gemini, em `ai.google.dev`, em inglês; use as URLs exatas daqui. Modelo no gratuito, limite por minuto e por dia, mínimo de cache e preço do plano pago mudam de um mês para o outro: o número que vale é o da página oficial no dia, e o limite do gratuito é o que o aluno lê no AI Studio dele, nunca um que você lembra. Os textos da Anthropic que ficaram são conceito, não documentação do provedor dele, e valem para qualquer modelo. Segundo: o texto da Anthropic sobre recuperação aparece duas vezes nesta aula, e ele existe para vender uma técnica mais pesada (embeddings contextualizados, reranking) que a P3 não precisa. Cite só as duas seções indicadas e não deixe o resto do artigo virar sugestão de arquitetura. Terceiro: quase todo material sobre RAG explica RAG pelo vetor, inclusive o da Anthropic. A aula diz o contrário, que RAG é "busca e põe no prompt" e vetor é um dos jeitos. Quando citar, diga isso antes que a página diga outra coisa.
 
 ## Citadas
 
@@ -16,11 +16,11 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://www.anthropic.com/engineering/contextual-retrieval#a-primer-on-rag-scaling-to-larger-knowledge-bases
   O RAG de vetor em três passos e, logo depois, o caso em que o vetor erra: um código exato, "TS-999", que só a busca por texto acha. É o "marcão" da P3 com outro nome.
 
-- **Anthropic, *Embeddings* — seção "Como obter embeddings com a Anthropic"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/embeddings#how-to-get-embeddings-with-anthropic
-  A Anthropic não tem modelo de embedding próprio: buscar por vetor é outro fornecedor, outra chave e outra conta. É o custo concreto de escolher o jeito caro quando a chave resolve.
+- **Google, *Embeddings* — seção "Storing embeddings"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/embeddings#store-embeddings
+  Em produção, vetor pede um banco de vetores para guardar, indexar e buscar, e a seção lista os serviços que fazem isso. É o custo concreto do jeito caro: mais uma peça para manter, quando a chave resolve.
 
-Os dois entram depois que ele respondeu a pergunta do marco: o TS-999 e o custo do vetor entregam parte da resposta. A seção do artigo apresenta o vetor primeiro e a busca por texto como remendo; inverta a ordem ao falar, porque na P3 a chave do cliente vem antes das duas. Use a página de embeddings só pela frase do topo da seção: o resto é Python de outro fornecedor e tabela de modelos, e não serve à oficina dele.
+Os dois entram depois que ele respondeu a pergunta do marco: o TS-999 e o custo do vetor entregam parte da resposta. A seção do artigo apresenta o vetor primeiro e a busca por texto como remendo; inverta a ordem ao falar, porque na P3 a chave do cliente vem antes das duas. O topo da página de embeddings diz que vetor dá resultado mais preciso que busca por palavra-chave; no "marcão" do Nilton é o contrário, e você diz isso antes. Não diga que vetor é caro em dinheiro: em 05/10/2026 o modelo de embedding do Gemini era de graça no plano gratuito (confira na página de preço antes de repetir). O custo é outro: mais uma chamada por mensagem, que conta no limite por minuto, o banco de vetores, e reindexar o acervo quando ele cresce; a seção "Migration from gemini-embedding-001", na mesma página, conta que trocar de modelo de embedding obriga a refazer todos os vetores, porque os espaços não se comparam. O resto da página é código em várias linguagens e tabela de modelos, e não serve à oficina dele.
 
 **marco `quando-cabe-tudo`**
 
@@ -32,7 +32,7 @@ Os dois entram depois que ele respondeu a pergunta do marco: o TS-999 e o custo 
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents#why-context-engineering-is-important-to-building-capable-agents
   O *context rot* dito pela Anthropic: quanto mais tokens na janela, pior o modelo recupera o que está nela, e contexto vira recurso finito com retorno decrescente. É o "caber não é valer".
 
-Os dois em sequência, nessa ordem: o primeiro autoriza pôr tudo, o segundo diz por que isso tem limite antes do limite da janela. Duas datas para dizer ao citar. Os duzentos mil tokens são de 2024, quando a janela era desse tamanho; hoje ela é maior, e o número vale como régua de simplicidade, não como teto técnico. E o mesmo parágrafo traz números de cache (mais de 2x na latência, até 90% no custo) que são da época: os vigentes foram da 3.4, não reabra. E o segundo não é texto novo: ele cruza com ele desde a 1.5. A fonte que cunhou *context rot*, o relatório da Chroma, já foi citada na 1.7 e a seção da Anthropic linka para ela; não repita.
+Os dois em sequência, nessa ordem: o primeiro autoriza pôr tudo, o segundo diz por que isso tem limite antes do limite da janela. Duas datas para dizer ao citar. Os duzentos mil tokens são de 2024 e de um modelo da Anthropic, quando a janela era desse tamanho; hoje ela é maior, e o número vale como régua de simplicidade, não como teto técnico. No gratuito há uma régua mais curta que a janela: o limite de tokens por minuto, que o histórico inteiro consome a cada mensagem. E o mesmo parágrafo traz números de cache (mais de 2x na latência, até 90% no custo) que são da Anthropic e da época: os do provedor dele foram da 3.4, não reabra. E o segundo não é texto novo: ele cruza com ele desde a 1.5. A fonte que cunhou *context rot*, o relatório da Chroma, já foi citada na 1.7 e a seção da Anthropic linka para ela; não repita.
 
 **marco `memoria-por-usuario`**
 
@@ -48,15 +48,15 @@ Os dois só depois que ele respondeu a pergunta do marco, nunca antes: ambos ent
 
 **marco `contexto-em-producao`**
 
-- **Anthropic, *Cache de prompt* — seção "Práticas recomendadas para um cache eficaz"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#best-practices-for-effective-caching
-  Volta da 3.4, não matéria nova: prefixo estático, sufixo variável, e o sufixo nomeado com todas as letras, "contexto por solicitação" e "a mensagem recebida". É a ordem da aula escrita pela documentação.
+- **Google, *Context caching* — seção "Implicit caching"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/caching#implicit-caching
+  Volta da 3.4, não matéria nova: o cache vem ligado sem fazer nada, e as duas dicas da página são pôr o conteúdo grande e comum no começo do prompt e mandar pedidos de prefixo parecido em pouco tempo. É a ordem da aula escrita pela documentação, e o `usage` diz quantos tokens vieram do cache.
 
-- **Anthropic, *Melhores práticas de prompting* — seção "Prompting de contexto longo"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-engineering/claude-prompting-best-practices#long-context-prompting
-  Dados longos acima, pergunta no fim, e cada documento na sua tag com a fonte ao lado. É a ordem da montagem e a tag por documento, ditas pela documentação.
+- **Google, *Long context* — FAQ "Where is the best place to put my query in the context window?"** — Gemini API Docs, atualizada em jun/2026 · ~1 min de leitura (esta pergunta e a seguinte), em inglês
+  https://ai.google.dev/gemini-api/docs/long-context#where_is_the_best_place_to_put_my_query_in_the_context_window
+  Pergunta no fim, depois de todo o contexto. E a pergunta logo abaixo, mesmo defendendo o contexto longo, abre dizendo que o token desnecessário é melhor evitar: o "caber não é valer" na voz do provedor.
 
-Antecipe uma aparente contradição: o cache manda o fixo primeiro, e a página de contexto longo manda o dado longo antes das instruções. Não brigam. As regras e o plano de contas são o `system`, que vem antes de tudo e é o que o cache aproveita; dentro da mensagem, o histórico do cliente vem antes da mensagem nova. A página de melhores práticas é enorme e abre com orientação por modelo: mande direto à seção. A seção de contexto longo fala de entrada acima de uns vinte mil tokens, com vários documentos, e o ganho de até 30% que ela cita vale para isso; a chamada da P3 fica bem abaixo. Use a ordem e a tag, não prometa o número. Delimitar é higiene, a trava é o desenho da 3.6: encapsular como dado ele já aprendeu lá, não ensine de novo. E os exemplos de tag da página são em inglês e de outro domínio; não traduza um deles para a P3 na conversa, que é ditar prompt. O nome das tags e o que vai dentro é escolha dele.
+Antecipe uma aparente contradição: o cache manda o fixo primeiro, e a página de contexto longo manda a pergunta por último, depois do dado. Não brigam. As regras e o plano de contas são o system, que vem antes de tudo e é o prefixo que o cache aproveita; dentro do pedido, o histórico do cliente vem antes da mensagem nova. O mínimo de tokens para o cache pegar muda por modelo e está numa tabela na página do cache: com a parte fixa da P3 abaixo dele, não há cache e não há erro, e só o `usage` mostra; não prometa acerto de cache. No gratuito o cache não muda o que ele paga, que é nada; muda o que custaria no pago, que é a conta do README. A seção "Long context limitations", na mesma página, diz que procurar várias informações num contexto longo não tem a precisão de procurar uma só: é o *context rot* do marco anterior, se ele voltar a ele. Delimitar é higiene, a trava é o desenho da 3.6: encapsular como dado ele já aprendeu lá, não ensine de novo. Como separar o histórico da mensagem, com que tag e o que vai dentro é escolha dele; não dite um formato.
 
 **no fechamento**
 

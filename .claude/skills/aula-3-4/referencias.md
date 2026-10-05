@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados que valem para a aula inteira. A documentação vive em `platform.claude.com`, e as páginas em português têm as âncoras em inglês: use as URLs exatas daqui, porque âncora traduzida não dá erro, só abre a página no topo. Preço muda sem aviso e a tabela da Anthropic é em dólar: o número que vale é o do dia em que ele mediu, com a data, o modelo e o câmbio escritos no README, e nunca um preço que você lembra. E o câmbio da fatura não é a cotação do jornal: cartão internacional cobra imposto e spread do banco por cima, então diga para ele declarar qual câmbio usou em vez de discutir qual é o certo.
+Três cuidados que valem para a aula inteira. A documentação do Gemini vive em `ai.google.dev` e é em inglês: use as URLs exatas daqui, porque âncora errada não dá erro, só abre a página no topo. Preço, modelos do gratuito e limites mudam sem aviso, e a data pesa: o preço pago do Flash atual tem aumento marcado para 01/01/2027, então o número que vale é o do dia em que ele mediu, com modelo, preço, câmbio e data escritos no README, e nunca um que você lembra. E os limites do gratuito do Gemini não são publicados em tabela: cada projeto vê os seus no AI Studio, em https://aistudio.google.com/rate-limit, página que pede login. Ele abre no navegador dele, não no painel, e é o número que ele leu ali que entra no teto; não cite número de blog nem de memória. Ninguém paga nada nesta aula: se a página oferecer subir de nível ou ligar cobrança, não é para a P3.
 
 ## Citadas
 
@@ -12,47 +12,43 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 
 **marco `tokens-e-preco`**
 
-- **Anthropic, *Preços* — seção "Preços dos modelos"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a tabela e as notas abaixo dela)
-  https://platform.claude.com/docs/pt-BR/about-claude/pricing#model-pricing
-  A tabela oficial em dólar por milhão de tokens, com entrada, saída e as colunas de cache de cada modelo: a saída custa várias vezes a entrada.
+- **Google, *Gemini Developer API pricing*** — Gemini API Docs, atualizado em out/2026 · ~3 min de leitura (o bloco do modelo que ele usa)
+  https://ai.google.dev/gemini-api/docs/pricing
+  A tabela oficial em dólar por milhão de tokens, com a coluna do gratuito ao lado da do pago: entrada, saída "incluindo os tokens de raciocínio" e cache, modelo por modelo.
 
-A pergunta do marco é de previsão: só abra a tabela depois que ele responder. Três minas na página. A tabela lista modelos aposentados e de acesso restrito ao lado dos vigentes; mande ler só a linha do modelo que a P3 usa. A leitura de cache não é o mesmo desconto para todos (as notas de rodapé dão frações menores para alguns modelos), então não diga "cache custa 10%" como regra. E logo abaixo há um aviso de que os modelos mais novos usam um tokenizador que gera cerca de 30% mais tokens para o mesmo texto: a contagem da 3.3 vale para o modelo em que foi medida, e quem troca de modelo reconta. A seção "Exemplo prático", mais abaixo, é sobre outro produto: não cite.
+A pergunta do marco é de previsão: só abra a tabela depois que ele responder. Quatro minas na página. Ela lista dezenas de modelos, de imagem, áudio e vídeo inclusive; mande ler só o bloco do modelo que a P3 usa, e nele só a primeira tabela (Standard). As tabelas Batch, Flex e Priority logo abaixo são outros jeitos de chamar: Batch volta no marco `reduzir`, as outras duas não são desta aula. A coluna do gratuito diz "Free of charge" em tudo, e a conta sai da coluna do pago. E a última linha de cada tabela, "Used to improve our products", é Yes no gratuito e No no pago: é o motivo de a Denise de verdade não poder usar o gratuito, e é gancho da 3.6, não matéria de hoje. Quem está no Groq lê o preço pago na página de modelos dele (https://console.groq.com/docs/models), na mesma unidade.
 
 **marco `custo-por-execucao`**
 
-- **Anthropic, *Contagem de tokens* — seção "Como contar os tokens de uma mensagem"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/token-counting#how-to-count-message-tokens
-  Um endpoint que recebe o mesmo pedido da chamada e devolve só quantos tokens de entrada ele tem, sem chamar o modelo: o jeito de pesar cada pedaço do prompt separado.
+- **Google, *Understand and count tokens* — seção "Count tokens"** — Gemini API Docs, atualizado em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/tokens#count-tokens
+  Os dois jeitos de contar: antes de mandar, só a entrada, sem gerar resposta; e depois, no `usage` de toda resposta, com entrada, saída, raciocínio e cache em campos separados.
 
-É a ferramenta de decompor: contar o pedido inteiro, depois sem as mensagens anteriores, depois sem o plano de contas, e a diferença é o peso de cada pedaço. Ele pede isso ao Claude da oficina; você não dita como. A seção "Preços e limites de taxa", no fim da mesma página, diz que a contagem é gratuita. A própria página avisa que o número é estimativa: o que vai para o README sai do `usage` das chamadas reais, não daqui.
+É a ferramenta de decompor: contar o pedido inteiro, depois sem as mensagens anteriores, depois sem o plano de contas, e a diferença é o peso de cada pedaço. Ele pede isso ao Claude da oficina; você não dita como. O número que vai para o README sai do `usage` das chamadas reais, não da contagem prévia. A regra de bolso da página (um token, uns quatro caracteres) é medida em inglês; para as mensagens da Prado, vale a contagem. O raciocínio vem num campo próprio e é cobrado como saída: quem soma só entrada e saída e esquece o raciocínio conta a menos.
 
 **marco `reduzir`**
 
-- **Anthropic, *Cache de prompt* — seção "Como o cache de prompt funciona"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#how-prompt-caching-works
-  O mecanismo em três passos: o sistema procura um prefixo idêntico do prompt já guardado, usa se achar e guarda se não achar; vale cinco minutos e renova a cada uso.
+- **Google, *Context caching* — seção "Implicit caching"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/caching#implicit-caching
+  O cache que já vem ligado, sem configurar nada: o conselho de pôr o conteúdo grande e comum no começo do prompt, o tamanho mínimo modelo por modelo, e o campo do `usage` que prova se pegou.
 
-- **Anthropic, *Cache de prompt* — seção "Limitações do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#cache-limitations
-  O tamanho mínimo que o cache aceita, modelo por modelo, e a frase que mais importa: abaixo dele o pedido roda sem cache e nenhum erro é retornado.
+- **Google, *Batch API* — seção "Technical details"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/batch-mode#technical-details
+  O preço do desconto, escrito: metade do custo da chamada comum, em troca de um prazo de até 24 horas para o resultado.
 
-- **Anthropic, *Processamento em lote* — seção "Limitações de lotes"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/batch-processing#batch-limitations
-  O preço do desconto, escrito: a maioria dos lotes termina em até uma hora, mas o resultado pode levar até 24, e o lote que não termina nesse prazo expira.
-
-A primeira só entra depois da resposta à pergunta de conceito, senão ela responde por ele. Na mesma página, o quadro "Erro comum" em "Como funciona a verificação automática de prefixos" (`#how-automatic-prefix-checking-works`) é o furo do lançador: marca do cache no bloco que muda a cada chamada, com a mensagem recebida como exemplo; quem ligou o cache do jeito mais simples e não vê leitura no `usage` caiu nele. A segunda é a armadilha que pega quem junta duas alavancas: o mínimo muda muito de modelo para modelo, e o modelo menor pede mais tokens para cachear do que o maior. Quem troca para o menor e liga o cache pode ficar sem cache nenhum e sem erro nenhum; a prova está no `usage`, com os dois campos de cache zerados. Também não prometa acerto de cache o dia inteiro: cinco minutos sem chamada e o prefixo expira, e a primeira mensagem depois disso paga a escrita, que custa mais que a entrada comum. Os multiplicadores estão na página de preços, seção "Cache de prompt" (`#prompt-caching`). Da página de lotes, uma linha que emenda no marco seguinte: o lote pode passar um pouco do limite de gasto configurado no console, porque roda em paralelo.
+A primeira só entra depois da resposta à pergunta de conceito, senão ela responde por ele. A armadilha da P3 está na tabela da seção: o cache só liga acima de um mínimo de tokens de entrada, que é maior nos Flash atuais do que nos antigos, e os Flash-Lite nem aparecem nela. Um prompt da P3 com plano de contas e regras pode ficar abaixo do mínimo, e aí não há cache nem erro nenhum; a prova é `total_cached_tokens` zerado no `usage`. Quem troca para o modelo menor e conta com o cache pode ficar sem os dois descontos ao mesmo tempo. A página não dá prazo de validade do cache, só manda mandar prefixos parecidos "em pouco tempo": não prometa acerto o dia inteiro. O preço da leitura em cache está na tabela de preços de cada modelo; não diga uma fração como regra. Do lote, diga o que ele troca: até um dia de espera, quando o Tiago quer a fila pronta no mesmo dia; e lote não existe no gratuito ("Not available" na tabela Batch).
 
 **marco `teto-e-log`**
 
-- **Anthropic, *Cache de prompt* — seção "Acompanhando o desempenho do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#tracking-cache-performance
-  Os três campos de entrada que o `usage` devolve com o cache ligado, e a soma que dá a entrada total: com cache, `input_tokens` é só o que vem depois do ponto de cache.
+- **Google, *Rate limits* — seção "How rate limits work"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/rate-limits#how-rate-limits-work
+  As três medidas do limite (requisições por minuto, tokens de entrada por minuto, requisições por dia), que valem por projeto e não por chave, com a cota diária zerando à meia-noite do horário do Pacífico.
 
-- **Anthropic, *Limites de taxa* — seção "Definindo seu próprio limite de gastos"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/api/rate-limits#setting-your-own-spend-limit
-  O teto mensal de gasto que o console oferece e o que acontece quando ele bate: as chamadas da conta passam a voltar com erro até o limite subir ou o mês virar.
+- **Groq, *Rate Limits* — seção "Rate Limits"** — GroqCloud Docs, sem data · ~2 min de leitura (a tabela do plano Free)
+  https://console.groq.com/docs/rate-limits#rate-limits
+  Um provedor que publica a tabela: requisições e tokens por minuto e por dia de cada modelo no plano gratuito, por organização, e o erro 429 com o tempo de espera quando passa.
 
-A primeira é a razão de o log precisar dos três campos: quem soma só `input_tokens` e `output_tokens` com o cache ligado conta a entrada a menos, e o README sai errado. A segunda serve de contraste, não de solução: o limite do console é o cinto de segurança da conta inteira, não sabe quem é o Nilton, e quando bate para os 140 clientes de uma vez, o contrário do que a Denise pediu. O teto por cliente mora no código, antes da chamada. Para barrar a entrada de tamanho absurdo antes de chamar, volte à contagem de tokens do marco anterior. A página de uso do console mostra o gasto somado, em gráfico; ele confere o log contra ela, e não a lê no lugar do log.
+A primeira é o teto real que o sistema bate, e é contraste, não solução: é da conta inteira, não sabe quem é o Nilton, e quando bate, bate para os 140 clientes de uma vez, o contrário do que a Denise pediu. O teto por cliente mora no código, antes da chamada, abaixo desse. Meia-noite do Pacífico é de madrugada em Brasília, entre 4h e 5h conforme o horário de verão de lá: a cota do dia não vira à meia-noite dele. O erro que volta é o 429, e a tabela de erros do Gemini tem duas linhas dele: o do minuto, que passa esperando, e o da cota do dia, que não. Ele entra no log como resultado. A segunda é para quem está no Groq, e serve a todos como ordem de grandeza: oito mil tokens por minuto acabam em poucas mensagens com o contexto da P3. Para barrar a entrada de tamanho absurdo antes de chamar, volte à contagem do marco anterior.
 
 **marco `margem`**
 
@@ -70,4 +66,4 @@ Link solto no fechamento, nunca leitura na aula. É ensaio de opinião, escrito 
   https://www.youtube.com/watch?v=u57EnkQaUTY&hl=en&persist_hl=1&t=362s
   Um quadro com o prompt montado em camadas, instruções, documento, exemplos e pergunta, e o que acontece com o cache quando a pergunta vem no fim e quando vem no começo: a pergunta do marco, desenhada.
 
-Uma só sugerida. Ofereça no painel depois que ele responder a pergunta de conceito, como conferência, não como explicação. Comece em 6:02 ("when does an LLM know what gets cached?") e pare em 7:52: antes disso é o funcionamento interno do modelo, que a aula não usa, e depois vêm números que não batem com a Anthropic (um mínimo único de 1.024 tokens e um prazo de cinco a dez minutos); os números certos estão nas páginas citadas acima. O vídeo diz que a comparação é token a token; na Anthropic ela é feita por bloco até o ponto de cache, e o efeito na ordem do prompt é o mesmo. Em inglês, com legenda em inglês.
+Uma só sugerida. Ofereça no painel depois que ele responder a pergunta de conceito, como conferência, não como explicação. Comece em 6:02 ("when does an LLM know what gets cached?") e pare em 7:52: antes disso é o funcionamento interno do modelo, que a aula não usa, e depois vêm números que não valem para o Gemini (um mínimo único de 1.024 tokens e um prazo de cinco a dez minutos); o mínimo certo, por modelo, está na página de cache citada acima. O vídeo não é sobre um provedor só, e o efeito da ordem do prompt vale para todos. Em inglês, com legenda em inglês.

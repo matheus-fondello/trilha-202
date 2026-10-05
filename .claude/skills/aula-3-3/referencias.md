@@ -4,9 +4,9 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados que valem para a aula inteira. A documentação vive em `platform.claude.com`; o endereço antigo (`docs.anthropic.com`) e o suporte antigo (`support.anthropic.com`) ainda redirecionam, mas não escreva nenhum dos dois. As páginas em português têm as âncoras em inglês — use as URLs exatas daqui, porque âncora traduzida não dá erro: a página abre no topo e ninguém percebe. E o nome do modelo aparece na primeira linha de quase todo exemplo e muda sem aviso: diga que `model` é parâmetro, não sintaxe, e mande conferir o nome vigente na oficina, que emenda na 1.6.
+Quatro cuidados que valem para a aula inteira. A documentação do Gemini vive em `ai.google.dev`, e a versão em português sai com `?hl=pt-br`; as âncoras continuam em inglês, então use as URLs exatas daqui, porque âncora traduzida não dá erro: a página abre no topo e ninguém percebe. A documentação de hoje ensina a API Interactions (`ai.interactions.create`, texto em `output_text`, system em `system_instruction`); tutorial e vídeo de antes de meados de 2026 usam `generateContent`, com outros nomes de campo, e os exemplos de contagem de tokens pedem o SDK `@google/genai` acima da versão 2.0.0. O nome do modelo aparece na primeira linha de todo exemplo e muda sem aviso: `model` é parâmetro, não sintaxe, e o que vale é a coluna "Nível sem custo financeiro" da página de preços no dia da aula. E limite e preço do gratuito mudam de mês para mês: você não cita número, ele confere na página oficial e no AI Studio dele.
 
-**Não há vídeo nesta aula, e a busca foi feita.** O canal oficial não devolve listagem para conferência automática, e eu não cito o que não abri; o curso da Anthropic Academy cobre exatamente estes marcos, mas exige cadastro e manda o aluno para um login no meio da aula; os vídeos de terceiros que achei são de Claude 3, de outra stack ou sem duração verificável. Se a 202 quiser vídeo aqui, o caminho é gravar dois minutos próprios: material de terceiro sobre chamada de API envelhece em semanas.
+**Não há vídeo nesta aula.** O formato da API do Gemini mudou em 2026, e vídeo de terceiro sobre chamada de API envelhece em semanas: o que ensina `generateContent` põe o aluno a copiar campo que a documentação de hoje já não mostra. Se a 202 quiser vídeo aqui, o caminho é gravar dois minutos próprios.
 
 ## Citadas
 
@@ -14,65 +14,77 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
 
 **marco `a-chamada`**
 
-- **Anthropic, *Comece a usar o Claude* — seção "Chame a API"** — Claude Platform Docs, em português, sem data · ~5 min de leitura
-  https://platform.claude.com/docs/pt-BR/get-started#call-the-api
-  A chamada mínima em abas por linguagem, com a resposta JSON inteira ao lado: o conteúdo, o motivo da parada e o `usage` com os tokens.
+- **Google, *Geração de texto* — seção "Instruções do sistema e outras configurações"** — Gemini API Docs, em português, atualizada em set/2026 · ~4 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#system-instructions
+  O system como campo próprio da chamada, separado da entrada, e os ajustes de geração num bloco à parte, o `generation_config`.
 
-- **Anthropic, *Criar uma mensagem*** — Claude Platform Docs, referência da API, em português, sem data · consulta, não leitura
-  https://platform.claude.com/docs/pt-BR/api/messages/create
-  A referência do endpoint: confirma que `model`, `messages` e `max_tokens` são obrigatórios e que `system` e `stream` são campos de topo, não itens da lista de mensagens.
+- **Google, *Interactions API* — referência** — Gemini API Docs, em inglês, sem data · consulta, não leitura
+  https://ai.google.dev/api/interactions-api
+  A referência do endpoint: `model`, `input`, `system_instruction`, `generation_config.max_output_tokens`, `stream`, `store`, os eventos do streaming e o `usage` com `total_input_tokens` e `total_output_tokens`.
 
-A primeira é o que o aluno leva para a oficina; a segunda é consulta sua, para responder "de onde vem esse campo" sem inventar. Não mande ler a referência: ela lista dezessete parâmetros de primeiro nível, e quem nunca chamou uma API se afoga ali.
+A primeira é o que o aluno leva para a oficina; a segunda é consulta sua, para responder "de onde vem esse campo" sem inventar. Não mande ler a referência: quem nunca chamou uma API se afoga ali. O exemplo da primeira mostra temperatura e nível de raciocínio no `generation_config`; o limite de saída (`max_output_tokens`) mora no mesmo bloco, mas só aparece na referência.
 
 **marco `chave-no-servidor`**
 
-- **Anthropic, *anthropic-sdk-typescript* — seção "Requirements"** — GitHub, README oficial, em inglês · ~2 min de leitura
-  https://github.com/anthropics/anthropic-sdk-typescript
-  O próprio SDK se recusa a rodar no navegador e diz por quê: usar no browser expõe a credencial, e destravar isso exige ligar uma opção com "dangerously" no nome.
+- **Google, *Como usar chaves da API Gemini* — seção "Regras de segurança críticas"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/api-key?hl=pt-br#critical-security-rules
+  A regra dita pelo próprio provedor: chave fora do Git, e chave em app web ou móvel pode ser extraída pelo usuário; para app do lado do cliente, um servidor no meio faz a chamada.
 
-- **Anthropic, *Obtenha sua chave de API do Claude* — seção "Use sua chave de API"** — Claude Platform Docs, em português, sem data · ~3 min de leitura
-  https://platform.claude.com/docs/pt-BR/get-api-key#use-your-api-key
-  Onde a chave nasce, que ela aparece uma única vez, e que o SDK a lê sozinho da variável de ambiente: o aluno não escreve a chave no código em lugar nenhum.
+- **Google, *Google Gen AI SDK for TypeScript and JavaScript* — aviso "API Key Security"** — GitHub, README oficial, em inglês · ~2 min de leitura
+  https://github.com/googleapis/js-genai
+  O SDK roda no navegador e não impede ninguém: só avisa para não expor a chave no código do cliente. A trava é o desenho dele, não a biblioteca.
 
 - **Vercel, *How to use environment variables in Next.js* — seção "Bundling Environment Variables for the Browser"** — Next.js Docs, atualizado em ago/2026 · ~8 min de leitura
   https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
   O mecanismo exato pelo qual a chave vazaria na oficina dele: o prefixo `NEXT_PUBLIC_` embute o valor no pacote que vai para o navegador, e sem o prefixo a variável só existe no servidor.
 
-O README do SDK é o melhor argumento do marco, porque a regra não é conselho da aula: é erro que o código dá. A página do Next.js registra um detalhe que vira bug silencioso: variável pública é congelada no build, então trocar o valor no painel depois não muda nada até o próximo deploy. Onde a chave fica no deploy foi a 2.6; não reabra.
+O README do SDK é o melhor argumento do marco: a biblioteca deixa, e quem decide é ele. A página do Next.js registra um detalhe que vira bug silencioso: variável pública é congelada no build, então trocar o valor no painel depois não muda nada até o próximo deploy. Onde a chave fica no deploy foi a 2.6; não reabra. A mesma página do Google tem a seção "Opção 1: usar variáveis de ambiente (recomendado)", que confirma que o SDK lê `GEMINI_API_KEY` sozinho; se as duas variáveis existirem, vale a `GOOGLE_API_KEY`, que é a causa de "troquei a chave e nada mudou".
 
 **marco `prompt-por-chamada`**
 
-- **Anthropic, *Usando a Messages API* — seção "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages#multiple-conversational-turns
-  A frase na documentação oficial: a API é sem estado, e o histórico inteiro vai junto a cada chamada. O exemplo ainda mostra que turnos do assistente podem ser escritos por você.
+- **Google, *Geração de texto* — seção "Conversas sem estado"** — Gemini API Docs, em português, atualizada em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#stateless-conversations
+  O histórico montado e enviado por quem chama, a cada vez: é o caso da P3, em que cada mensagem é chamada nova e a montagem é dele.
 
-- **Anthropic, *Janelas de contexto* — seção "Como a janela de contexto funciona"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (só a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/context-windows#how-the-context-window-works
-  O que entra na conta de cada chamada: o system, toda mensagem da lista, as ferramentas definidas e a saída.
+- **Google, *Entender e contar tokens* — seção "Contar tokens multiturno"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/tokens?hl=pt-br#multi-turn-tokens
+  A prova de que o modelo relê tudo: mesmo quando o servidor guarda a conversa, o uso da segunda rodada inclui os tokens das duas.
 
-Cite só a primeira seção da segunda página: depois dela vem thinking, compaction e assinatura de bloco de pensamento, que não são desta aula e parecem pré-requisito quando aparecem na tela.
+A segunda desarma quem saiu do quickstart achando que "com estado" é memória do modelo: é o provedor reenviando por ele, e contando.
 
 **marco `streaming`**
 
-- **Anthropic, *Streaming de mensagens* — seção "Streaming com SDKs"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#streaming-com-sdks
-  Quatro linhas que trocam a chamada que devolve tudo no fim pela que devolve em pedaços: é o diff mínimo entre as duas.
-
-- **Anthropic, *Streaming de mensagens* — seção "Requisição básica de streaming"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#basic-streaming-request
-  O fluxo cru de eventos, do começo ao fim, com os pedaços de texto chegando um a um — e os tokens aparecendo na abertura e no fechamento, não no meio.
+- **Google, *Geração de texto* — seção "Respostas de streaming"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#streaming-responses
+  A mesma chamada com `stream: true`, e o laço que recebe os pedaços de texto um a um: é o diff mínimo entre as duas.
 
 - **MDN, *Using server-sent events*** — MDN Web Docs, atualizado em set/2026 · ~12 min de leitura, só em inglês
   https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-  O padrão por baixo do streaming, que é o mesmo que a própria documentação da Anthropic aponta na primeira linha.
+  O padrão por baixo do streaming, que é o mesmo que o quickstart do Gemini nomeia.
 
-A segunda âncora só existe em inglês na página traduzida, e é a que está aqui: não traduza nenhuma das duas. A do MDN é longa e sem versão em português: cite, não ofereça.
+Na referência da Interactions API, o `usage` completo vem no evento `interaction.completed`, o último: é o que sustenta "a conta que vale chega no fim". A do MDN é longa e sem versão em português: cite, não ofereça.
+
+**marco `primeira-chamada`**
+
+- **Google, *Preços da API Gemini Developer*** — Gemini API Docs, em português, atualizada em out/2026 · consulta, não leitura
+  https://ai.google.dev/gemini-api/docs/pricing?hl=pt-br
+  A coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o quanto custaria.
+
+- **Groq, *Quickstart*** — GroqDocs, em inglês, sem data · ~4 min de leitura
+  https://console.groq.com/docs/quickstart
+  A alternativa, se o Gemini não abrir para ele: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
+
+- **Groq, *Rate Limits*** — GroqDocs, em inglês, sem data · consulta, não leitura
+  https://console.groq.com/docs/rate-limits
+  A tabela do plano Free, que é a lista dos modelos que ele pode usar de graça.
+
+Só cite o Groq se o Gemini travar. O exemplo do quickstart usa um modelo que hoje não está na tabela do Free: o modelo sai da tabela de limites, não do exemplo. A página de preços do Gemini é consulta para a escolha do modelo; não abra a conta do pago hoje, que é a 3.4.
 
 **no fechamento**
 
 - **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "The anatomy of effective context"** — Anthropic Engineering, set/2025 · ~13 min de leitura, em inglês
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
-  A tese é o marco `prompt-por-chamada` dito pelo time que escreve isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado.
+  A tese é o marco `prompt-por-chamada` dito por quem constrói isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado. Vale para qualquer provedor.
 
 Único material longo da aula e o único em inglês que vale o tamanho. Vai no fechamento, como link solto para quem quiser; é orientado a agentes, então nunca como leitura pedida.
 
@@ -80,8 +92,8 @@ A segunda âncora só existe em inglês na página traduzida, e é a que está a
 
 **marco `a-chamada`**
 
-- **Anthropic, *Usando a Messages API* — seções "Requisição e resposta básicas" e "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~6 min de leitura (as duas seções)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages
-  A requisição básica e o JSON de resposta à vista, e logo depois a lista de mensagens crescendo turno a turno: as duas metades da aula na mesma página, em português.
+- **Google, *Vamos começar* — seções 1 a 4** — Gemini API Docs, em português, atualizada em out/2026 · ~7 min de leitura (as quatro seções)
+  https://ai.google.dev/gemini-api/docs/quickstart?hl=pt-br
+  A chave, a primeira chamada com a resposta e os tokens à vista, o streaming, e a conversa de vários turnos nos dois jeitos, com estado e sem estado: a aula inteira na mesma página, em português.
 
-Uma só sugerida, e ela serve dois marcos: ofereça no painel quando o `a-chamada` abrir, e volte a ela no `prompt-por-chamada` em vez de oferecer outra coisa. Antecipe duas minas antes de abrir: a página avisa que alguns parâmetros de amostragem dão erro nos modelos novos e que uma técnica de prefill não é mais suportada. São dois parágrafos sobre coisa que não existe mais; diga que ele lê as duas primeiras seções e para.
+Uma só sugerida, e ela serve dois marcos: ofereça no painel quando o `a-chamada` abrir, e volte a ela no `prompt-por-chamada`, na seção 4, em vez de oferecer outra coisa. Antecipe duas minas antes de abrir: logo depois da seção da chave vem "Fazer upgrade para o nível pago", que pede faturamento e não é para a P3; e a seção 5, multimodal, não é desta aula. Diga que ele lê da 1 à 4, pula o upgrade, e para.

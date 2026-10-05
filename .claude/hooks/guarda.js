@@ -155,6 +155,7 @@ function conferirBash(entrada) {
     if (GIT_ESCREVE.test(seg)) {
       bloquear(`\`${seg}\` reescreve o repositório da sala. Aqui o git é só leitura (status, log, diff). Atualizar o material com \`git pull\` é o aluno que faz, no terminal dele, fora do chat.`);
     }
+    if (REDE.test(seg)) conferirRede(seg);
     if (REMOVE.test(seg)) {
       bloquear(`\`${seg}\` apaga arquivos. Nada na sala precisa disso.`);
     }
@@ -164,6 +165,28 @@ function conferirBash(entrada) {
       if (LEITURA.has(primeiro.toLowerCase()) && !redireciona) continue;
       bloquear(`\`${seg}\` mexe em um arquivo do harness. O harness não se edita a partir de um chat, por nenhum caminho: nem sed, nem tee, nem node -e, nem redirecionamento.`);
     }
+  }
+}
+
+// Rede pelo terminal: a sala não tem web aberta (WebFetch e WebSearch estão
+// negados), e um curl para qualquer endereço era a mesma porta por outro
+// caminho. Quem corrige precisa ver o sistema do aluno responder sem login, e
+// isso é curl contra a entrega registrada; fora dela, só localhost.
+const REDE = /^(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*(?:curl|wget|invoke-webrequest|iwr|invoke-restmethod|irm)(?:\.exe)?(?:\s|$)/i;
+function hostLocal(h) { return h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h === '::1'; }
+function conferirRede(seg) {
+  const urls = seg.match(/\bhttps?:\/\/[^\s'"<>]+/gi) || [];
+  const estado = lerJson(paths.ESTADO, {});
+  const hosts = Object.values(estado.praticas || {})
+    .map((p) => { try { return semWww(new URL(p.url).hostname); } catch { return null; } })
+    .filter(Boolean);
+  const fora = urls.filter((u) => {
+    let h;
+    try { h = semWww(new URL(u).hostname); } catch { return true; }
+    return !hostLocal(h) && !hosts.includes(h);
+  });
+  if (!urls.length || fora.length) {
+    bloquear(`\`${seg}\` vai à internet. Daqui só se chama a entrega registrada do aluno (a URL da prática) e localhost; a sala não busca nem lê página por conta própria.`, 'Se é o sistema dele no ar, registre a URL antes (`pratica <id> pasta=<caminho> url=<url>`) e chame de novo. Link de fora vai em texto, para o aluno abrir no navegador dele.');
   }
 }
 

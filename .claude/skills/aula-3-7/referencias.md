@@ -4,9 +4,9 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Tudo em inglês menos a documentação da Anthropic; avise antes do primeiro link. Três cuidados para a aula inteira. O texto do Hamel Husain é de março de 2024: a tese e o método não envelheceram, mas metade do artigo é sobre o que não é desta aula (teste A/B, RAG, fine-tuning), e ele usa um modelo para gerar as entradas de teste — aqui as entradas saem do material da P3 e a saída esperada sai das regras, escrita por ele. Diga isso antes de ele ler, senão ele volta querendo pedir ao Claude da oficina os vinte casos prontos com resposta. O artigo da Anthropic, *Demystifying evals for AI agents*, é escrito para agente e os exemplos são de agente (Terminal-Bench, SWE-Bench, pass@k): o lançador dele é um workflow, então ele leva o princípio e deixa o exemplo. E a página da documentação discorda da aula em dois pontos, que você precisa antecipar: ela aceita juiz dando nota de 1 a 5 e diz para evitar avaliação humana sempre que der. A aula fica com passa ou não passa, e com os casos julgados na mão servindo para conferir o juiz — a própria página manda testar a confiabilidade do juiz antes de escalar, e é por aí que você costura.
+Tudo em inglês menos a página da documentação da Anthropic; avise antes do primeiro link. Os textos da Anthropic aqui são de método, não de API: ele roda a P3 no Gemini, ou no Groq, e o eval é o mesmo em qualquer provedor. Três cuidados para a aula inteira. O texto do Hamel Husain é de março de 2024: a tese e o método não envelheceram, mas metade do artigo é sobre o que não é desta aula (teste A/B, RAG, fine-tuning), e ele usa um modelo para gerar as entradas de teste — aqui as entradas saem do material da P3 e a saída esperada sai das regras, escrita por ele. Diga isso antes de ele ler, senão ele volta querendo pedir ao Claude da oficina os vinte casos prontos com resposta. O artigo da Anthropic, *Demystifying evals for AI agents*, é escrito para agente e os exemplos são de agente (Terminal-Bench, SWE-Bench, pass@k): o lançador dele é um workflow, então ele leva o princípio e deixa o exemplo. E a página da documentação discorda da aula em dois pontos, que você precisa antecipar: ela aceita juiz dando nota de 1 a 5 e diz para evitar avaliação humana sempre que der. A aula fica com passa ou não passa, e com os casos julgados na mão servindo para conferir o juiz — a própria página manda testar a confiabilidade do juiz antes de escalar, e é por aí que você costura.
 
-**Vídeo, a busca foi feita.** O da Anthropic sobre avaliar prompt no Console (2024, 3 min 20 s) foi visto e descartado: gera os casos automaticamente, o contrário do primeiro marco, e a página da ferramenta que ele mostra hoje redireciona para a página geral de avaliação. O único curto que passou é o do Hamel, nas sugeridas.
+**Vídeo, a busca foi feita.** O da Anthropic sobre a ferramenta de avaliar prompt do console dela (2024, 3 min 20 s) foi visto e descartado: gera os casos automaticamente, o contrário do primeiro marco, e é de uma ferramenta que ele não usa. O único curto que passou é o do Hamel, nas sugeridas.
 
 ## Citadas
 
@@ -34,7 +34,7 @@ A tese do Hamel, a de que produto de IA que empaca quase sempre empacou por falt
   https://hamel.dev/blog/posts/field-guide/#creating-trustworthy-evaluation-systems
   Por que passa ou não passa ganha de escala de 1 a 5, e como medir se o juiz concorda com a pessoa antes de confiar nele: "a 10% increase in passing outputs is immediately meaningful".
 
-A primeira é a taxonomia; a segunda é o cuidado com o juiz que a primeira deixa leve. As âncoras da página em português estão em inglês, e é a URL daqui: não traduza. O endereço antigo da página (`define-success`) redireciona para este. O código de exemplo da documentação traz o nome de um modelo na primeira linha: `model` é parâmetro, como a 3.3 já disse. Leia com ele até o item 3 do Hamel; o 4 é sobre escalar sem perder gente, que não é o problema dele.
+A primeira é a taxonomia; a segunda é o cuidado com o juiz que a primeira deixa leve. As âncoras da página em português estão em inglês, e é a URL daqui: não traduza. O endereço antigo da página (`define-success`) redireciona para este. O código de exemplo da documentação usa o SDK da Anthropic, e o dele chama outro provedor: leve o desenho (casos, laço, comparação, juiz com resposta fechada) e deixe o cliente e o nome do modelo. Leia com ele até o item 3 do Hamel; o 4 é sobre escalar sem perder gente, que não é o problema dele.
 
 **marco `regressao`**
 
@@ -62,7 +62,15 @@ A seção abre com o "Step 6", que é o caso a caso do marco anterior dito pela 
   https://hamel.dev/blog/posts/evals/#step-3-run-track-your-tests-regularly
   Rodar os testes do jeito que der menos atrito na stack que já existe, e guardar o resultado ao longo do tempo para ver se está melhorando.
 
-O exemplo dele é integração contínua com painel de métricas. Para o aluno, o "menos atrito" é um script que imprime o número e o README com o resultado de cada rodada; nada de CI nem painel nesta aula.
+- **Google, *Rate limits* — seção "How rate limits work"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/rate-limits#how-rate-limits-work
+  As três medidas do limite (requisições por minuto, tokens de entrada por minuto, requisições por dia), que estourar qualquer uma dá erro, que o limite é do projeto e não da chave, e que o diário zera à meia-noite do Pacífico.
+
+- **Groq, *Rate Limits*** — GroqDocs, sem data · ~2 min de leitura (a tabela do plano gratuito e os cabeçalhos)
+  https://console.groq.com/docs/rate-limits
+  Para quem foi pelo Groq: o limite por minuto, por dia e de tokens de cada modelo no gratuito, e o `429` com o `retry-after` dizendo quanto esperar.
+
+O exemplo do Hamel é integração contínua com painel de métricas. Para o aluno, o "menos atrito" é um script que imprime o número e o README com o resultado de cada rodada e o comando que o roda, porque a correção roda esse mesmo comando na máquina dele, com a chave do `.env`; nada de CI nem painel nesta aula. O "menos atrito" também é caber no plano gratuito: a página do Gemini não publica o número, que só aparece no AI Studio do aluno, logado (https://aistudio.google.com/rate-limit, ele abre no navegador dele); peça que ele leia o do projeto dele, não cite número de memória nem de terceiros, e lembre que limite e modelos do gratuito mudam e se conferem na página oficial. No Groq, a tabela pública do gratuito dava 8 mil tokens por minuto aos modelos de texto em outubro de 2026 (confira na página, que muda): com o plano de contas e as regras no prompt, cabem poucos casos por minuto, e o script roda um por vez, esperando o `retry-after`. Nos dois, chamada recusada por limite é caso que não rodou e se repete, não caso errado.
 
 ## Sugeridas
 

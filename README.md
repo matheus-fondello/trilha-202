@@ -27,6 +27,6 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 
 Em construção. Escritos do módulo 0 ao módulo 4: as aulas, as práticas P0 a P4 (da P1 em diante com correção) e os quizzes dos módulos 1 a 4. O material para no quiz do módulo 4; o módulo 5 chega numa atualização, e quem já terminou segue para ele sozinho.
 
-O módulo 3 constrói uma feature que chama a API da Anthropic com uma chave sua, que precisa de saldo: a assinatura do Claude Code não dá esse crédito. A 202 informa como fica o crédito.
+O módulo 3 constrói uma feature que chama um modelo por API, com uma chave sua e gratuita: a recomendada é a do Gemini, criada no Google AI Studio com a sua conta Google, sem cartão; o Groq é a alternativa. Ninguém paga nada. O plano gratuito tem limite de requisições por minuto e por dia, e lidar com ele faz parte da matéria.
 
 Os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem para o CRM da 202 com o seu token; sem rede, esperam e sobem de uma vez quando ela volta. Ver `TESTE.md` para o protocolo de validação.

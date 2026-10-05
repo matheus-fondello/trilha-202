@@ -1026,55 +1026,63 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 **Sugerida**
 
-- **Anthropic, *Usando a Messages API* — seções "Requisição e resposta básicas" e "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~6 min de leitura (as duas seções)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages
-  A requisição básica e o JSON de resposta à vista, e logo depois a lista de mensagens crescendo turno a turno: as duas metades da aula na mesma página, em português.
+- **Google, *Vamos começar* — seções 1 a 4** — Gemini API Docs, em português, atualizada em out/2026 · ~7 min de leitura (as quatro seções)
+  https://ai.google.dev/gemini-api/docs/quickstart?hl=pt-br
+  A chave, a primeira chamada com a resposta e os tokens à vista, o streaming, e a conversa de vários turnos nos dois jeitos, com estado e sem estado: a aula inteira na mesma página, em português.
 
 **Citadas na aula**
 
-- **Anthropic, *Comece a usar o Claude* — seção "Chame a API"** — Claude Platform Docs, em português, sem data · ~5 min de leitura
-  https://platform.claude.com/docs/pt-BR/get-started#call-the-api
-  A chamada mínima em abas por linguagem, com a resposta JSON inteira ao lado: o conteúdo, o motivo da parada e o `usage` com os tokens.
+- **Google, *Geração de texto* — seção "Instruções do sistema e outras configurações"** — Gemini API Docs, em português, atualizada em set/2026 · ~4 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#system-instructions
+  O system como campo próprio da chamada, separado da entrada, e os ajustes de geração num bloco à parte, o `generation_config`.
 
-- **Anthropic, *Criar uma mensagem*** — Claude Platform Docs, referência da API, em português, sem data · consulta, não leitura
-  https://platform.claude.com/docs/pt-BR/api/messages/create
-  A referência do endpoint: confirma que `model`, `messages` e `max_tokens` são obrigatórios e que `system` e `stream` são campos de topo, não itens da lista de mensagens.
+- **Google, *Interactions API* — referência** — Gemini API Docs, em inglês, sem data · consulta, não leitura
+  https://ai.google.dev/api/interactions-api
+  A referência do endpoint: `model`, `input`, `system_instruction`, `generation_config.max_output_tokens`, `stream`, `store`, os eventos do streaming e o `usage` com `total_input_tokens` e `total_output_tokens`.
 
-- **Anthropic, *anthropic-sdk-typescript* — seção "Requirements"** — GitHub, README oficial, em inglês · ~2 min de leitura
-  https://github.com/anthropics/anthropic-sdk-typescript
-  O próprio SDK se recusa a rodar no navegador e diz por quê: usar no browser expõe a credencial, e destravar isso exige ligar uma opção com "dangerously" no nome.
+- **Google, *Como usar chaves da API Gemini* — seção "Regras de segurança críticas"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/api-key?hl=pt-br#critical-security-rules
+  A regra dita pelo próprio provedor: chave fora do Git, e chave em app web ou móvel pode ser extraída pelo usuário; para app do lado do cliente, um servidor no meio faz a chamada.
 
-- **Anthropic, *Obtenha sua chave de API do Claude* — seção "Use sua chave de API"** — Claude Platform Docs, em português, sem data · ~3 min de leitura
-  https://platform.claude.com/docs/pt-BR/get-api-key#use-your-api-key
-  Onde a chave nasce, que ela aparece uma única vez, e que o SDK a lê sozinho da variável de ambiente: o aluno não escreve a chave no código em lugar nenhum.
+- **Google, *Google Gen AI SDK for TypeScript and JavaScript* — aviso "API Key Security"** — GitHub, README oficial, em inglês · ~2 min de leitura
+  https://github.com/googleapis/js-genai
+  O SDK roda no navegador e não impede ninguém: só avisa para não expor a chave no código do cliente. A trava é o desenho dele, não a biblioteca.
 
 - **Vercel, *How to use environment variables in Next.js* — seção "Bundling Environment Variables for the Browser"** — Next.js Docs, atualizado em ago/2026 · ~8 min de leitura
   https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
   O mecanismo exato pelo qual a chave vazaria na oficina dele: o prefixo `NEXT_PUBLIC_` embute o valor no pacote que vai para o navegador, e sem o prefixo a variável só existe no servidor.
 
-- **Anthropic, *Usando a Messages API* — seção "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages#multiple-conversational-turns
-  A frase na documentação oficial: a API é sem estado, e o histórico inteiro vai junto a cada chamada. O exemplo ainda mostra que turnos do assistente podem ser escritos por você.
+- **Google, *Geração de texto* — seção "Conversas sem estado"** — Gemini API Docs, em português, atualizada em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#stateless-conversations
+  O histórico montado e enviado por quem chama, a cada vez: é o caso da P3, em que cada mensagem é chamada nova e a montagem é dele.
 
-- **Anthropic, *Janelas de contexto* — seção "Como a janela de contexto funciona"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (só a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/context-windows#how-the-context-window-works
-  O que entra na conta de cada chamada: o system, toda mensagem da lista, as ferramentas definidas e a saída.
+- **Google, *Entender e contar tokens* — seção "Contar tokens multiturno"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/tokens?hl=pt-br#multi-turn-tokens
+  A prova de que o modelo relê tudo: mesmo quando o servidor guarda a conversa, o uso da segunda rodada inclui os tokens das duas.
 
-- **Anthropic, *Streaming de mensagens* — seção "Streaming com SDKs"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#streaming-com-sdks
-  Quatro linhas que trocam a chamada que devolve tudo no fim pela que devolve em pedaços: é o diff mínimo entre as duas.
-
-- **Anthropic, *Streaming de mensagens* — seção "Requisição básica de streaming"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#basic-streaming-request
-  O fluxo cru de eventos, do começo ao fim, com os pedaços de texto chegando um a um — e os tokens aparecendo na abertura e no fechamento, não no meio.
+- **Google, *Geração de texto* — seção "Respostas de streaming"** — Gemini API Docs, em português, atualizada em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/text-generation?hl=pt-br#streaming-responses
+  A mesma chamada com `stream: true`, e o laço que recebe os pedaços de texto um a um: é o diff mínimo entre as duas.
 
 - **MDN, *Using server-sent events*** — MDN Web Docs, atualizado em set/2026 · ~12 min de leitura, só em inglês
   https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-  O padrão por baixo do streaming, que é o mesmo que a própria documentação da Anthropic aponta na primeira linha.
+  O padrão por baixo do streaming, que é o mesmo que o quickstart do Gemini nomeia.
+
+- **Google, *Preços da API Gemini Developer*** — Gemini API Docs, em português, atualizada em out/2026 · consulta, não leitura
+  https://ai.google.dev/gemini-api/docs/pricing?hl=pt-br
+  A coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o quanto custaria.
+
+- **Groq, *Quickstart*** — GroqDocs, em inglês, sem data · ~4 min de leitura
+  https://console.groq.com/docs/quickstart
+  A alternativa, se o Gemini não abrir para ele: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
+
+- **Groq, *Rate Limits*** — GroqDocs, em inglês, sem data · consulta, não leitura
+  https://console.groq.com/docs/rate-limits
+  A tabela do plano Free, que é a lista dos modelos que ele pode usar de graça.
 
 - **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "The anatomy of effective context"** — Anthropic Engineering, set/2025 · ~13 min de leitura, em inglês
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
-  A tese é o marco `prompt-por-chamada` dito pelo time que escreve isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado.
+  A tese é o marco `prompt-por-chamada` dito por quem constrói isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado. Vale para qualquer provedor.
 
 ### 3.4 Custo, teto e observabilidade
 
@@ -1086,33 +1094,29 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 **Citadas na aula**
 
-- **Anthropic, *Preços* — seção "Preços dos modelos"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a tabela e as notas abaixo dela)
-  https://platform.claude.com/docs/pt-BR/about-claude/pricing#model-pricing
-  A tabela oficial em dólar por milhão de tokens, com entrada, saída e as colunas de cache de cada modelo: a saída custa várias vezes a entrada.
+- **Google, *Gemini Developer API pricing*** — Gemini API Docs, atualizado em out/2026 · ~3 min de leitura (o bloco do modelo que ele usa)
+  https://ai.google.dev/gemini-api/docs/pricing
+  A tabela oficial em dólar por milhão de tokens, com a coluna do gratuito ao lado da do pago: entrada, saída "incluindo os tokens de raciocínio" e cache, modelo por modelo.
 
-- **Anthropic, *Contagem de tokens* — seção "Como contar os tokens de uma mensagem"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/token-counting#how-to-count-message-tokens
-  Um endpoint que recebe o mesmo pedido da chamada e devolve só quantos tokens de entrada ele tem, sem chamar o modelo: o jeito de pesar cada pedaço do prompt separado.
+- **Google, *Understand and count tokens* — seção "Count tokens"** — Gemini API Docs, atualizado em set/2026 · ~3 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/tokens#count-tokens
+  Os dois jeitos de contar: antes de mandar, só a entrada, sem gerar resposta; e depois, no `usage` de toda resposta, com entrada, saída, raciocínio e cache em campos separados.
 
-- **Anthropic, *Cache de prompt* — seção "Como o cache de prompt funciona"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#how-prompt-caching-works
-  O mecanismo em três passos: o sistema procura um prefixo idêntico do prompt já guardado, usa se achar e guarda se não achar; vale cinco minutos e renova a cada uso.
+- **Google, *Context caching* — seção "Implicit caching"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/caching#implicit-caching
+  O cache que já vem ligado, sem configurar nada: o conselho de pôr o conteúdo grande e comum no começo do prompt, o tamanho mínimo modelo por modelo, e o campo do `usage` que prova se pegou.
 
-- **Anthropic, *Cache de prompt* — seção "Limitações do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#cache-limitations
-  O tamanho mínimo que o cache aceita, modelo por modelo, e a frase que mais importa: abaixo dele o pedido roda sem cache e nenhum erro é retornado.
+- **Google, *Batch API* — seção "Technical details"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/batch-mode#technical-details
+  O preço do desconto, escrito: metade do custo da chamada comum, em troca de um prazo de até 24 horas para o resultado.
 
-- **Anthropic, *Processamento em lote* — seção "Limitações de lotes"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/batch-processing#batch-limitations
-  O preço do desconto, escrito: a maioria dos lotes termina em até uma hora, mas o resultado pode levar até 24, e o lote que não termina nesse prazo expira.
+- **Google, *Rate limits* — seção "How rate limits work"** — Gemini API Docs, atualizado em set/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/rate-limits#how-rate-limits-work
+  As três medidas do limite (requisições por minuto, tokens de entrada por minuto, requisições por dia), que valem por projeto e não por chave, com a cota diária zerando à meia-noite do horário do Pacífico.
 
-- **Anthropic, *Cache de prompt* — seção "Acompanhando o desempenho do cache"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#tracking-cache-performance
-  Os três campos de entrada que o `usage` devolve com o cache ligado, e a soma que dá a entrada total: com cache, `input_tokens` é só o que vem depois do ponto de cache.
-
-- **Anthropic, *Limites de taxa* — seção "Definindo seu próprio limite de gastos"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/api/rate-limits#setting-your-own-spend-limit
-  O teto mensal de gasto que o console oferece e o que acontece quando ele bate: as chamadas da conta passam a voltar com erro até o limite subir ou o mês virar.
+- **Groq, *Rate Limits* — seção "Rate Limits"** — GroqCloud Docs, sem data · ~2 min de leitura (a tabela do plano Free)
+  https://console.groq.com/docs/rate-limits#rate-limits
+  Um provedor que publica a tabela: requisições e tokens por minuto e por dia de cada modelo no plano gratuito, por organização, e o erro 429 com o tempo de espera quando passa.
 
 - **Ethan Ding, *tokens are getting more expensive*** — mandates (Substack), jul/2025 · ~9 min de leitura, em inglês
   https://ethanding.substack.com/p/ai-subscriptions-get-short-squeezed
@@ -1128,33 +1132,41 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 **Citadas na aula**
 
-- **Anthropic, *Saídas estruturadas* — seção "Por que usar saídas estruturadas"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#why-use-structured-outputs
-  A lista do que dá errado quando a forma é só pedida no prompt — JSON que não abre, campo faltando, tipo trocado — e o que muda quando a API força a forma.
+- **Google, *Structured outputs* — seção "Best practices"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/structured-output#best-practices
+  A tese do marco dita pelo próprio provedor: o JSON sai sintaticamente correto, e o valor se valida na aplicação, inclusive a saída que bate com o schema e está errada no sentido.
 
-- **Anthropic, *Saídas estruturadas* — seção "Limitações do JSON Schema"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#json-schema-limitations
-  Restrição numérica (`minimum`, `maximum`) e de tamanho de texto não entram no schema forçado: o "valor maior que zero" da regra do negócio não tem como ser garantido pela API, só pela validação dele.
+- **Google, *Structured outputs* — seção "JSON schema support"** — Gemini API Docs, atualizada em set/2026 · ~3 min de leitura (a seção e "Limitations", logo abaixo), em inglês
+  https://ai.google.dev/gemini-api/docs/structured-output#json-schema-support
+  O que o schema forçado aceita: `enum` para tipo, categoria e forma de pagamento, `format` de data, `minimum`, `required`. E, em "Limitations", que nem todo recurso do JSON Schema entra e schema grande ou muito aninhado pode ser recusado.
 
-- **Anthropic, *Saídas estruturadas* — seção "Saídas inválidas"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/structured-outputs#invalid-outputs
-  A própria documentação admite os buracos da forma forçada: a recusa vem com status 200 e pode não bater com o schema, a resposta cortada no `max_tokens` vem incompleta, e valor de `enum` pode voltar com maiúscula trocada sem erro nenhum.
+- **Groq, *Structured Outputs* — seção "Choosing between strict and best-effort mode"** — GroqCloud Docs, sem data · ~2 min de leitura (a seção), em inglês
+  https://console.groq.com/docs/structured-outputs#choosing-between-strict-and-besteffort-mode
+  Para quem foi pelo Groq: só o modo estrito garante o schema, e só em alguns modelos; o outro pode devolver erro 400 ou JSON válido que não bate com o schema.
 
-- **Anthropic, *Motivos de parada e fallback* — seção "Referência rápida"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/handling-stop-reasons#quick-reference
-  Uma tabela: cada valor de `stop_reason`, quando acontece e o que fazer. É o mapa do "por que parou" que vem em toda resposta.
+- **Google, *Interactions API* — campo `status` do recurso Interaction** — Gemini API Docs, referência da API, sem data · consulta, não leitura, em inglês
+  https://ai.google.dev/api/interactions-api
+  O "terminou ou foi cortada" que vem em toda resposta: `completed`, `failed`, e `incomplete`, que é a resposta que acabou com resultado pela metade, por exemplo por bater no limite de saída.
 
-- **Anthropic, *Motivos de parada e fallback* — seção "Motivos de parada vs. erros"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/handling-stop-reasons#stop-reasons-vs-errors
-  A separação que o marco precisa: motivo de parada vem numa resposta que deu certo, erro vem como status 4xx ou 5xx. São dois caminhos no código dele, e cada um tem destino diferente.
+- **Google, *API errors* — seção "Standard API error codes"** — Gemini API Docs, atualizada em set/2026 · ~3 min de leitura (a tabela), em inglês
+  https://ai.google.dev/gemini-api/docs/api-errors#api-error-codes
+  Cada código com o que fazer. O 429 tem dois: o de limite por minuto, que se repete esperando, e o de cota do dia, que só volta quando a cota zera. Chave inválida e pedido torto não se repetem.
 
-- **Anthropic, *Erros da Claude API* — seção "Erros HTTP"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/api/errors#http-errors
-  Cada código com o que significa, e no fim o parágrafo que importa: os SDKs oficiais já repetem sozinhos, duas vezes, as falhas passageiras (conexão, limite de taxa, 5xx).
+- **Google, *API errors* — seção "Generation blocked codes"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/api-errors#generation-blocked-codes
+  O terceiro jeito de quebrar: o provedor bloqueia a saída por política ou segurança, com um código que diz o motivo, e a página manda mudar a entrada, não repetir igual.
+
+- **Google, *Troubleshooting guide* — seção "Retry strategy"** — Gemini API Docs, atualizada em out/2026 · ~2 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/troubleshooting#retry-strategy
+  Os SDKs oficiais já repetem sozinhos, com espera crescente, as falhas passageiras (429 e 5xx), e a lista do que não se repete nunca: 400, sintaxe, e 403, que a página liga à chave (a tabela de erros dá 401 para chave inválida; nenhum dos dois se repete).
 
 - **Anthropic, *Glossário* — seção "Temperature"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
   https://platform.claude.com/docs/pt-BR/about-claude/glossary#temperature
-  Dois parágrafos, e o segundo é a frase oficial: mesmo com a temperatura em zero, os resultados não são totalmente determinísticos, e entradas idênticas podem produzir saídas diferentes.
+  Dois parágrafos, e o segundo é a frase que vale para qualquer provedor: mesmo com a temperatura em zero, os resultados não são totalmente determinísticos, e entradas idênticas podem produzir saídas diferentes.
+
+- **Google, *Gemini 3 Developer Guide* — seção "Temperature"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/gemini-3#temperature
+  O "nem mexa" da aula: nos modelos Gemini 3 a recomendação é deixar a temperatura no padrão, 1.0, porque baixar pode fazer o modelo entrar em loop ou raciocinar pior.
 
 - **Jakob Nielsen, *Response Times: The 3 Important Limits*** — Nielsen Norman Group, 1993, revisado em jan/2024 · ~4 min de leitura, em inglês
   https://www.nngroup.com/articles/response-times-3-important-limits/
@@ -1213,6 +1225,14 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 - **OWASP, *LLM02:2025 Sensitive Information Disclosure* — seção "Example Attack Scenarios"** — genai.owasp.org, edição 2025 · ~6 min de leitura
   https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/#user-content-example-attack-scenarios
   O primeiro cenário é o do marco, em uma linha: um usuário recebe na resposta o dado pessoal de outro usuário. A página também trata do dado que entra no treino e reaparece na saída.
+
+- **Google, *Gemini API Additional Terms of Service* — seção "Unpaid Services", parte "How Google Uses Your Data"** — ai.google.dev, atualizada em abr/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/terms#data-use-unpaid
+  O provedor também é quem lê o contexto: no plano gratuito, que é o da P3, o Google usa o que entra e o que sai para desenvolver os produtos dele, revisores humanos podem ler, e os próprios termos mandam não enviar informação sensível, confidencial ou pessoal.
+
+- **Groq, *Your Data in GroqCloud*** — console.groq.com, sem data · ~3 min de leitura
+  https://console.groq.com/docs/your-data
+  O contraste, para quem foi pelo Groq: por padrão ele não guarda o dado das chamadas, salvo log temporário de erro e abuso por até 30 dias.
 
 - **OWASP, *LLM06:2025 Excessive Agency* — seção "Prevention and Mitigation Strategies"** — genai.owasp.org, edição 2025 · ~7 min de leitura
   https://genai.owasp.org/llmrisk/llm062025-excessive-agency/#user-content-prevention-and-mitigation-strategies
@@ -1276,6 +1296,14 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://hamel.dev/blog/posts/evals/#step-3-run-track-your-tests-regularly
   Rodar os testes do jeito que der menos atrito na stack que já existe, e guardar o resultado ao longo do tempo para ver se está melhorando.
 
+- **Google, *Rate limits* — seção "How rate limits work"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/docs/rate-limits#how-rate-limits-work
+  As três medidas do limite (requisições por minuto, tokens de entrada por minuto, requisições por dia), que estourar qualquer uma dá erro, que o limite é do projeto e não da chave, e que o diário zera à meia-noite do Pacífico.
+
+- **Groq, *Rate Limits*** — GroqDocs, sem data · ~2 min de leitura (a tabela do plano gratuito e os cabeçalhos)
+  https://console.groq.com/docs/rate-limits
+  Para quem foi pelo Groq: o limite por minuto, por dia e de tokens de cada modelo no gratuito, e o `429` com o `retry-after` dizendo quanto esperar.
+
 ### 3.8 Recuperação e memória
 
 **Sugerida**
@@ -1290,9 +1318,9 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://www.anthropic.com/engineering/contextual-retrieval#a-primer-on-rag-scaling-to-larger-knowledge-bases
   O RAG de vetor em três passos e, logo depois, o caso em que o vetor erra: um código exato, "TS-999", que só a busca por texto acha. É o "marcão" da P3 com outro nome.
 
-- **Anthropic, *Embeddings* — seção "Como obter embeddings com a Anthropic"** — Claude Platform Docs, em português, sem data · ~1 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/embeddings#how-to-get-embeddings-with-anthropic
-  A Anthropic não tem modelo de embedding próprio: buscar por vetor é outro fornecedor, outra chave e outra conta. É o custo concreto de escolher o jeito caro quando a chave resolve.
+- **Google, *Embeddings* — seção "Storing embeddings"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/embeddings#store-embeddings
+  Em produção, vetor pede um banco de vetores para guardar, indexar e buscar, e a seção lista os serviços que fazem isso. É o custo concreto do jeito caro: mais uma peça para manter, quando a chave resolve.
 
 - **Daniel Ford (Anthropic), *Introducing Contextual Retrieval* — seção "A note on simply using a longer prompt"** — Anthropic Engineering, set/2024 · ~1 min de leitura (a seção), em inglês
   https://www.anthropic.com/engineering/contextual-retrieval#a-note-on-simply-using-a-longer-prompt
@@ -1310,13 +1338,13 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://www.langchain.com/blog/memory-for-agents
   Memória é específica de cada aplicação: o que guardar depende do produto. E dá o vocabulário: a memória "episódica", exemplos de casos que deram certo postos no prompt, é o que o histórico aprovado da P3 é.
 
-- **Anthropic, *Cache de prompt* — seção "Práticas recomendadas para um cache eficaz"** — Claude Platform Docs, em português, sem data · ~2 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-caching#best-practices-for-effective-caching
-  Volta da 3.4, não matéria nova: prefixo estático, sufixo variável, e o sufixo nomeado com todas as letras, "contexto por solicitação" e "a mensagem recebida". É a ordem da aula escrita pela documentação.
+- **Google, *Context caching* — seção "Implicit caching"** — Gemini API Docs, atualizada em set/2026 · ~1 min de leitura (a seção), em inglês
+  https://ai.google.dev/gemini-api/docs/caching#implicit-caching
+  Volta da 3.4, não matéria nova: o cache vem ligado sem fazer nada, e as duas dicas da página são pôr o conteúdo grande e comum no começo do prompt e mandar pedidos de prefixo parecido em pouco tempo. É a ordem da aula escrita pela documentação, e o `usage` diz quantos tokens vieram do cache.
 
-- **Anthropic, *Melhores práticas de prompting* — seção "Prompting de contexto longo"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
-  https://platform.claude.com/docs/pt-BR/build-with-claude/prompt-engineering/claude-prompting-best-practices#long-context-prompting
-  Dados longos acima, pergunta no fim, e cada documento na sua tag com a fonte ao lado. É a ordem da montagem e a tag por documento, ditas pela documentação.
+- **Google, *Long context* — FAQ "Where is the best place to put my query in the context window?"** — Gemini API Docs, atualizada em jun/2026 · ~1 min de leitura (esta pergunta e a seguinte), em inglês
+  https://ai.google.dev/gemini-api/docs/long-context#where_is_the_best_place_to_put_my_query_in_the_context_window
+  Pergunta no fim, depois de todo o contexto. E a pergunta logo abaixo, mesmo defendendo o contexto longo, abre dizendo que o token desnecessário é melhor evitar: o "caber não é valer" na voz do provedor.
 
 - **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "Context retrieval and agentic search"** — Anthropic Engineering, set/2025 · ~5 min de leitura (a seção), em inglês
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents#context-retrieval-and-agentic-search

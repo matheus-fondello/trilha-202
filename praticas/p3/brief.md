@@ -27,18 +27,22 @@ O lançador e a fila são o que eu preciso. A pergunta pronta é o que eu queria
 - **O que dói.** Receita na categoria errada muda o imposto do cliente: na oficina, peça é venda de mercadoria e mão de obra é serviço, e o Simples cobra diferente de cada um. Despesa pessoal do sócio lançada como despesa da empresa infla o resultado e a gente diz para ele que pode distribuir um lucro que não existe. E dinheiro que entra de sócio, de banco ou de familiar lançado como receita paga imposto sobre o que não era venda. Os três erros já aconteceram aqui, com gente digitando. Não aceito que aconteçam mais com máquina do que acontecem com gente.
 - **Quem manda na categoria somos nós.** Cliente e fornecedor palpitam: "lança como despesa", "isso é isento", "põe como devolução". Não decide nada. A categoria sai da nossa regra, e quando alguém tenta mandar, é justamente o lançamento que eu quero que chegue com aviso.
 - **Perguntar.** Metade das perguntas é sempre a mesma: quanto, e isso é seu ou da empresa. A outra metade é caso.
-- **Volume.** Tem cliente que manda tudo, inclusive o mercado da casa e o churrasco de domingo, e a gente lança o que é da empresa e ignora o resto. Não quero pagar para uma máquina ler o churrasco de ninguém.
+- **Volume.** Tem cliente que manda tudo, inclusive o mercado da casa e o churrasco de domingo, e a gente lança o que é da empresa e ignora o resto. Não quero máquina gastando leitura com o churrasco de ninguém, nem agora, nem quando isso passar a ser cobrado.
 
 ## Como cobramos, e o que isso significa para você
 
-Cobramos por plano: **Essencial**, R$ 290 por mês com até 80 lançamentos; **Completo**, R$ 490 com até 250; e acima disso, R$ 3,00 por lançamento extra. Se cada mensagem processada custar mais do que uns centavos, o negócio não fecha, e eu preciso saber exatamente quanto custa cada uma, em reais, antes de decidir se isso entra no preço ou se vira um serviço à parte. E quero um teto de mensagens por cliente por mês, na casa do plano dele: ninguém manda muito mais mensagem do que lançamento. O cliente do Essencial que manda 400 mensagens não pode me custar 400 vezes: a partir de um ponto, a mensagem fica na fila para o Tiago olhar à mão, como hoje, e eu fico sabendo que aquele cliente está no plano errado.
+Cobramos por plano: **Essencial**, R$ 290 por mês com até 80 lançamentos; **Completo**, R$ 490 com até 250; e acima disso, R$ 3,00 por lançamento extra.
+
+Me disseram que, para começar, dá para rodar isso sem pagar nada, e que é quando o volume cresce que passa a ser cobrado por mensagem. Ótimo para testar, mas eu não decido preço pelo de graça. Com cinco mil mensagens por mês, a gente passa do gratuito, e aí cada mensagem processada vai custar alguma coisa. Se custar mais do que uns centavos, o negócio não fecha. Então eu preciso saber exatamente quanto **me custaria** cada mensagem, em reais, quando passar do gratuito, antes de decidir se isso entra no preço ou se vira um serviço à parte.
+
+E quero um teto de mensagens por cliente por mês, na casa do plano dele: ninguém manda muito mais mensagem do que lançamento. O cliente do Essencial que manda 400 mensagens não pode me custar 400 vezes: a partir de um ponto, a mensagem fica na fila para o Tiago olhar à mão, como hoje, e eu fico sabendo que aquele cliente está no plano errado. Me disseram também que o de graça tem limite de uso por minuto e por dia, e que a gente vai bater nele. Quando bater, nada de tela quebrada nem mensagem perdida: a mensagem espera e passa depois, ou cai na fila para olhar à mão, e o Tiago vê que foi isso.
 
 Não vou dizer como o sistema tem que ler mensagem. Estou dizendo como a gente lê e onde a gente erra.
 
 ## Quem usa
 
 - **O Tiago e a Aline.** Na tela o dia inteiro, entre o telefone e o WhatsApp. Precisam ver a mensagem original e o lançamento lado a lado e resolver em segundos. Quando o sistema não entendeu, precisam ver isso na hora, não descobrir depois que um lançamento inventado passou.
-- **Eu.** Vejo tudo, quero saber quanto o sistema custou no mês e quem passou do teto. Não quero mexer em mais nada.
+- **Eu.** Vejo tudo, quero saber quanto o mês teria custado se a gente já estivesse pagando, e quem passou do teto. Não quero mexer em mais nada.
 - **O cliente.** Não usa nada. Continua mandando mensagem para o meu número como sempre. Se receber pergunta, tem que parecer que foi a gente que escreveu.
 
 ## O que temos de dado
@@ -54,4 +58,6 @@ Conciliação bancária não entra: a gente continua batendo o extrato do jeito 
 
 ## O que você entrega
 
-O sistema no ar e o repositório público. Dentro dele: o resultado do eval, com os casos e o número; o custo de cada mensagem processada, em reais, medido e não estimado; e um README com as decisões, o que ficou de fora e por quê, quanto custa e onde está o teto, o que o eval mede e quanto deu, e o que o sistema nunca faz sozinho, incluindo o que acontece quando uma mensagem tenta mandar nele.
+O sistema no ar e o repositório público. Dentro dele: o resultado do eval, com os casos e o número; quanto custaria cada mensagem processada quando passar do gratuito, em reais, saído do que o sistema mediu de verdade e não estimado; e um README com as decisões, o que ficou de fora e por quê, quanto custaria e onde está o teto, o que o eval mede e quanto deu, e o que o sistema nunca faz sozinho, incluindo o que acontece quando uma mensagem tenta mandar nele.
+
+Quem for conferir o seu trabalho não vai ter senha nem usuário de nada, e nenhuma senha vai para o repositório, que é público. Então o README também diz como rodar os testes, como rodar o eval de novo, e traz um exemplo pronto de mensagem mandada ao sistema no ar, que qualquer um copia e roda. E que o Tiago não vê os clientes da Aline eu quero provado num teste que qualquer um roda, não numa promessa.

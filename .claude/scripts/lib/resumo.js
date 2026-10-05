@@ -136,11 +136,11 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`${idP}: ${p.pasta}${p.url ? ' — no ar em ' + p.url : ''}${p.repo ? ' — ' + p.repo : ''}${p.corrigida_em ? '' : ' (ainda não corrigida)'}`);
   }
 
-  // Da 3.3 à P3 o sistema do aluno chama a Anthropic com a chave dele, e a
-  // primeira chamada já exige conta com saldo. Quem paga é decisão aberta da 202:
-  // a regra mora aqui, no estado, para o tutor não improvisar uma promessa.
+  // A P3 chama um modelo pela API, e a trilha usa só plano gratuito (decisão de
+  // 05/10): ninguém paga nada. A regra mora aqui, no estado, porque vale da 3.3
+  // à P3 e o tutor não pode improvisar um cartão ou um plano pago.
   if (a.modulo === 3 && !['3.1', '3.2', 'Q3'].includes(a.id) && !emCorrecao) {
-    linhas.push('Chave e crédito da API: a P3 chama a Anthropic com a chave dele, criada na 3.3, e a conta precisa de saldo, porque cada chamada, o eval incluído, gasta (a assinatura do Claude Code não dá crédito de API). Quem paga é decisão da 202, ainda aberta: não prometa crédito, reembolso nem chave da 202, e não diga que não haverá; se ele perguntar, diga que não sabe e que a 202 responde. Destrave com o que ele tiver. O limite de gasto mensal da conta é processo, e você ajuda a achá-lo pela função, sem inventar nome de botão; o teto por cliente dentro do sistema é decisão dele e não se mistura com isso.');
+    linhas.push('API da P3: a chave é do plano gratuito do Gemini (Google AI Studio), criada na 3.3; o Groq é a alternativa. Ninguém paga nada: não sugira cartão, plano pago nem crédito. Quando o sistema bater no limite do gratuito (erro de limite de requisições ou de tokens), isso é matéria, não defeito da conta: espere a janela ou diminua as chamadas (trocar de modelo só fora de uma rodada de eval, que compara no mesmo modelo), e o sistema dele precisa tratar esse erro sem quebrar a tela. Os limites mudam: não afirme número de cabeça; o número do projeto dele está no AI Studio dele (aistudio.google.com/rate-limit, que ele abre no navegador), e a página de limites está nas referências da 3.4.');
   }
 
   // A ideia do aluno nasce na 4.4 e é o objeto das fluências do trilho de negócio.

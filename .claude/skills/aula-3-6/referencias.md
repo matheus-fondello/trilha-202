@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados que valem para a aula inteira. Quase tudo aqui é em inglês; a única página em português é a da Anthropic, que mora em `platform.claude.com` e tem as âncoras em inglês — use a URL exata daqui, porque âncora traduzida não dá erro, só abre a página no topo. A página da LLM01, da OWASP, não tem âncora de seção: o link abre no topo, e é você quem diz o que ele procura; as da LLM02 e da LLM06 abrem já na seção certa. E o texto do Willison sobre a tríade foi oferecido na 1.11, como régua do que conectar ao Claude Code; se ele abriu, aqui volta como desenho do sistema dele. Pergunte antes de tratar como conhecido.
+Quatro cuidados que valem para a aula inteira. Quase tudo aqui é em inglês; a única página em português é a da Anthropic, que mora em `platform.claude.com` e tem as âncoras em inglês — use a URL exata daqui, porque âncora traduzida não dá erro, só abre a página no topo. O aluno não usa a API da Anthropic: a P3 roda no plano gratuito do Gemini, ou do Groq, e os textos da Anthropic e da Microsoft entram aqui pelo conceito, que vale em qualquer provedor; nada deles vira instrução de código para o sistema dele. A página da LLM01, da OWASP, não tem âncora de seção: o link abre no topo, e é você quem diz o que ele procura; as da LLM02 e da LLM06 abrem já na seção certa. E o texto do Willison sobre a tríade foi oferecido na 1.11, como régua do que conectar ao Claude Code; se ele abriu, aqui volta como desenho do sistema dele. Pergunte antes de tratar como conhecido.
 
 ## Citadas
 
@@ -28,7 +28,7 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   https://www.anthropic.com/research/prompt-injection-defenses#claudes-progress-on-browser-use-robustness
   A própria Anthropic, ao anunciar 1% de ataques bem-sucedidos, escreve que isso ainda é risco relevante e que nenhum agente é imune.
 
-A página da Anthropic tem uma mina que você precisa desarmar antes que o aluno a pise: metade dela ensina a pôr um modelo pequeno fazendo triagem de injeção, e quem lê sai achando que achou o filtro. Diga com todas as letras que triagem baixa a frequência e não muda a pergunta da aula; o argumento está na própria página, que no mesmo bloco manda limitar o acesso para o caso de a injeção passar. Separe o que é da 3.9 do que vale hoje: entregar conteúdo de fora como resultado de ferramenta é para quem usa ferramentas, fora do escopo da P3; mas dizer o que o conteúdo é e de onde veio, declarar no *system* que ele é dado não confiável e encapsular a mensagem em JSON valem para a P3 já, e são o que a aula manda fazer. O nome do modelo de triagem que ela cita envelhece. A primeira linha diz que o Claude é "inerentemente resiliente": resiliente não é imune, e o post de pesquisa, com o 1%, é a resposta. Use o 1% e o 95% juntos: o número melhorou, a conta de quem ataca e tenta de novo não mudou.
+A página da Anthropic é documentação da API do Claude, e o aluno está no Gemini: cite a seção pelo modelo de ameaça e pelas defesas de desenho, não pelos campos e formatos dela (`tool_result`, `output_config`, o modelo de triagem que ela nomeia), que são do Claude e não existem com esse nome no sistema dele. Ela tem também uma mina que você precisa desarmar antes que o aluno a pise: metade dela ensina a pôr um modelo pequeno fazendo triagem de injeção, e quem lê sai achando que achou o filtro. Diga com todas as letras que triagem baixa a frequência e não muda a pergunta da aula; o argumento está na própria página, que no mesmo bloco manda limitar o acesso para o caso de a injeção passar. E triagem é mais uma chamada por mensagem, que no gratuito gasta o limite por minuto e por dia que a 3.4 mediu. Separe o que é da 3.9 do que vale hoje: entregar conteúdo de fora como resultado de ferramenta é para quem usa ferramentas, fora do escopo da P3; mas dizer o que o conteúdo é e de onde veio, declarar no *system* que ele é dado não confiável e encapsular a mensagem em JSON valem para a P3 já, em qualquer provedor, e são o que a aula manda fazer. A primeira linha diz que o Claude é "inerentemente resiliente": resiliente não é imune, e o post de pesquisa, com o 1%, é a resposta. Use o 1% e o 95% juntos: o número melhorou, a conta de quem ataca e tenta de novo não mudou.
 
 **marco `triade-letal`**
 
@@ -48,7 +48,17 @@ O caso do Superhuman é o que torna concreta a frase da aula de que a saída é 
   https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/#user-content-example-attack-scenarios
   O primeiro cenário é o do marco, em uma linha: um usuário recebe na resposta o dado pessoal de outro usuário. A página também trata do dado que entra no treino e reaparece na saída.
 
-Cite o cenário, não a lista de mitigações: ela fala de privacidade diferencial e aprendizado federado, que não são desta aula e assustam quem está construindo um lançador. A ponte que vale é com a 2.13: lá o banco não deixava o Carlos ver o lead da Renata; aqui a mesma regra vale na fila, para o Tiago e a Aline, e o que precisa ficar de fora também é o contexto da chamada.
+- **Google, *Gemini API Additional Terms of Service* — seção "Unpaid Services", parte "How Google Uses Your Data"** — ai.google.dev, atualizada em abr/2026 · ~2 min de leitura (a seção)
+  https://ai.google.dev/gemini-api/terms#data-use-unpaid
+  O provedor também é quem lê o contexto: no plano gratuito, que é o da P3, o Google usa o que entra e o que sai para desenvolver os produtos dele, revisores humanos podem ler, e os próprios termos mandam não enviar informação sensível, confidencial ou pessoal.
+
+- **Groq, *Your Data in GroqCloud*** — console.groq.com, sem data · ~3 min de leitura
+  https://console.groq.com/docs/your-data
+  O contraste, para quem foi pelo Groq: por padrão ele não guarda o dado das chamadas, salvo log temporário de erro e abuso por até 30 dias.
+
+Os termos do Gemini são a tríade fora do sistema dele: o dado privado sai por um caminho que nenhum corte no código fecha, porque o caminho é o próprio provedor. Com o material da Prado, que é fictício, rodar no gratuito é aceitável; com livro de cliente real, a Denise não poderia, e o plano pago serve para isso, não só para volume (é a pergunta "quando passar do gratuito" da 3.4, por outro lado). Não transforme em pânico nem em regra para a P3: é decisão que vai para o README como o que muda antes de cliente de verdade. Termos e retenção mudam; antes de citar, confira as duas páginas. O link do Groq abre no topo; o que vale está no primeiro bloco.
+
+Na LLM02, cite o cenário, não a lista de mitigações: ela fala de privacidade diferencial e aprendizado federado, que não são desta aula e assustam quem está construindo um lançador. A ponte que vale é com a 2.13: lá o banco não deixava o Carlos ver o lead da Renata; aqui a mesma regra vale na fila, para o Tiago e a Aline, e o que precisa ficar de fora também é o contexto da chamada. A prova é um teste automatizado no repositório dele, que a correção roda de novo; usuário e senha de teste não vão para o README nem para o chat.
 
 **marco `humano-no-loop`**
 
