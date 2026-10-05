@@ -13,6 +13,7 @@
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
 //   node .claude/scripts/trilha.js criterios <pratica>
+//   node .claude/scripts/trilha.js ideia [texto="..."] [hipoteses="..."] [nomes="a; b; ..."] [entrevista="..."]
 //   node .claude/scripts/trilha.js persona <pratica>
 //   node .claude/scripts/trilha.js conversa <pratica>
 //   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
@@ -44,7 +45,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'persona', 'conversa', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -329,6 +330,36 @@ const comandos = {
     }
     fila.enfileirar('criterios.abertos', { aula: idPratica }, e);
     console.log(texto);
+  },
+
+  // A ideia do aluno, escolhida na 4.4: o problema dele em três linhas, as três
+  // hipóteses (quem, qual dor, qual alternativa atual) e a lista de pessoas reais
+  // para entrevistar. As fluências do trilho de negócio são sobre ela. Ela pode
+  // mudar, e cada mudança fica registrada: mudar de ideia é dado, não erro.
+  // Os nomes são de terceiros e ficam só nesta máquina; para a 202 sobe quantos.
+  // O mesmo vale para as entrevistas: sobe que aconteceu, não o que a pessoa disse.
+  ideia(args) {
+    exigirAcesso();
+    const kv = parChaveValor(args);
+    const e = estadoLib.carregar();
+    if (!kv.texto && !kv.hipoteses && !kv.nomes && !kv.entrevista) {
+      if (!e.ideia) return console.log('Nenhuma ideia registrada ainda. Ela nasce na 4.4: ideia texto="<três linhas>" hipoteses="<quem; qual dor; qual alternativa>" nomes="<nome; nome; ...>"');
+      return console.log(descreverIdeia(e.ideia));
+    }
+    const i = e.ideia || { versoes: [], entrevistas: [] };
+    const quando = agora();
+    const mudou = [];
+    if (kv.texto) { i.texto = kv.texto.trim(); mudou.push('texto'); }
+    if (kv.hipoteses) { i.hipoteses = kv.hipoteses.trim(); mudou.push('hipoteses'); }
+    if (kv.nomes) { i.nomes = kv.nomes.split(/[;\n]/).map((s) => s.trim()).filter(Boolean); mudou.push('nomes'); }
+    if (kv.entrevista) i.entrevistas = [...(i.entrevistas || []), { em: quando, resumo: kv.entrevista.trim() }];
+    for (const campo of mudou) i.versoes.push({ campo, em: quando });
+    i.atualizada_em = quando;
+    e.ideia = i;
+    estadoLib.salvar(e);
+    if (mudou.length) fila.enfileirar('ideia.registro', { campos: mudou, texto: i.texto || null, hipoteses: i.hipoteses || null, nomes: (i.nomes || []).length, versao: i.versoes.length }, e);
+    if (kv.entrevista) fila.enfileirar('ideia.entrevista', { numero: i.entrevistas.length }, e);
+    console.log(descreverIdeia(i));
   },
 
   // A persona de uma prática de discovery, a P4: quem é o dono do negócio, o que
@@ -622,6 +653,17 @@ function desistir(e, reg, idAula, motivo, uso) {
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, avaliador: uso || null }, e);
   console.log(`Não consegui avaliar a aula ${idAula}: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+}
+
+function descreverIdeia(i) {
+  const linhas = [];
+  linhas.push(`Ideia: ${i.texto || '(ainda sem texto)'}`);
+  linhas.push(`Hipóteses: ${i.hipoteses || '(ainda sem hipóteses)'}`);
+  const nomes = i.nomes || [];
+  linhas.push(`Nomes para entrevistar (${nomes.length}): ${nomes.length ? nomes.join('; ') : '(nenhum)'}`);
+  linhas.push(`Entrevistas reais feitas: ${(i.entrevistas || []).length} de 3.`);
+  linhas.push(`Versões registradas: ${(i.versoes || []).length}.`);
+  return linhas.join('\n');
 }
 
 function minutosNaAula(e, idAula) {

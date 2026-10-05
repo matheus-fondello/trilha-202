@@ -131,6 +131,21 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`${idP}: ${p.pasta}${p.url ? ' — no ar em ' + p.url : ''}${p.repo ? ' — ' + p.repo : ''}${p.corrigida_em ? '' : ' (ainda não corrigida)'}`);
   }
 
+  // A ideia do aluno nasce na 4.4 e é o objeto das fluências do trilho de negócio.
+  // Do M4 ao M5 também correm as três entrevistas reais da P5, e é na abertura de
+  // cada sessão que o tutor pergunta por elas.
+  if (e.ideia && e.ideia.texto) {
+    linhas.push(`Ideia do aluno (da 4.4; as fluências do negócio são sobre ela): ${e.ideia.texto.replace(/\s+/g, ' ')}`);
+    if (e.ideia.hipoteses) linhas.push(`  Hipóteses: ${e.ideia.hipoteses.replace(/\s+/g, ' ')}`);
+    if (a.modulo === 4 || a.modulo === 5) {
+      const feitas = (e.ideia.entrevistas || []).length;
+      const nomes = (e.ideia.nomes || []).length;
+      linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}`);
+    }
+  } else if (a.modulo === 4 && a.id !== '4.1' && a.id !== '4.2' && a.id !== '4.3') {
+    linhas.push('Ideia do aluno: ainda não registrada. Ela nasce na 4.4, com `ideia texto="..." hipoteses="..." nomes="..."`.');
+  }
+
   const ultima = e.sessoes.length ? e.sessoes[e.sessoes.length - 1] : null;
   if (ultima) {
     linhas.push(`Última sessão: ${relativo(ultima.fim)}, ${ultima.minutos} min, na aula ${ultima.aula}. Sessões nesta aula: ${reg.sessoes || 0}.`);
