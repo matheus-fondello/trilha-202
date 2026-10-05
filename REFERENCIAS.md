@@ -1022,6 +1022,60 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://pair.withgoogle.com/chapter/errors-failing/#section3
   O que pôr na tela quando a IA erra: focar no que a pessoa pode fazer a seguir, não só admitir a falha, com o exemplo do garçom que oferece alternativa em vez de dizer "acabou".
 
+### 3.3 Chamar um modelo
+
+**Sugerida**
+
+- **Anthropic, *Usando a Messages API* — seções "Requisição e resposta básicas" e "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~6 min de leitura (as duas seções)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages
+  A requisição básica e o JSON de resposta à vista, e logo depois a lista de mensagens crescendo turno a turno: as duas metades da aula na mesma página, em português.
+
+**Citadas na aula**
+
+- **Anthropic, *Comece a usar o Claude* — seção "Chame a API"** — Claude Platform Docs, em português, sem data · ~5 min de leitura
+  https://platform.claude.com/docs/pt-BR/get-started#call-the-api
+  A chamada mínima em abas por linguagem, com a resposta JSON inteira ao lado: o conteúdo, o motivo da parada e o `usage` com os tokens.
+
+- **Anthropic, *Criar uma mensagem*** — Claude Platform Docs, referência da API, em português, sem data · consulta, não leitura
+  https://platform.claude.com/docs/pt-BR/api/messages/create
+  A referência do endpoint: confirma que `model`, `messages` e `max_tokens` são obrigatórios e que `system` e `stream` são campos de topo, não itens da lista de mensagens.
+
+- **Anthropic, *anthropic-sdk-typescript* — seção "Requirements"** — GitHub, README oficial, em inglês · ~2 min de leitura
+  https://github.com/anthropics/anthropic-sdk-typescript
+  O próprio SDK se recusa a rodar no navegador e diz por quê: usar no browser expõe a credencial, e destravar isso exige ligar uma opção com "dangerously" no nome.
+
+- **Anthropic, *Obtenha sua chave de API do Claude* — seção "Use sua chave de API"** — Claude Platform Docs, em português, sem data · ~3 min de leitura
+  https://platform.claude.com/docs/pt-BR/get-api-key#use-your-api-key
+  Onde a chave nasce, que ela aparece uma única vez, e que o SDK a lê sozinho da variável de ambiente: o aluno não escreve a chave no código em lugar nenhum.
+
+- **Vercel, *How to use environment variables in Next.js* — seção "Bundling Environment Variables for the Browser"** — Next.js Docs, atualizado em ago/2026 · ~8 min de leitura
+  https://nextjs.org/docs/app/guides/environment-variables#bundling-environment-variables-for-the-browser
+  O mecanismo exato pelo qual a chave vazaria na oficina dele: o prefixo `NEXT_PUBLIC_` embute o valor no pacote que vai para o navegador, e sem o prefixo a variável só existe no servidor.
+
+- **Anthropic, *Usando a Messages API* — seção "Múltiplos turnos de conversa"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/working-with-messages#multiple-conversational-turns
+  A frase na documentação oficial: a API é sem estado, e o histórico inteiro vai junto a cada chamada. O exemplo ainda mostra que turnos do assistente podem ser escritos por você.
+
+- **Anthropic, *Janelas de contexto* — seção "Como a janela de contexto funciona"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (só a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/context-windows#how-the-context-window-works
+  O que entra na conta de cada chamada: o system, toda mensagem da lista, as ferramentas definidas e a saída.
+
+- **Anthropic, *Streaming de mensagens* — seção "Streaming com SDKs"** — Claude Platform Docs, em português, sem data · ~4 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#streaming-com-sdks
+  Quatro linhas que trocam a chamada que devolve tudo no fim pela que devolve em pedaços: é o diff mínimo entre as duas.
+
+- **Anthropic, *Streaming de mensagens* — seção "Requisição básica de streaming"** — Claude Platform Docs, em português, sem data · ~3 min de leitura (a seção)
+  https://platform.claude.com/docs/pt-BR/build-with-claude/streaming#basic-streaming-request
+  O fluxo cru de eventos, do começo ao fim, com os pedaços de texto chegando um a um — e os tokens aparecendo na abertura e no fechamento, não no meio.
+
+- **MDN, *Using server-sent events*** — MDN Web Docs, atualizado em set/2026 · ~12 min de leitura, só em inglês
+  https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+  O padrão por baixo do streaming, que é o mesmo que a própria documentação da Anthropic aponta na primeira linha.
+
+- **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "The anatomy of effective context"** — Anthropic Engineering, set/2025 · ~13 min de leitura, em inglês
+  https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+  A tese é o marco `prompt-por-chamada` dito pelo time que escreve isso em produção: achar o menor conjunto de tokens de alto sinal que produz o resultado desejado.
+
 ### 3.9 Ferramentas e agentes no produto
 
 **Sugerida**
