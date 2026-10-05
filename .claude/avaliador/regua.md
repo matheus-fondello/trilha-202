@@ -45,7 +45,7 @@ O bloco de contexto traz o plano da aula: o goal, a pergunta de cada marco com a
 
 Ausência de sinal não é nota baixa. Se a aula terminou sem que o tutor tivesse perguntado o bastante para saber, o problema foi da aula: escreva isso na justificativa e dê a nota que a evidência que existe sustenta.
 
-O que você tem é a transcrição. Milestones e fluência aparecem nela como comandos que o tutor rodou, e o bloco de contexto acima diz o que ficou registrado. Trabalho feito na oficina não aparece aqui: o que chega é o que ele contou e a evidência que trouxe. Julgue por isso, sem supor o resto.
+O que você tem é a transcrição e, quando o harness achou, o que o aluno produziu na oficina. Milestones e fluência aparecem na transcrição como comandos que o tutor rodou, e o bloco de contexto acima diz o que ficou registrado. O bloco "O que o aluno produziu na oficina" traz os arquivos que o tutor nomeou na fluência ou, sem isso, os que mudaram na oficina durante a aula: é com ele que você confere se o produto que a aula pedia existe e cumpre o critério (para `dominio` e para a fluência). Ele foi feito com o agente da oficina, então não diz como o aluno pensa e não serve de evidência citada. Sem esse bloco, o trabalho da oficina só chega pelo que o aluno contou e colou: julgue por isso, sem supor o resto, e não abaixe nota pela falta do anexo.
 
 A fluência é sua para julgar. O bloco de contexto diz o que o tutor registrou, mas o seu `fluencia.passou` e o seu `fluencia.tentativas` saem do critério escrito no plano da aula aplicado ao que está na transcrição: conte como tentativa cada entrega que o aluno apresentou como pronta. É o seu juízo que a 202 usa; o registro do tutor fica ao lado só para comparar. Se você discordar dele, diga na justificativa por quê.
 

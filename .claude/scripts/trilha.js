@@ -8,7 +8,7 @@
 //   node .claude/scripts/trilha.js identificar <email> [nome]
 //   node .claude/scripts/trilha.js oficina <caminho>
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
-//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
+//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]
 //   node .claude/scripts/trilha.js avaliar <aula>
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
@@ -33,6 +33,7 @@ const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
 const { contextoDaAula } = require('./lib/contexto');
+const produto = require('./lib/produto');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const { agora, minutosEntre, relativo } = require('./lib/util');
@@ -167,9 +168,9 @@ const comandos = {
     console.log(`Milestone fechado: ${idAula} / ${idMilestone} (${m.titulo}). Faltam: ${faltam.length ? faltam.join(', ') : 'nenhum'}.`);
   },
 
-  fluencia([idAula, resultado, tentativas]) {
+  fluencia([idAula, resultado, tentativas, ...resto]) {
     exigirAcesso();
-    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas>');
+    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]');
     const a = mapa.aula(idAula);
     if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
     const n = parseInt(tentativas, 10);
@@ -179,10 +180,21 @@ const comandos = {
     if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
     const pend = a.milestones.filter((x) => !reg.milestones[x.id]);
     if (pend.length) falhar(`fluência só depois de fechar todos os milestones. Pendentes: ${pend.map((x) => x.id).join(', ')}`);
-    reg.fluencia = { passou: resultado === 'passou', tentativas: n, registrada_em: agora() };
+    // O produto da fluência, quando o tutor o nomeia: os arquivos que o aluno fez
+    // na oficina e, se houver, o endereço no ar. O `avaliar` anexa os arquivos ao
+    // que o avaliador lê (lib/produto.js). Sem isso, ele procura sozinho o que
+    // mudou na oficina durante a aula.
+    const opcoes = Object.fromEntries(resto.map((r) => r.split('=')).filter(([k, ...v]) => k && v.length).map(([k, ...v]) => [k, v.join('=')]));
+    const arquivos = opcoes.arquivos ? opcoes.arquivos.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 12) : [];
+    const url = opcoes.url && ['http://', 'https://'].some((p) => opcoes.url.toLowerCase().startsWith(p)) ? opcoes.url : null;
+    reg.fluencia = { passou: resultado === 'passou', tentativas: n, registrada_em: agora(), ...(arquivos.length ? { arquivos } : {}), ...(url ? { url } : {}) };
     estadoLib.salvar(e);
-    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n }, e);
-    console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`);
+    // Para a 202 sobe quantos arquivos foram nomeados, não os caminhos: eles
+    // carregam o nome de usuário da máquina.
+    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n, produto_nomeado: arquivos.length, ...(url ? { url } : {}) }, e);
+    const naoAchados = arquivos.filter((nome) => !produto.pastasDeTrabalho(e).some((p) => fs.existsSync(path.resolve(p, nome))) && !(path.isAbsolute(nome) && fs.existsSync(nome)));
+    console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`
+      + (naoAchados.length ? ` Não achei na oficina: ${naoAchados.join(', ')} - confira o nome e registre de novo se quiser que o avaliador leia.` : ''));
   },
 
   // A nota não se forma no chat do aluno. Este comando não recebe JSON nenhum: ele
@@ -204,9 +216,11 @@ const comandos = {
     const t = transcricao.ler(e, idAula);
     if (!t.ok) return desistir(e, reg, idAula, t.motivo);
 
+    const anexo = produto.coletar(e, reg);
     const r = avaliador.avaliar({
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
+      produto: anexo.texto,
       validar: (av) => validarAvaliacao(av, idAula, t.texto),
     });
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
@@ -225,7 +239,7 @@ const comandos = {
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, ...revisao }, e);
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, produto: anexo.resumo, ...revisao }, e);
     reg.avaliada_em = agora();
     delete reg.avaliacao_falhou;
     estadoLib.salvar(e);
@@ -625,6 +639,19 @@ function validarAvaliacao(av, idAula, texto) {
   }
   if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 5 linhas (mínimo 120 caracteres)');
   if (av.justificativa && av.justificativa.length > 1500) erros.push('"justificativa" longa demais (máximo 1500 caracteres)');
+  // A ficha mostra a nota e a justificativa lado a lado. Medido na 1.2 de 05/10:
+  // "Pensamento 4: ..." na justificativa e `pensamento: 3` no JSON - a tela
+  // contradizendo a si mesma. Quando a justificativa nomeia um critério com um
+  // número, ele tem de ser a nota.
+  if (typeof av.justificativa === 'string' && av.criterios && typeof av.criterios === 'object') {
+    const nomes = { compreensao: 'compreens[aã]o', pensamento: 'pensamento', esforco: 'esfor[cç]o', autonomia: 'autonomia', dominio: 'dom[ií]nio' };
+    for (const [k, padrao] of Object.entries(nomes)) {
+      const m = av.justificativa.match(new RegExp(`${padrao}\\s*(?:=|:)?\\s*([1-5])\\b`, 'i'));
+      if (m && Number.isInteger(av.criterios[k]) && Number(m[1]) !== av.criterios[k]) {
+        erros.push(`a justificativa diz ${k} ${m[1]} e criterios.${k} é ${av.criterios[k]}; a nota e a justificativa têm de dizer o mesmo`);
+      }
+    }
+  }
   if (!Array.isArray(av.evidencias) || av.evidencias.length < 1 || av.evidencias.length > 3) erros.push('"evidencias" deve ter de 1 a 3 trechos');
   else {
     const falas = texto ? transcricao.falasDoAluno(texto) : null;
