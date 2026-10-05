@@ -68,7 +68,12 @@ function resumo(e, { fonte = 'startup' } = {}) {
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
 
-  if (!mapa.escrita(a)) {
+  // Depois da última unidade escrita não há o que carregar: o material novo
+  // chega pela atualização, e o chat não reabre a unidade que já fechou.
+  const fimDoMapa = reg.status === 'concluida' && !mapa.proxima(a.id);
+  if (fimDoMapa) {
+    linhas.push('Fim do material escrito: esta era a última unidade do mapa, e está concluída. Não há aula neste chat. Diga ao aluno, em poucas linhas, que o próximo módulo chega com a atualização do material (a receita da 1.2), sem prometer data, e ofereça tirar dúvidas do que já foi visto.');
+  } else if (!mapa.escrita(a)) {
     linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : a.tipo === 'quiz' ? 'unidade' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
   } else if (a.tipo === 'quiz') {
     // O quiz não tem milestones: a ementa é o banco, e o progresso é quantas
@@ -165,7 +170,8 @@ function resumo(e, { fonte = 'startup' } = {}) {
   if (fonte === 'compact') {
     linhas.push('Contexto foi compactado no meio da sessão. Continue a aula de onde estava, sem reapresentação. Os milestones acima são a verdade sobre o que já foi fechado.');
   } else {
-    linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
+    if (fimDoMapa) linhas.push('Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula.');
+    else linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
     if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
       linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
     } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
