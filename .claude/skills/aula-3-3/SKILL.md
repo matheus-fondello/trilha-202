@@ -14,7 +14,7 @@ Sala e oficina. A 1.7, a 2.6 e a 3.2 já foram dadas: referencie. Fica para depo
 
 ## Antes de começar
 
-**O brief da P3 entra hoje**, e é a primeira coisa da aula: `praticas/p3/brief.md`, com o material em `praticas/p3/mensagens.md`. Ele lê o brief inteiro antes de qualquer código — é o Prado Contabilidade, um escritório que quer transformar mensagem de WhatsApp em lançamento. A P3 cresce daqui até a 3.7 e é corrigida no fim; a régua não está neste chat. Confira no estado a pasta e o repositório da oficina. Hoje ele não resolve a P3: faz a chamada mais simples que já produz algo útil, e ela vai errar em vários casos. Você não escreve o prompt nem escolhe o modelo: pergunte o que aquela chamada precisa saber e trabalhe com a resposta.
+**O brief da P3 entra hoje**, e é a primeira coisa da aula: `praticas/p3/brief.md`, com o material em `praticas/p3/mensagens.md`. Ele lê o brief inteiro antes de qualquer código — é o Prado Contabilidade, um escritório que quer transformar mensagem de WhatsApp em lançamento. A P3 cresce daqui até a 3.8 e é corrigida no fim; a régua não está neste chat. Ela nasce nesta aula, na oficina: pasta nova, `git init`, repositório público no GitHub, a receita da 2.4 e da 2.5. Assim que existir, `node .claude/scripts/trilha.js pratica P3 pasta=<caminho> repo=<url do GitHub>`, sem URL: a URL só entra na entrega, e registrá-la abre a correção. Hoje ele não resolve a P3: faz a chamada mais simples que já produz algo útil, e ela vai errar em vários casos. Você não escreve o prompt nem escolhe o modelo: pergunte o que aquela chamada precisa saber e trabalhe com a resposta.
 
 ## Marcos
 

@@ -1080,7 +1080,24 @@
       "fluencia": false,
       "correcao": true,
       "criterios": ["funciona", "saida_confiavel", "custo_teto", "seguranca", "eval"],
-      "milestones": null
+      "milestones": [
+        {
+          "id": "inventario",
+          "titulo": "O que falta e o que fica de fora, com motivo"
+        },
+        {
+          "id": "readme",
+          "titulo": "README com as cinco partes, eval e custo no repositório"
+        },
+        {
+          "id": "entrega-vista",
+          "titulo": "O lançador no ar, visto no painel"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Pasta, URL e repositório registrados"
+        }
+      ]
     },
     {
       "id": "Q3",
