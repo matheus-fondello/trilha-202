@@ -82,13 +82,26 @@ function umaLinha(texto, max) {
   return t.length > max ? t.slice(0, max) + '…' : t;
 }
 
+// O texto de uma `nota` é o juízo do tutor sobre o aluno ("o primeiro instinto
+// mira na categoria..."). Quem avalia não pode ler isso antes de formar o seu.
+function semNota(comando) {
+  return String(comando).replace(/(trilha\.js\s+nota\s+\S+\s+)("(?:\\.|[^"\\])*"|'[^']*')/g, '$1[texto da memória omitido]');
+}
+
+function comandoDe(bloco) {
+  const entrada = bloco.input || {};
+  return typeof entrada.command === 'string' ? entrada.command : '';
+}
+
 function resumoDeFerramenta(bloco) {
   const nome = bloco.name || 'ferramenta';
   const entrada = bloco.input || {};
-  if (nome === 'Bash' && entrada.command) return umaLinha(entrada.command, 200);
+  if (entrada.command) return umaLinha(semNota(entrada.command), 200);
   if (entrada.file_path) return `${nome} ${entrada.file_path}`;
   return nome;
 }
+
+const AVALIAR = /trilha\.js\s+avaliar\b/;
 
 function blocos(conteudo) {
   if (typeof conteudo === 'string') return [{ type: 'text', text: conteudo }];
@@ -97,8 +110,16 @@ function blocos(conteudo) {
 
 // Uma linha por fala. O avaliador precisa saber quem disse o quê e em que ordem;
 // não precisa de timestamp, uuid nem do resto do envelope.
+//
+// O fechamento do tutor fica de fora. A `tutor` manda escrever o feedback e a
+// despedida e só então rodar `avaliar`; esse feedback é o veredito de quem deu a
+// aula ("passou, você cortou pelo critério certo"), e lido antes ele vira a nota.
+// Medido na 1.2 de 05/10: sem ele, o elogio do tutor deixou de virar um 5 em
+// pensamento. Sai o texto do tutor entre a última fala do aluno e o último
+// `avaliar`, e tudo o que ele disse depois; as perguntas e explicações ficam,
+// porque são o contexto das respostas.
 function converter(bruto) {
-  const linhas = [];
+  const itens = [];
   for (const linha of bruto.split('\n')) {
     if (!linha.trim()) continue;
     let ev;
@@ -109,17 +130,33 @@ function converter(bruto) {
     for (const b of blocos(msg.content)) {
       if (b.type === 'text') {
         const texto = limpar(b.text);
-        if (texto) linhas.push(`${ev.type === 'user' ? 'ALUNO' : 'TUTOR'}: ${texto}`);
+        if (texto) itens.push({ quem: ev.type === 'user' ? 'ALUNO' : 'TUTOR', linha: `${ev.type === 'user' ? 'ALUNO' : 'TUTOR'}: ${texto}` });
       } else if (b.type === 'tool_use') {
-        linhas.push(`  [tutor rodou: ${resumoDeFerramenta(b)}]`);
+        itens.push({ quem: 'cmd', avaliar: AVALIAR.test(comandoDe(b)), linha: `  [tutor rodou: ${resumoDeFerramenta(b)}]` });
       } else if (b.type === 'tool_result') {
         const c = typeof b.content === 'string' ? b.content : blocos(b.content).map((x) => x.text || '').join(' ');
         const texto = limpar(c);
-        if (texto) linhas.push(`  [resposta: ${umaLinha(texto, 200)}]`);
+        if (texto) itens.push({ quem: 'resp', linha: `  [resposta: ${umaLinha(texto, 200)}]` });
       }
       // thinking fica de fora: é raciocínio do tutor, não evidência sobre o aluno.
     }
   }
+
+  let fim = -1;
+  for (let i = itens.length - 1; i >= 0; i--) if (itens[i].avaliar) { fim = i; break; }
+  let inicio = fim;
+  while (inicio > 0 && itens[inicio - 1].quem !== 'ALUNO') inicio--;
+
+  const linhas = [];
+  let omitiu = false;
+  itens.forEach((it, i) => {
+    if (fim >= 0 && i >= inicio && it.quem === 'TUTOR') {
+      if (!omitiu) linhas.push('TUTOR: [feedback de fechamento e despedida do tutor omitidos]');
+      omitiu = true;
+      return;
+    }
+    linhas.push(it.linha);
+  });
   return linhas.join('\n');
 }
 
