@@ -178,7 +178,7 @@ const comandos = {
 
   fluencia([idAula, resultado, tentativas, ...resto]) {
     exigirAcesso();
-    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]');
+    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> motivo="<cada parte da condição: cumpriu ou não, com o quê, e a ajuda que você deu>" [arquivos=<a>,<b>] [url=<endereço>]');
     const a = mapa.aula(idAula);
     if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
     const n = parseInt(tentativas, 10);
@@ -195,11 +195,18 @@ const comandos = {
     const opcoes = Object.fromEntries(resto.map((r) => r.split('=')).filter(([k, ...v]) => k && v.length).map(([k, ...v]) => [k, v.join('=')]));
     const arquivos = opcoes.arquivos ? opcoes.arquivos.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 12) : [];
     const url = opcoes.url && ['http://', 'https://'].some((p) => opcoes.url.toLowerCase().startsWith(p)) ? opcoes.url : null;
-    reg.fluencia = { passou: resultado === 'passou', tentativas: n, registrada_em: agora(), ...(arquivos.length ? { arquivos } : {}), ...(url ? { url } : {}) };
+    // O motivo é o juízo do tutor por extenso (06/10): cada parte da condição
+    // "Passa se" da aula, cumprida ou não, com o quê, e a ajuda que ele deu. Sobe
+    // para a 202 e fica na ficha ao lado do juízo do avaliador, que não o lê
+    // (a transcrição tira o motivo junto com o resultado).
+    const motivo = (opcoes.motivo || '').trim();
+    if (motivo.length < 60) falhar('falta o motivo: motivo="<cada parte da condição \"Passa se\" da aula: cumpriu ou não, com o que ele fez; e a ajuda que você deu>". A 202 lê isso na ficha.');
+    if (motivo.length > 1500) falhar(`o motivo tem ${motivo.length} caracteres; o máximo é 1500. Uma linha por parte da condição.`);
+    reg.fluencia = { passou: resultado === 'passou', tentativas: n, motivo, registrada_em: agora(), ...(arquivos.length ? { arquivos } : {}), ...(url ? { url } : {}) };
     estadoLib.salvar(e);
     // Para a 202 sobe quantos arquivos foram nomeados, não os caminhos: eles
     // carregam o nome de usuário da máquina.
-    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n, produto_nomeado: arquivos.length, ...(url ? { url } : {}) }, e);
+    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n, motivo, produto_nomeado: arquivos.length, ...(url ? { url } : {}) }, e);
     const naoAchados = arquivos.filter((nome) => !produto.pastasDeTrabalho(e).some((p) => fs.existsSync(path.resolve(p, nome))) && !(path.isAbsolute(nome) && fs.existsSync(nome)));
     console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`
       + (naoAchados.length ? ` Não achei na oficina: ${naoAchados.join(', ')} - confira o nome e registre de novo se quiser que o avaliador leia.` : ''));
@@ -240,7 +247,7 @@ const comandos = {
     const payload = {
       versao: 2,
       ...r.avaliacao,
-      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas } : null,
+      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}) } : null,
     };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
     const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
@@ -1034,7 +1041,7 @@ function validarAvaliacao(av, idAula, texto) {
   if (av.fluencia !== null && av.fluencia !== undefined) {
     if (typeof av.fluencia.passou !== 'boolean') erros.push('fluencia.passou deve ser booleano');
     if (!Number.isInteger(av.fluencia.tentativas) || av.fluencia.tentativas < 1) erros.push('fluencia.tentativas deve ser inteiro a partir de 1; se a fluência não aconteceu, "fluencia" vai null');
-    if (typeof av.fluencia.evidencia !== 'string' || av.fluencia.evidencia.length > 400) erros.push('fluencia.evidencia é texto de até 400 caracteres');
+    if (typeof av.fluencia.evidencia !== 'string' || av.fluencia.evidencia.length > 1000) erros.push('fluencia.evidencia é texto de até 1000 caracteres');
   }
   if (av.suspeita !== null && av.suspeita !== undefined) {
     if (typeof av.suspeita.descricao !== 'string' || typeof av.suspeita.evidencia !== 'string') erros.push('suspeita precisa de "descricao" e "evidencia"');

@@ -188,6 +188,10 @@ function semNota(comando) {
 function semVeredito(texto) {
   return String(texto)
     .replace(/(trilha\.js\s+fluencia\s+\S+\s+)(?:passou|nao-passou)(?:\s+\d+)?/g, '$1[resultado do tutor omitido]')
+    // O motivo é o mesmo juízo por extenso (06/10). É texto livre, com aspas e
+    // ponto e vírgula dentro: sai tudo do `motivo=` até o próximo comando
+    // encadeado ou o fim, para não vazar pela metade.
+    .replace(/\s+motivo=[\s\S]*?(?=\s+(?:&&|\|\||;)\s+(?:node|&|\.)|\s*\n\s*(?:node|&|\.)|$)/g, ' [motivo do tutor omitido]')
     .replace(/(Fluência registrada: \S+) (?:passou|nao-passou) em \d+ tentativa\(s\)\./g, '$1 [resultado do tutor omitido].');
 }
 
