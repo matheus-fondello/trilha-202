@@ -38,6 +38,8 @@ Se você se preparou por escrito ou anotou durante a conversa, isso pode ir na m
 
 **A conversa** você não precisa entregar: ela já fica registrada.
 
+A síntese, e o que mais estiver em texto na pasta (anotações, preparação), vai para a 202 junto com a entrega.
+
 Quando a síntese estiver pronta, diga ao tutor onde está a pasta, e ele registra a entrega.
 
 ## O que não há

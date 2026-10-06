@@ -69,4 +69,4 @@ O tutor confere que as três entrevistas estão registradas; com menos, ele regi
 
 ## Depois da entrega
 
-A correção acontece num chat novo, com quem não acompanhou o trabalho nem a conversa das premissas: ela lê este brief, o seu plano e o registro da sua ideia, e devolve feedback, sem nota. Depois vem o Q5, o quiz do módulo, e então o M6, onde o plano vira produto.
+A correção acontece num chat novo, com quem não acompanhou o trabalho nem a conversa das premissas: ela lê este brief, o seu plano e o registro da sua ideia, e devolve feedback, sem nota. O plano e a planilha em texto vão para a 202 junto com a entrega, com os nomes da sua lista de entrevistas trocados por `[nome]`. Depois vem o Q5, o quiz do módulo, e então o M6, onde o plano vira produto.

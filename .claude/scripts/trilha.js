@@ -39,6 +39,7 @@ const avaliador = require('./lib/avaliador');
 const { contextoDaAula } = require('./lib/contexto');
 const produto = require('./lib/produto');
 const entregaLib = require('./lib/entrega');
+const documentos = require('./lib/documentos');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const { agora, minutosEntre, relativo } = require('./lib/util');
@@ -336,8 +337,10 @@ const comandos = {
     }
     if (kv.url && !/^https?:\/\//.test(kv.url)) falhar('url precisa começar com http:// ou https://. Se a página ainda não está no ar, registre só a pasta.');
     const e = estadoLib.carregar();
+    const jaEntregue = Boolean((e.praticas[idPratica] || {}).entregue_em);
     e.praticas[idPratica] = { ...(e.praticas[idPratica] || {}), ...kv, registrada_em: agora() };
     marcarEntrega(e, a);
+    if (jaEntregue && kv.pasta) enviarDocumento(e, a);
     estadoLib.salvar(e);
     fila.enfileirar('pratica.registro', { aula: idPratica, ...kv }, e);
     console.log(`Prática ${idPratica} registrada: ${JSON.stringify(kv)}`);
@@ -754,7 +757,22 @@ function marcarEntrega(e, a) {
   if (a.tipo !== 'pratica' || !a.correcao) return;
   const p = (e.praticas || {})[a.id];
   if (!p || p.entregue_em) return;
-  if (mapa.prontaParaCorrigir(a, p, e.aulas[a.id])) p.entregue_em = agora();
+  if (mapa.prontaParaCorrigir(a, p, e.aulas[a.id])) {
+    p.entregue_em = agora();
+    enviarDocumento(e, a);
+  }
+}
+
+// A prática que entrega só a pasta (a P4 e a P5) não tem página nem
+// repositório: o que ela entregou é o documento, e ele sobe para a 202 no
+// evento `pratica.documento` (lib/documentos.js: só texto, com teto, sem nomes
+// de terceiros e sem o caminho da pasta). Vale o último envio.
+function enviarDocumento(e, a) {
+  if (mapa.entregaExigida(a).includes('url')) return;
+  const p = (e.praticas || {})[a.id];
+  if (!p || !p.pasta || !fs.existsSync(p.pasta)) return;
+  const d = documentos.coletar(p.pasta, e);
+  fila.enfileirar('pratica.documento', { aula: a.id, arquivos: d.arquivos, omitidos: d.omitidos, caracteres: d.total }, e);
 }
 
 // A conversa de uma prática, cortada na entrega: só as sessões da prática e

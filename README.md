@@ -21,7 +21,7 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 - **Progresso registrado.** O Claude registra cada conceito fechado por script. Você pode fechar o terminal a qualquer hora e retomar depois do ponto onde parou.
 - **Material de apoio.** Cada aula cita fontes e sugere um material que vale de verdade. Tudo junto está em [REFERENCIAS.md](REFERENCIAS.md); no meio de uma conversa, peça `/referencias`. É opcional: a aula se sustenta sozinha.
 - **Prática vale nota.** Ao fim de cada módulo você entrega um trabalho de verdade, feito na oficina. Quem corrige é um chat novo, que não acompanhou o trabalho: você registra a entrega, fecha o chat e abre outro para receber a correção. A régua de cada prática abre depois da entrega, com `criterios`.
-- **A 202 acompanha.** Sobem metadados e avaliações estruturadas, nunca a conversa inteira. Do módulo 4 em diante, também a sua ideia de negócio em três linhas e as hipóteses; os nomes de quem você vai entrevistar ficam na sua máquina. Você recebe o feedback; a nota fica com a 202.
+- **A 202 acompanha.** Sobem metadados e avaliações estruturadas, nunca a conversa inteira. Do módulo 4 em diante, também a sua ideia de negócio em três linhas e as hipóteses; os nomes de quem você vai entrevistar ficam na sua máquina. O que você entrega nas práticas também sobe: o link e o repositório, e, na P4 e na P5, o documento (a síntese, o plano), com os nomes da sua lista de entrevistas trocados por `[nome]`. Você recebe o feedback; a nota fica com a 202.
 
 ## Estado do protótipo
 
