@@ -375,6 +375,13 @@ const comandos = {
       '',
       checks.length ? 'O que conferir:' : 'Não achei a lista de checks desta prática. Confira que a página abre, o que ela mostra, e como fica a 390px.',
       ...checks.map((c) => `- ${c}`),
+      // O que a régua julga e só a tela mostra: primeira dobra, ação, cores. Sem
+      // isto o corretor, que não tem navegador, julgaria conversão e execução às
+      // cegas (revisão de 05/10). Pedidos de descrição, nunca de juízo.
+      '- Transcreva o texto que aparece sem rolar, a 1280px de largura e a 390px.',
+      '- Liste cada botão e link de ação, com o texto exato e para onde leva.',
+      '- Anote as cores dominantes da página e, se houver logo, as cores dela.',
+      '- Onde um check acima diz o que é certo ("resposta honesta", "não pode quebrar"), descreva o que aconteceu e deixe o julgamento para o corretor.',
       '',
       `Escreva em \`${arquivo}\` o que você viu, check por check, como fato: o que abriu, o que a tela mostrou, o que o sistema respondeu a cada entrada, o que quebrou. Sem nota, sem adjetivo de juízo, sem dizer se passa. Depois: \`corrigir ${idPratica} conferencia=${arquivo}\`.`,
     ].join('\n'));
