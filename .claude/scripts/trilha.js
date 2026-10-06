@@ -8,7 +8,7 @@
 //   node .claude/scripts/trilha.js identificar <email> [nome]
 //   node .claude/scripts/trilha.js oficina <caminho>
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
-//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas>
+//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]
 //   node .claude/scripts/trilha.js avaliar <aula>
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
@@ -16,7 +16,8 @@
 //   node .claude/scripts/trilha.js ideia [texto="..."] [hipoteses="..."] [nomes="a; b; ..."] [entrevista="..."]
 //   node .claude/scripts/trilha.js persona <pratica>
 //   node .claude/scripts/trilha.js conversa <pratica>
-//   node .claude/scripts/trilha.js corrigir <pratica> <arquivo.json>
+//   node .claude/scripts/trilha.js conferir <pratica>
+//   node .claude/scripts/trilha.js corrigir <pratica> conferencia=<arquivo>          (à mão: corrigir <pratica> <arquivo.json>)
 //   node .claude/scripts/trilha.js quiz <Q> | quiz <Q> responder <n> <letra>          (aberta: responder <n> arquivo=<txt> | texto="...")
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
@@ -29,12 +30,15 @@ const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
-const { enviar, enviarAgora } = require('./lib/enviar');
+const { enviar, enviarAgora, prazoDeEnvio } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
+const { contextoDaAula } = require('./lib/contexto');
+const produto = require('./lib/produto');
+const entregaLib = require('./lib/entrega');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const { agora, minutosEntre, relativo } = require('./lib/util');
@@ -45,7 +49,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -171,9 +175,9 @@ const comandos = {
     console.log(`Milestone fechado: ${idAula} / ${idMilestone} (${m.titulo}). Faltam: ${faltam.length ? faltam.join(', ') : 'nenhum'}.`);
   },
 
-  fluencia([idAula, resultado, tentativas]) {
+  fluencia([idAula, resultado, tentativas, ...resto]) {
     exigirAcesso();
-    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas>');
+    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]');
     const a = mapa.aula(idAula);
     if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
     const n = parseInt(tentativas, 10);
@@ -183,10 +187,21 @@ const comandos = {
     if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
     const pend = a.milestones.filter((x) => !reg.milestones[x.id]);
     if (pend.length) falhar(`fluência só depois de fechar todos os milestones. Pendentes: ${pend.map((x) => x.id).join(', ')}`);
-    reg.fluencia = { passou: resultado === 'passou', tentativas: n, registrada_em: agora() };
+    // O produto da fluência, quando o tutor o nomeia: os arquivos que o aluno fez
+    // na oficina e, se houver, o endereço no ar. O `avaliar` anexa os arquivos ao
+    // que o avaliador lê (lib/produto.js). Sem isso, ele procura sozinho o que
+    // mudou na oficina durante a aula.
+    const opcoes = Object.fromEntries(resto.map((r) => r.split('=')).filter(([k, ...v]) => k && v.length).map(([k, ...v]) => [k, v.join('=')]));
+    const arquivos = opcoes.arquivos ? opcoes.arquivos.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 12) : [];
+    const url = opcoes.url && ['http://', 'https://'].some((p) => opcoes.url.toLowerCase().startsWith(p)) ? opcoes.url : null;
+    reg.fluencia = { passou: resultado === 'passou', tentativas: n, registrada_em: agora(), ...(arquivos.length ? { arquivos } : {}), ...(url ? { url } : {}) };
     estadoLib.salvar(e);
-    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n }, e);
-    console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`);
+    // Para a 202 sobe quantos arquivos foram nomeados, não os caminhos: eles
+    // carregam o nome de usuário da máquina.
+    fila.enfileirar('fluencia', { aula: idAula, passou: reg.fluencia.passou, tentativas: n, produto_nomeado: arquivos.length, ...(url ? { url } : {}) }, e);
+    const naoAchados = arquivos.filter((nome) => !produto.pastasDeTrabalho(e).some((p) => fs.existsSync(path.resolve(p, nome))) && !(path.isAbsolute(nome) && fs.existsSync(nome)));
+    console.log(`Fluência registrada: ${idAula} ${resultado} em ${n} tentativa(s).`
+      + (naoAchados.length ? ` Não achei na oficina: ${naoAchados.join(', ')} - confira o nome e registre de novo se quiser que o avaliador leia.` : ''));
   },
 
   // A nota não se forma no chat do aluno. Este comando não recebe JSON nenhum: ele
@@ -208,19 +223,30 @@ const comandos = {
     const t = transcricao.ler(e, idAula);
     if (!t.ok) return desistir(e, reg, idAula, t.motivo);
 
+    const anexo = produto.coletar(e, reg);
     const r = avaliador.avaliar({
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
-      validar: (av) => validarAvaliacao(av, idAula),
+      produto: anexo.texto,
+      validar: (av) => validarAvaliacao(av, idAula, t.texto),
     });
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
+    // Versão 2 do contrato (05/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
+    // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
+    // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
+    // de ela ficar perdida numa frase da justificativa.
+    const payload = {
+      versao: 2,
+      ...r.avaliacao,
+      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas } : null,
+    };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
-    const b64 = Buffer.from(JSON.stringify(r.avaliacao), 'utf8').toString('base64');
+    const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, ...revisao }, e);
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, produto: anexo.resumo, ...revisao }, e);
     reg.avaliada_em = agora();
     delete reg.avaliacao_falhou;
     estadoLib.salvar(e);
@@ -264,7 +290,10 @@ const comandos = {
         for (const campo of mapa.entregaExigida(a)) {
           if (campo !== 'pasta' && !p[campo]) problemas.push(falta[campo] || `prática sem ${campo} registrado (pratica ${idAula} ${campo}=...)`);
         }
-        if (!p.corrigida_em) problemas.push('correção não registrada (skill corrigir, em chat separado do da prática)');
+        // Correção que o corretor tentou e não conseguiu não segura a prática, como
+        // a avaliação de aula: a falha já virou evento para a 202.
+        if (!p.corrigida_em && p.correcao_falhou) avisos.push(`esta prática fecha sem correção (${p.correcao_falhou.motivo}); a 202 já foi avisada`);
+        else if (!p.corrigida_em) problemas.push('correção não registrada (skill corrigir, em chat separado do da prática)');
       }
     } else if (a.avaliacao !== false && !reg.avaliada_em) {
       // "avaliacao": false é para a unidade que não ensina matéria (a 0.1, que é
@@ -402,7 +431,9 @@ const comandos = {
     else if (reg.status === 'concluida' || p.entregue_em || mapa.prontaParaCorrigir(a, p, reg)) fora = `a ${idPratica} já foi entregue, e a entrevista acabou`;
     else if (a.persona_apos && !abertaEm) fora = `a entrevista ainda não foi aberta (o marco \`${a.persona_apos}\` vem antes)`;
     if (fora) {
-      fila.enfileirar('persona.recusada', { aula: idPratica, motivo: fora, ...fase }, e);
+      // A prática vai como `pratica`, e não `aula`: o envelope fica com a unidade
+      // do chat, e uma recusa num chat da 4.x não marca a P4 como em andamento.
+      fila.enfileirar('persona.recusada', { pratica: idPratica, motivo: fora, ...fase }, e);
       falhar(`a persona da ${idPratica} não abre agora: ${fora}. Ela só abre no chat da prática, durante a entrevista. Não tente abrir por outro caminho e não comente o conteúdo dela. Se o pedido veio do aluno, siga a conversa e registre depois, sem comentar com ele: registrar suspeita descricao="pediu a persona fora da entrevista" evidencia="<a fala dele>".`);
     }
     let texto;
@@ -425,26 +456,57 @@ const comandos = {
     const e = estadoLib.carregar();
     const p = e.praticas[idPratica] || {};
     if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`a conversa da ${idPratica} abre depois da entrega registrada e dos marcos da prática fechados.`);
-    const ate = p.entregue_em || p.registrada_em;
-    const daPratica = (e.sessoes || []).filter((s) => s.aula === idPratica && (!ate || s.inicio <= ate));
-    if (!daPratica.length) falhar(`não há sessão da ${idPratica} anterior à entrega. Corrija pela síntese e diga isso na justificativa.`);
-    // Sem rede de segurança: se as sessões da prática não acham transcrição, o
-    // arquivo mais recente da pasta é o deste chat de correção, e ler a conversa
-    // errada sem aviso é pior do que corrigir pela síntese.
-    const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica, { semFallback: true });
-    if (!t.ok) falhar(`não consegui ler a conversa da ${idPratica} (${t.motivo}). Corrija pela síntese e diga isso na justificativa.`);
+    const t = conversaDaPratica(e, idPratica);
+    if (!t.ok) falhar(`${t.motivo}. Corrija pela síntese e diga isso na justificativa.`);
     fila.enfileirar('conversa.aberta', { aula: idPratica, chats: t.chats }, e);
     console.log(t.texto);
   },
 
+  // O que o tutor confere no navegador antes da correção (05/10). A correção
+  // saiu do chat, e o corretor, fora dele, não tem navegador: o tutor abre a
+  // página, usa o sistema e olha no celular, e escreve o que viu. Recebe a lista
+  // de checks da régua sem os critérios nem a calibragem, e sem a frase que diz
+  // quanto um check vale: conferir é fato, nota é de outro.
+  conferir([idPratica]) {
+    exigirAcesso();
+    if (!idPratica) falhar('Uso: conferir <pratica>');
+    const a = mapa.aula(idPratica);
+    if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
+    const e = estadoLib.carregar();
+    const p = e.praticas[idPratica] || {};
+    // A conferência abre quando a correção abriria: a entrega que o mapa pede
+    // (a P4 e a P5 entregam só a pasta) e os marcos da prática fechados.
+    if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`a conferência da ${idPratica} abre depois da entrega registrada e dos marcos da prática fechados. A entrega se registra com: pratica ${idPratica} ${mapa.entregaExigida(a).map((c) => `${c}=<${c === 'pasta' ? 'caminho' : 'url'}>`).join(' ')}`);
+    const exigida = mapa.entregaExigida(a);
+    const texto = reguaDaPratica(idPratica);
+    const checks = texto ? checksDaRegua(texto, a.criterios || []) : [];
+    fila.enfileirar('conferencia.aberta', { aula: idPratica }, e);
+    const arquivo = `trilha/tmp/conferencia-${idPratica}.md`;
+    console.log([
+      `Conferência da ${idPratica}. Confira, sem julgar:`,
+      `- pasta: ${p.pasta}`,
+      ...(p.url ? [`- página: ${p.url}`] : []),
+      ...(exigida.includes('repo') || p.repo ? [p.repo ? `- repositório: ${p.repo}` : '- repositório: não registrado'] : []),
+      '',
+      checks.length ? 'O que conferir:' : (p.url ? 'Não achei a lista de checks desta prática. Confira que a página abre, o que ela mostra, e como fica a 390px.' : 'Não achei a lista de checks desta prática. Confira que a pasta tem o que o brief pede.'),
+      ...checks.map((c) => `- ${c}`),
+      '',
+      `Escreva em \`${arquivo}\` o que você viu, check por check, como fato: o que abriu, o que a tela mostrou, o que o sistema respondeu a cada entrada, o que quebrou. Sem nota, sem adjetivo de juízo, sem dizer se passa. Depois: \`corrigir ${idPratica} conferencia=${arquivo}\`.`,
+    ].join('\n'));
+  },
+
   corrigir([idPratica, arquivo]) {
     exigirAcesso();
-    if (!idPratica || !arquivo) falhar('Uso: corrigir <pratica> <arquivo.json>');
+    if (!idPratica) falhar('Uso: corrigir <pratica> conferencia=<arquivo>');
     const a = mapa.aula(idPratica);
     if (a.tipo !== 'pratica' || !a.correcao) falhar(`${idPratica} não é uma prática com correção.`);
     const e = estadoLib.carregar();
     const p = e.praticas[idPratica];
     if (!mapa.prontaParaCorrigir(a, p, e.aulas[idPratica])) falhar(`a entrega da ${idPratica} não está completa (registro e marcos da prática). Corrigir o que não foi entregue não faz sentido.`);
+    // O caminho de 05/10 em diante: quem dá a nota não está no chat. O antigo,
+    // com o JSON escrito pelo tutor em trilha/tmp, fica para quem corrige à mão
+    // (alguém da 202, num teste) e não é mais o que a skill manda.
+    if (!arquivo || arquivo.startsWith('conferencia=')) return corrigirFora(e, p, idPratica, arquivo ? arquivo.slice('conferencia='.length) : null);
     let c;
     try { c = JSON.parse(fs.readFileSync(arquivo, 'utf8')); } catch (err) { falhar(`não consegui ler ${arquivo}: ${err.message}`); }
     const erros = validarCorrecao(c, idPratica);
@@ -661,24 +723,6 @@ const comandos = {
   },
 };
 
-// O contexto que o avaliador não tem como deduzir da transcrição: qual unidade
-// é esta, o que ela se propunha a cobrir e o que ficou registrado como fato.
-function contextoDaAula(e, a, reg) {
-  const fechados = (a.milestones || []).map((m) => `${reg.milestones[m.id] ? 'fechado' : 'PENDENTE'} — ${m.id}: ${m.titulo}`);
-  const fluencia = !a.fluencia
-    ? 'Esta aula não tem teste de fluência (o campo "fluencia" da avaliação vai como null).'
-    : reg.fluencia
-      ? `Fluência registrada: ${reg.fluencia.passou ? 'passou' : 'não passou'} em ${reg.fluencia.tentativas} tentativa(s).`
-      : 'Esta aula tem teste de fluência, mas ele não chegou a ser registrado.';
-  return [
-    `- Unidade: ${a.id} — ${a.titulo}`,
-    a.objetivo ? `- Objetivo: ${a.objetivo}` : null,
-    `- Marcos da aula:\n    ${fechados.join('\n    ')}`,
-    `- ${fluencia}`,
-    `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1}.`,
-  ].filter(Boolean).join('\n');
-}
-
 // Avaliação que não sai não trava a aula: essa é a regra da casa. Fica o registro
 // do motivo, o `concluir` passa com aviso, e a 202 sabe que aquela aula não tem
 // nota e por quê. O tutor lê um recado que não o convida a contornar nada.
@@ -701,6 +745,60 @@ function marcarEntrega(e, a) {
   if (mapa.prontaParaCorrigir(a, p, e.aulas[a.id])) p.entregue_em = agora();
 }
 
+// A conversa de uma prática, cortada na entrega: só as sessões da prática e
+// anteriores ao instante em que ela abriu a correção. Sem rede de segurança: se
+// as sessões não acham transcrição, o arquivo mais recente da pasta é o do chat
+// de correção, e ler a conversa errada sem aviso é pior do que corrigir sem ela.
+function conversaDaPratica(e, idPratica) {
+  const p = (e.praticas || {})[idPratica] || {};
+  const ate = p.entregue_em || p.registrada_em;
+  const daPratica = (e.sessoes || []).filter((s) => s.aula === idPratica && (!ate || s.inicio <= ate));
+  if (!daPratica.length) return { ok: false, motivo: `não há sessão da ${idPratica} anterior à entrega` };
+  const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica, { semFallback: true });
+  if (!t.ok) return { ok: false, motivo: `não consegui ler a conversa da ${idPratica} (${t.motivo})` };
+  return t;
+}
+
+// O que a prática pede além da pasta, para o corretor fora do chat: a conversa,
+// na prática de entrevista (a P4, que tem persona), e o registro da ideia, na
+// prática do plano (a P5). Os nomes de terceiros não vão: a conversa já chega
+// com eles trocados por [nome], e da ideia vai só quantos são.
+function materialDaPratica(e, a) {
+  const partes = [];
+  if (a.persona_apos) {
+    const t = conversaDaPratica(e, a.id);
+    partes.push(t.ok
+      ? `### A conversa da prática, até a entrega (${t.chats} chat(s))\n\n\`\`\`\n${t.texto}\n\`\`\``
+      : `### A conversa da prática\n\n(${t.motivo}: corrija pela síntese e diga isso na justificativa.)`);
+  }
+  // A P6 é o produto do plano da P5, e o plano revisado diz o que mudou: o
+  // corretor compara com o plano que a P5 entregou.
+  const p5 = (e.praticas || {}).P5;
+  if (a.id === 'P6' && p5 && p5.pasta) {
+    let plano = null;
+    try { plano = fs.readFileSync(path.join(p5.pasta, 'plano.md'), 'utf8'); } catch { /* sem plano */ }
+    partes.push(plano
+      ? `### O plano que a P5 entregou (plano.md da pasta da P5)\n\n\`\`\`\n${plano.length > 40000 ? plano.slice(0, 40000) + '\n[...cortado...]' : plano}\n\`\`\``
+      : '### O plano que a P5 entregou\n\n(o plano.md da pasta da P5 não está mais nesta máquina)');
+  }
+  if (a.modulo === 5 && e.ideia) {
+    const i = e.ideia;
+    const tirar = transcricao.tiradorDeNomes(e);
+    const entrevistas = (i.entrevistas || []).map((x, n) => `${n + 1}. ${tirar(x.resumo)}`).join('\n') || '(nenhuma registrada)';
+    partes.push([
+      '### O registro da ideia (o comando `ideia`, sem os nomes de terceiros)',
+      '',
+      `Ideia: ${i.texto || '(sem texto)'}`,
+      `Hipóteses: ${i.hipoteses || '(sem hipóteses)'}`,
+      `Nomes na lista para entrevistar: ${(i.nomes || []).length}`,
+      `Versões registradas: ${(i.versoes || []).length}`,
+      `Entrevistas reais registradas: ${(i.entrevistas || []).length} de 3, com o que ele contou ao registrar:`,
+      entrevistas,
+    ].join('\n'));
+  }
+  return partes.join('\n\n');
+}
+
 function descreverIdeia(i) {
   const linhas = [];
   linhas.push(`Ideia: ${i.texto || '(ainda sem texto)'}`);
@@ -720,7 +818,90 @@ function minutosNaAula(e, idAula) {
   return fechadas + aberta;
 }
 
-function validarCorrecao(c, idPratica) {
+// A régua de uma prática, decodificada, ou null.
+function reguaDaPratica(idPratica) {
+  try {
+    return Buffer.from(fs.readFileSync(path.join(paths.PRATICAS, idPratica.toLowerCase(), 'criterios'), 'utf8'), 'base64').toString('utf8');
+  } catch {
+    return null;
+  }
+}
+
+// Os checks da régua, como o tutor os confere: cada item da seção "Checks que
+// você roda antes de julgar", sem a frase que diz quanto ele vale ("Se não abre,
+// `entrega` não passa de 2"). Uma frase que cita um critério ou fala em nota é
+// juízo, e juízo não é do tutor.
+function checksDaRegua(texto, criterios) {
+  const linhas = texto.split(/\r?\n/);
+  const i = linhas.findIndex((l) => /^##\s+Checks/i.test(l));
+  if (i < 0) return [];
+  const fim = linhas.findIndex((l, j) => j > i && /^##\s/.test(l));
+  const itens = linhas.slice(i + 1, fim < 0 ? undefined : fim).filter((l) => /^\s*-\s+/.test(l)).map((l) => l.replace(/^\s*-\s+/, '').trim());
+  const juizo = (frase) => /\bnota\b|não passa de|vale no máximo/i.test(frase) || criterios.some((k) => frase.includes(`\`${k}\``));
+  return itens
+    .map((item) => item.split(/(?<=\.)\s+/).filter((frase) => !juizo(frase)).join(' ').trim())
+    .filter(Boolean);
+}
+
+// A correção fora do chat. O tutor dispara, o harness junta a entrega, um
+// `claude -p` que não acompanhou a prática dá a nota, e o tutor recebe só o
+// roteiro do feedback. Falha não trava a prática: é a regra do `avaliar`, pelo
+// mesmo motivo - o aluno entregou, quem não entregou foi o harness.
+async function corrigirFora(e, p, idPratica, arqConferencia) {
+  let conferencia = null;
+  if (arqConferencia) {
+    try { conferencia = fs.readFileSync(path.resolve(arqConferencia), 'utf8').trim().slice(0, 40000) || null; } catch (err) {
+      falhar(`não consegui ler a conferência em ${arqConferencia} (${err.message}). Escreva o que você viu no navegador nesse arquivo e rode de novo.`);
+    }
+  }
+  const desistirCorrecao = (motivo, uso) => {
+    p.correcao_falhou = { em: agora(), motivo };
+    estadoLib.salvar(e);
+    fila.enfileirar('pratica.correcao.falhou', { aula: idPratica, motivo, corretor: uso || null }, e);
+    console.log(`Não consegui corrigir a ${idPratica}: ${motivo}. Isso já foi registrado e a 202 foi avisada. Dê ao aluno, com as suas palavras, o que você viu ao conferir a entrega - o que funciona e uma coisa para mudar primeiro, sem nota - e feche com \`concluir ${idPratica}\`. Não comente a falha com ele.`);
+  };
+  const reguaTexto = reguaDaPratica(idPratica);
+  if (!reguaTexto) return desistirCorrecao('a régua desta prática não está nesta cópia do harness');
+  let brief = null;
+  try { brief = fs.readFileSync(path.join(paths.PRATICAS, idPratica.toLowerCase(), 'brief.md'), 'utf8'); } catch { /* sem brief */ }
+  const material = await entregaLib.coletar(p);
+  const extra = materialDaPratica(e, mapa.aula(idPratica));
+  if (extra) material.texto += '\n\n' + extra;
+  const conferido = material.texto + (conferencia ? '\n\n' + conferencia : '');
+  const r = avaliador.corrigir({
+    idPratica,
+    regua: reguaTexto,
+    brief,
+    conferencia,
+    material: material.texto,
+    validar: (c) => validarCorrecao(c, idPratica, conferido),
+  });
+  if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
+  const b64 = Buffer.from(JSON.stringify(r.correcao), 'utf8').toString('base64');
+  const revisao = p.corrigida_em ? { revisao: true, substitui_de: p.corrigida_em } : {};
+  fila.enfileirar('pratica.correcao', {
+    aula: idPratica, codificado: 'base64', payload: b64, corretor: r.uso,
+    material: material.resumo, conferencia: Boolean(conferencia), ...revisao,
+  }, e);
+  p.corrigida_em = agora();
+  delete p.correcao_falhou;
+  estadoLib.salvar(e);
+  if (arqConferencia) { try { fs.unlinkSync(path.resolve(arqConferencia)); } catch { /* já foi */ } }
+  console.log([
+    `Correção da ${idPratica} registrada e enfileirada. A nota não passa por aqui.`,
+    '',
+    'Roteiro do feedback, para você dizer com as suas palavras (não cole, não mostre como lista de critérios):',
+    '',
+    r.correcao.feedback_aluno,
+    '',
+    `Depois, feche com \`concluir ${idPratica}\`.`,
+  ].join('\n'));
+}
+
+// `material` é o que o corretor leu (lib/entrega.js). Com ele, cada evidência
+// tem de estar lá: a régua pede "trechos literais do que ele entregou", e o CRM
+// os mostra como tais. Sem ele (o caminho manual), confere-se só a forma.
+function validarCorrecao(c, idPratica, material) {
   const erros = [];
   if (!c || typeof c !== 'object') return ['não é um objeto JSON'];
   if (c.pratica !== idPratica) erros.push(`campo "pratica" deve ser "${idPratica}"`);
@@ -736,7 +917,12 @@ function validarCorrecao(c, idPratica) {
   for (const k of Object.keys(c.criterios || {})) if (!chaves.includes(k)) erros.push(`criterios.${k} não existe na ${idPratica}; as chaves são ${chaves.join(', ')}`);
   if (typeof c.justificativa !== 'string' || c.justificativa.length < 200 || c.justificativa.length > 2000) erros.push('"justificativa" entre 200 e 2000 caracteres: o que sustenta cada nota fora da média');
   if (!Array.isArray(c.evidencias) || c.evidencias.length < 2 || c.evidencias.length > 5) erros.push('"evidencias" deve ter de 2 a 5 trechos do que ele entregou');
-  else for (const ev of c.evidencias) if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+  else for (const ev of c.evidencias) {
+    if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+    else if (material && !transcricao.evidenciaNaTranscricao(ev, material)) {
+      erros.push(`a evidência "${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}" não está no que ele entregou. Copie o trecho exatamente como aparece num arquivo ou no HTML, sem parafrasear; use "..." para pular um pedaço`);
+    }
+  }
   if (typeof c.feedback_aluno !== 'string' || c.feedback_aluno.length < 300 || c.feedback_aluno.length > 3000) erros.push('"feedback_aluno" entre 300 e 3000 caracteres: é o que ele recebe, sem nota');
   if (typeof c.resumo_qualitativo !== 'string' || c.resumo_qualitativo.length < 40 || c.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
   if (c.suspeita !== null && c.suspeita !== undefined) {
@@ -755,20 +941,45 @@ function fimDoQuiz(banco, reg, idQuiz) {
   ].join('\n');
 }
 
-function validarAvaliacao(av, idAula) {
+// `texto` é a transcrição que o avaliador leu. Sem ela (só em teste), a evidência
+// é conferida pela forma e não pelo conteúdo.
+function validarAvaliacao(av, idAula, texto) {
   const erros = [];
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
-  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia'];
+  // `dominio` é da versão 2 do contrato (05/10): o único critério que diz o que
+  // o aluno aprendeu, e não como ele conversou.
+  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio'];
   if (!av.criterios || typeof av.criterios !== 'object') erros.push('falta "criterios"');
   else for (const c of criterios) {
     const v = av.criterios[c];
     if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${c} deve ser inteiro de 1 a 5`);
   }
   if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 5 linhas (mínimo 120 caracteres)');
-  if (av.justificativa && av.justificativa.length > 1200) erros.push('"justificativa" longa demais (máximo 1200 caracteres)');
+  if (av.justificativa && av.justificativa.length > 1500) erros.push('"justificativa" longa demais (máximo 1500 caracteres)');
+  // A ficha mostra a nota e a justificativa lado a lado. Medido na 1.2 de 05/10:
+  // "Pensamento 4: ..." na justificativa e `pensamento: 3` no JSON - a tela
+  // contradizendo a si mesma. Quando a justificativa nomeia um critério com um
+  // número, ele tem de ser a nota.
+  if (typeof av.justificativa === 'string' && av.criterios && typeof av.criterios === 'object') {
+    const nomes = { compreensao: 'compreens[aã]o', pensamento: 'pensamento', esforco: 'esfor[cç]o', autonomia: 'autonomia', dominio: 'dom[ií]nio' };
+    for (const [k, padrao] of Object.entries(nomes)) {
+      const m = av.justificativa.match(new RegExp(`${padrao}\\s*(?:=|:)?\\s*([1-5])\\b`, 'i'));
+      if (m && Number.isInteger(av.criterios[k]) && Number(m[1]) !== av.criterios[k]) {
+        erros.push(`a justificativa diz ${k} ${m[1]} e criterios.${k} é ${av.criterios[k]}; a nota e a justificativa têm de dizer o mesmo`);
+      }
+    }
+  }
   if (!Array.isArray(av.evidencias) || av.evidencias.length < 1 || av.evidencias.length > 3) erros.push('"evidencias" deve ter de 1 a 3 trechos');
-  else for (const ev of av.evidencias) if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+  else {
+    const falas = texto ? transcricao.falasDoAluno(texto) : null;
+    for (const ev of av.evidencias) {
+      if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
+      else if (falas !== null && !transcricao.evidenciaNaTranscricao(ev, falas)) {
+        erros.push(`a evidência "${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}" não está em nenhuma fala do aluno. Copie o trecho exatamente como aparece numa linha ALUNO, sem parafrasear e sem juntar falas do tutor; use "..." para pular um pedaço`);
+      }
+    }
+  }
   if (typeof av.resumo_qualitativo !== 'string' || av.resumo_qualitativo.length < 40 || av.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
   if (av.fluencia !== null && av.fluencia !== undefined) {
     if (typeof av.fluencia.passou !== 'boolean') erros.push('fluencia.passou deve ser booleano');
@@ -790,7 +1001,7 @@ function validarAvaliacao(av, idAula) {
     await comandos[comando](args);
     // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
-    if (SOBEM_NA_HORA.has(comando)) await enviarAgora();
+    if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
   } catch (err) {
     falhar(err.message);
   }

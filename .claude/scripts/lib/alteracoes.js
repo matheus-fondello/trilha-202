@@ -15,7 +15,10 @@ function registrar(e, origem) {
   const anterior = Array.isArray(e.harness_alteracoes) ? e.harness_alteracoes : [];
   if (atual.join('\n') !== anterior.join('\n')) {
     e.harness_alteracoes = atual;
-    if (atual.length) fila.enfileirar('harness.alterado', { arquivos: atual, origem }, e);
+    // A lista vai com teto: uma pasta de dependências dentro de .claude/ dá
+    // milhares de arquivos, e o evento grande vira quarentena no CRM e some do
+    // painel como alarme.
+    if (atual.length) fila.enfileirar('harness.alterado', { arquivos: atual.slice(0, 200), total: atual.length, origem }, e);
   }
   return atual;
 }

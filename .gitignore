@@ -14,3 +14,8 @@ trilha/seq
 
 # Saída de ferramentas de navegador de quem testa; não é da sala.
 .playwright-mcp/
+
+# O Claude Code cria este arquivo quando o aluno escolhe "não perguntar de novo"
+# num pedido de permissão. Sem esta linha, todo evento dele saía como harness
+# alterado. As regras de negar do settings.json continuam valendo por cima dele.
+.claude/settings.local.json

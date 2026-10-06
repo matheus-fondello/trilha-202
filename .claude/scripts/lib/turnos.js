@@ -25,8 +25,14 @@ function abrir(e) {
   s.turnos = n;
   // O horário é o do evento, e o estado herda dele: o fato é o que foi para o
   // disco, e o servidor compara `sessao.fim` com o `ts` do último turno.
-  const ev = fila.enfileirar('turno.envio', { sessao: s.id, n, aula: e.aula_atual, mono_ms: mono }, e);
-  s.turno_aberto = { n, mono_ms: mono, ts: ev.ts, aula: e.aula_atual };
+  // Depois do `concluir` a unidade atual já é a seguinte, mas o "obrigado" do
+  // aluno no mesmo chat ainda é da que fechou: contava tempo para a próxima e a
+  // marcava em andamento. Fora disso vale a atual, que é como a troca de unidade
+  // no meio de uma sessão continua contando para a unidade nova.
+  const daSessao = s.aula && ((e.aulas || {})[s.aula] || {}).status === 'concluida';
+  const aula = daSessao ? s.aula : e.aula_atual;
+  const ev = fila.enfileirar('turno.envio', { sessao: s.id, n, aula, mono_ms: mono }, e);
+  s.turno_aberto = { n, mono_ms: mono, ts: ev.ts, aula };
   s.ultima_atividade = ev.ts;
   return n;
 }

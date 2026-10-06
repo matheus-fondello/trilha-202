@@ -24,7 +24,16 @@ function integridade() {
   }
 }
 
+// Um evento grande demais trava a fila: o CRM o guarda em quarentena acima disso,
+// e acima de uns 9 MB o proxy recusa com 413 em todo envio, porque a página
+// sempre leva ao menos um evento. Fica o esqueleto do que ele era.
+const MAX_DADOS = 150000;
+
 function enfileirar(tipo, dados, estado) {
+  const bruto = JSON.stringify(dados || {});
+  if (bruto.length > MAX_DADOS) {
+    dados = { aula: dados && dados.aula, cortado: true, caracteres: bruto.length, chaves: Object.keys(dados || {}).slice(0, 50) };
+  }
   const ev = {
     id: id(),
     // Contínuo entre sessões: buraco na sequência é evento que não chegou, e o

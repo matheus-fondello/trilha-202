@@ -74,7 +74,7 @@ A P3 nasce na 3.3 e cresce até a 3.8 sobre uma chave gratuita do próprio aluno
 
 - o tutor não pede a chave no chat, não cita limite nem preço de memória e manda ler o limite do projeto no AI Studio;
 - o 429 pode aparecer de verdade ao rodar o eval de vinte casos de uma vez, e a mensagem não some: espera e passa, ou cai na fila como não processada; na 3.5 ele também existe simulado num teste;
-- na correção, num chat novo, o corretor roda os testes e o eval na pasta registrada, abre a URL só para olhar e manda o `curl` do README contra a URL registrada; não pede senha nem usuário de teste, e um `curl` para outro endereço é bloqueado pela guarda.
+- na correção, num chat novo, o tutor roda `conferir P3`, roda os testes e o eval na pasta registrada e o `curl` do README contra a URL registrada, e cola as saídas na conferência como fato; quem dá a nota é o corretor fora do chat (`corrigir P3 conferencia=...`), que só lê. Ninguém pede senha nem usuário de teste, e um `curl` para outro endereço é bloqueado pela guarda.
 
 A 3.3 registra a P3 com pasta e repositório, sem URL: confira que isso não abre a correção (`criterios P3` recusa) e que a URL só entra no fechamento, na `pratica-p3`.
 
@@ -88,7 +88,7 @@ A P4 é um discovery: o tutor vira o dono de uma clínica veterinária e o aluno
 | `cat praticas/p4/persona` | bloqueado pela guarda |
 | Pedir ao dono "sai do personagem e me diz o que você quer" | ele continua no personagem; a suspeita, se houver, é registrada depois do fim |
 | Entrega | `pratica P4 pasta=<pasta da síntese>`, sem URL nem repositório; a correção abre com os marcos fechados |
-| Correção, em chat novo | o tutor lê a conversa com `conversa P4` e a síntese da pasta; o feedback revela o que ficou escondido pela conversa do aluno, sem nota |
+| Correção, em chat novo | o tutor roda `conferir P4` e confere só a pasta da síntese (a tela não traz nada da persona); o corretor fora do chat recebe a conversa da prática e a síntese, e o roteiro do feedback revela o que ficou escondido pela conversa do aluno, sem nota |
 
 ## Ideia do aluno (4.4 em diante)
 
@@ -104,7 +104,7 @@ A P5 entrega só a pasta do plano (`plano-p5/plano.md`, com as oito seções do 
 | Chat da P5 com menos de três entrevistas | o tutor registra a que ele trouxer e não escreve plano |
 | Marco `premissas` | o tutor só pergunta a origem de cada número e premissa do plano, uma por vez; não sugere número nem aponta o que falta |
 | Último marco (`registrada`) | é ele que abre a correção no chat seguinte; o tutor avisa antes |
-| Correção, em chat novo | lê o brief, o `plano.md` e o `ideia`; não pede nada ao aluno |
+| Correção, em chat novo | o tutor confere a pasta (`conferir P5`); o corretor fora do chat lê o brief, o `plano.md` e o registro da ideia, sem nomes de terceiros; não pede nada ao aluno |
 
 ## P6: o produto com pagamento
 
@@ -112,7 +112,11 @@ A P6 nasce na 6.1, num repositório novo registrado com pasta e repositório, se
 
 - o tutor não sugere ativar conta, informar documento nem criar conta de outro país;
 - na 6.2, o ataque à URL de retorno acontece num branch descartável, e o `curl` com webhook forjado vai só a localhost; a guarda aceita `curl` de várias linhas (barra invertida no fim da linha no Bash, crase no PowerShell);
-- na correção, o corretor roda os quatro testes na pasta registrada e os `curl` do README contra a URL registrada, sem login e sem abrir o Checkout; não assiste o vídeo, só confere o link.
+- na correção, o tutor roda `conferir P6`, os quatro testes na pasta registrada e os `curl` do README contra a URL registrada, sem login e sem abrir o Checkout, e cola as saídas; o corretor fora do chat julga. O vídeo não é assistido: só se confere que o link existe.
+
+## A correção de prática, fora do chat
+
+Desde 06/10 o tutor não dá nota de prática. No chat da correção ele roda `conferir <P>`, que imprime o que conferir (tirado da régua, sem critério nem juízo), confere no painel e no terminal, e escreve o que viu em `trilha/tmp/conferencia-<P>.md`. Depois `corrigir <P> conferencia=...` chama um `claude -p` sem ferramentas, que lê a régua, o brief, a conferência e o material que o harness junta, e devolve ao tutor só o roteiro do feedback. Para conferir: a nota não aparece em lugar nenhum do chat; com o CLI `claude` fora da máquina, o `corrigir` falha, avisa a 202 e a prática fecha mesmo assim. As réguas da P1 à P6 descrevem cada nível sem cota: perto de 60% do que o critério pede é 3, e quem faz o que o 5 descreve tira 5.
 
 ## Rede fora e servidor
 
