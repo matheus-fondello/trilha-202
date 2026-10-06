@@ -1013,10 +1013,13 @@ function validarAvaliacao(av, idAula, texto) {
         const curta = `"${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}"`;
         if (!origem) {
           erros.push(`a evidência ${curta} não está em nenhuma fala do aluno. Copie o trecho exatamente como aparece numa única linha ALUNO, sem parafrasear, sem juntar falas de momentos diferentes e sem juntar falas do tutor; use "..." para pular um pedaço dentro da mesma fala`);
-        } else if (['colou', 'anexou', 'longo'].includes(origem.tipo) && !origem.rotulada) {
+        } else if (['colou', 'anexou'].includes(origem.tipo) && !origem.rotulada) {
           // O CRM mostra a evidência entre aspas como as palavras do aluno. Um
           // terminal ou a saída do agente da oficina, colados por ele, não são
-          // (revisão de 05/10): sobem dizendo de onde vieram.
+          // (revisão de 05/10): sobem dizendo de onde vieram. O bloco longo sem
+          // marca não entra aqui (06/10): na maior parte das vezes é o aluno
+          // ditando por voz, e exigir "(colou)" derrubava a avaliação inteira ou
+          // punha na ficha que ele colou o que ele falou.
           erros.push(`a evidência ${curta} vem de um trecho que o aluno colou ou anexou, não de algo que ele digitou. Comece com "(colou) " ou "(anexou) ", ou prefira uma fala digitada`);
         }
       }
