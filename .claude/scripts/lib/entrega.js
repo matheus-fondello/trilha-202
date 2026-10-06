@@ -35,8 +35,10 @@ const IGNORAR = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out'
 
 // O que a régua manda ler primeiro. A ordem decide o que entra quando o teto
 // aperta: um repositório grande perde código periférico, nunca a spec.
+// `spec` não casa arquivo de teste (`calc.spec.ts`): um teste passava na frente
+// do README, e com o teto o README ficava de fora e a régua lia ausência.
 const PRIORIDADE = [
-  /^plano\.md$/i, /spec/i, /^claude\.md$/i, /^readme/i, /design|estilo|style-guide/i,
+  /^plano\.md$/i, /^(?!.*\.spec\.[cm]?[jt]sx?$).*spec/i, /^claude\.md$/i, /^readme/i, /design|estilo|style-guide/i,
   /verifica|evidenc|checklist|screenshot/i, /test|spec\.(js|ts)$/i,
   /^index\.html?$/i,
 ];
@@ -68,20 +70,25 @@ function listar(pasta) {
 
 function arquivos(pasta) {
   const blocos = [];
+  const omitidos = [];
   let total = 0;
   const lista = listar(pasta);
-  for (const rel of lista.slice(0, MAX_ARQUIVOS)) {
+  for (const rel of lista) {
+    if (blocos.length >= MAX_ARQUIVOS) { omitidos.push(rel); continue; }
     let bruto;
     try { bruto = fs.readFileSync(path.join(pasta, rel)); } catch { continue; }
     if (bruto.includes(0)) continue;
     let texto = bruto.toString('utf8');
-    const teto = prioridade(rel) < PRIORIDADE.length ? POR_ARQUIVO_PRIORITARIO : POR_ARQUIVO;
+    // Só o plano, a spec, o CLAUDE.md e o README: testes ficam no teto comum.
+    const teto = prioridade(rel) <= 3 ? POR_ARQUIVO_PRIORITARIO : POR_ARQUIVO;
     if (texto.length > teto) texto = texto.slice(0, teto) + `\n[...cortado: ${texto.length} caracteres no total...]`;
-    if (total + texto.length > TOTAL) break;
+    // Um arquivo que não cabe é pulado e nomeado, e não encerra a coleta: os
+    // menores que vêm depois ainda entram.
+    if (total + texto.length > TOTAL) { omitidos.push(rel); continue; }
     blocos.push({ rel, texto });
     total += texto.length;
   }
-  return { blocos, total, listados: lista.length };
+  return { blocos, omitidos, total, listados: lista.length };
 }
 
 function historico(pasta) {
@@ -124,8 +131,11 @@ async function coletar(p) {
     const a = arquivos(p.pasta);
     resumo.arquivos = a.blocos.length;
     resumo.caracteres = a.total;
-    partes.push(`### Arquivos da entrega (${a.blocos.length} de ${a.listados} arquivos de texto; o resto ficou de fora pelo teto)\n\n`
-      + (a.blocos.map((b) => `#### ${b.rel}\n\n\`\`\`\n${b.texto}\n\`\`\``).join('\n\n') || '(nenhum arquivo de texto na pasta)'));
+    partes.push(`### Arquivos da entrega (${a.blocos.length} de ${a.listados} arquivos de texto lidos)\n\n`
+      + (a.blocos.map((b) => `#### ${b.rel}\n\n\`\`\`\n${b.texto}\n\`\`\``).join('\n\n') || '(nenhum arquivo de texto na pasta)')
+      + (a.omitidos.length
+        ? `\n\n#### Também na entrega, sem o conteúdo\n\n${a.omitidos.map((r) => `- ${r} (conteúdo omitido pelo teto)`).join('\n')}`
+        : ''));
     const h = historico(p.pasta);
     resumo.historico = Boolean(h);
     partes.push(`### Histórico de commits da pasta, do mais novo ao mais antigo\n\n${h ? '```\n' + h + '\n```' : '(a pasta não é um repositório git, ou o git não respondeu)'}`);

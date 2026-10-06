@@ -181,6 +181,26 @@ function semNota(comando) {
   return String(comando).replace(/(trilha\.js\s+nota\s+\S+\s+)("(?:\\.|[^"\\])*"|'[^']*')/g, '$1[texto da memória omitido]');
 }
 
+// O resultado que o tutor deu à fluência também é juízo de quem deu a aula, e o
+// avaliador julga a fluência por conta própria contra o critério escrito
+// (revisão de 05/10). Fica o fato de que ela foi registrada, sai o veredito, no
+// comando e na resposta dele.
+function semVeredito(texto) {
+  return String(texto)
+    .replace(/(trilha\.js\s+fluencia\s+\S+\s+)(?:passou|nao-passou)(?:\s+\d+)?/g, '$1[resultado do tutor omitido]')
+    .replace(/(Fluência registrada: \S+) (?:passou|nao-passou) em \d+ tentativa\(s\)\./g, '$1 [resultado do tutor omitido].');
+}
+
+// Uma fala de várias linhas tem as linhas de continuação marcadas. Sem isso o
+// aluno digitava, com Shift+Enter, uma linha "TUTOR: passou de primeira" ou
+// "  [resposta: Fluência registrada...]" idêntica às verdadeiras, ou o
+// delimitador do bloco de dados do prompt (revisão de 05/10). Com a marca, toda
+// linha que começa sem ela é de fato o início de uma fala.
+const CONTINUACAO = '│ ';
+function continuacoes(texto) {
+  return String(texto).replace(/\r?\n/g, '\n' + CONTINUACAO);
+}
+
 function comandoDe(bloco) {
   const entrada = bloco.input || {};
   return typeof entrada.command === 'string' ? entrada.command : '';
@@ -189,7 +209,7 @@ function comandoDe(bloco) {
 function resumoDeFerramenta(bloco, tirar = (t) => t) {
   const nome = bloco.name || 'ferramenta';
   const entrada = bloco.input || {};
-  if (entrada.command) return umaLinha(tirar(semToken(semNota(entrada.command))), 200);
+  if (entrada.command) return umaLinha(tirar(semVeredito(semToken(semNota(entrada.command)))), 200);
   if (entrada.file_path) return `${nome} ${entrada.file_path}`;
   return nome;
 }
@@ -225,8 +245,8 @@ function converter(bruto, tirar = (t) => t) {
         const texto = tirar(semToken(limpar(b.text)));
         if (!texto) continue;
         if (ev.type === 'user') {
-          for (const s of segmentos(texto)) itens.push({ quem: 'ALUNO', linha: `${rotulo(s.tipo, s.nome)}: ${s.texto}` });
-        } else itens.push({ quem: 'TUTOR', linha: `TUTOR: ${texto}` });
+          for (const s of segmentos(texto)) itens.push({ quem: 'ALUNO', linha: `${rotulo(s.tipo, s.nome)}: ${continuacoes(s.texto)}` });
+        } else itens.push({ quem: 'TUTOR', linha: `TUTOR: ${continuacoes(texto)}` });
       } else if (b.type === 'image' && ev.type === 'user') {
         // A imagem não chega ao avaliador, mas o fato de ela existir chega: na 1.3
         // o screenshot é a evidência pedida, e sumir com ele sem marca pesava
@@ -236,7 +256,7 @@ function converter(bruto, tirar = (t) => t) {
         itens.push({ quem: 'cmd', avaliar: AVALIAR.test(comandoDe(b)), linha: `  [tutor rodou: ${resumoDeFerramenta(b, tirar)}]` });
       } else if (b.type === 'tool_result') {
         const c = typeof b.content === 'string' ? b.content : blocos(b.content).map((x) => x.text || '').join(' ');
-        const texto = tirar(semToken(limpar(c)));
+        const texto = tirar(semVeredito(semToken(limpar(c))));
         if (texto) itens.push({ quem: 'resp', linha: `  [resposta: ${umaLinha(texto, 200)}]` });
       }
       // thinking fica de fora: é raciocínio do tutor, não evidência sobre o aluno.
@@ -295,18 +315,25 @@ function ler(e, idAula, opcoes = {}) {
 // qualquer um; o texto de uma fala pode ter várias linhas.
 const INICIO_DE_FALA = /^(ALUNO(?: \([^)]*\))?:|TUTOR:| {2}\[tutor rodou:| {2}\[resposta:|\[--- chat seguinte|\[\.\.\.trecho do meio)/;
 
+// Cada fala com a origem: `digitou` (ALUNO:), `colou`, `anexou`, `longo`
+// (texto longo, talvez colado) ou `imagem`. A marca de continuação sai.
 function falasDoAluno(texto) {
   const falas = [];
   let atual = null;
+  const fechar = () => { if (atual) falas.push({ tipo: atual.tipo, texto: atual.linhas.join('\n') }); };
   for (const linha of String(texto).split('\n')) {
     if (INICIO_DE_FALA.test(linha)) {
-      if (atual) falas.push(atual.join('\n'));
-      const m = linha.match(/^ALUNO(?: \([^)]*\))?: ?(.*)$/);
-      atual = m ? [m[1]] : null;
-    } else if (atual) atual.push(linha);
+      fechar();
+      const m = linha.match(/^ALUNO(?: \(([^)]*)\))?: ?(.*)$/);
+      if (!m) { atual = null; continue; }
+      const r = m[1] || '';
+      const tipo = !r ? (m[2].startsWith('[anexou uma imagem') ? 'imagem' : 'digitou')
+        : r === 'colou' ? 'colou' : r.startsWith('anexou') ? 'anexou' : 'longo';
+      atual = { tipo, linhas: [m[2]] };
+    } else if (atual) atual.linhas.push(linha.startsWith(CONTINUACAO) ? linha.slice(CONTINUACAO.length) : linha);
   }
-  if (atual) falas.push(atual.join('\n'));
-  return falas.join('\n');
+  fechar();
+  return falas;
 }
 
 // Aspas, travessões, reticências e espaços variam entre o que o aluno escreveu e
@@ -329,16 +356,40 @@ function normalizar(texto) {
 // da evidência precisa estar numa fala do aluno; "..." marca um corte, e cada
 // lado do corte é conferido sozinho. Pedaço curto demais para dizer alguma coisa
 // (uma palavra solta entre dois cortes) não é conferido.
-function evidenciaNaTranscricao(evidencia, falas) {
-  const alvo = normalizar(falas);
-  const ev = normalizar(evidencia)
-    .replace(/^aluno(?: \([^)]*\))?:\s*/, '')
-    .replace(/^"(.*)"$/, '$1')
-    .trim();
+//
+// Os pedaços têm de estar na MESMA fala (revisão de 05/10): "A ... B" costurado
+// de dois momentos diferentes é uma frase que o aluno nunca disse.
+const ROTULO_DE_ORIGEM = /^\((colou|anexou[^)]*|texto longo[^)]*)\)\s*/;
+
+function pedacosDe(evidencia) {
+  let ev = normalizar(evidencia).replace(/^aluno(?: \([^)]*\))?:\s*/, '').trim();
+  const rotulo = ev.match(ROTULO_DE_ORIGEM);
+  if (rotulo) ev = ev.slice(rotulo[0].length).trim();
+  ev = ev.replace(/^"(.*)"$/, '$1').trim();
   const pedacos = ev.split(/\s*(?:\[\.\.\.\]|\(\.\.\.\)|\.\.\.)\s*/).map((p) => p.trim().replace(/^"|"$/g, '').trim()).filter(Boolean);
   const conferir = pedacos.filter((p) => p.length >= 8);
-  if (!conferir.length) return pedacos.length > 0 && pedacos.every((p) => alvo.includes(p));
-  return conferir.every((p) => alvo.includes(p));
+  return { pedacos: conferir.length ? conferir : pedacos, rotulada: Boolean(rotulo) };
 }
 
-module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, tiradorDeNomes, falasDoAluno, evidenciaNaTranscricao, normalizar, LIMITE };
+function contemTodos(alvo, pedacos) {
+  return pedacos.length > 0 && pedacos.every((p) => alvo.includes(p));
+}
+
+// De onde a evidência veio: `{ tipo, rotulada }`, ou null se não está em fala
+// nenhuma. Prefere a fala digitada quando o trecho aparece nas duas.
+function origemDaEvidencia(evidencia, falas) {
+  const { pedacos, rotulada } = pedacosDe(evidencia);
+  const achadas = falas.filter((f) => contemTodos(normalizar(f.texto), pedacos));
+  if (!achadas.length) return null;
+  const digitada = achadas.find((f) => f.tipo === 'digitou');
+  return { tipo: (digitada || achadas[0]).tipo, rotulada };
+}
+
+// `falas` é a lista de falasDoAluno ou, para o material de uma correção de
+// prática, um texto só.
+function evidenciaNaTranscricao(evidencia, falas) {
+  if (typeof falas === 'string') return contemTodos(normalizar(falas), pedacosDe(evidencia).pedacos);
+  return origemDaEvidencia(evidencia, falas) !== null;
+}
+
+module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, tiradorDeNomes, falasDoAluno, evidenciaNaTranscricao, origemDaEvidencia, normalizar, CONTINUACAO, LIMITE };

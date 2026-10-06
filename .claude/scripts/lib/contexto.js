@@ -55,7 +55,10 @@ function contextoDaAula(e, a, reg) {
   const fluencia = !a.fluencia
     ? 'Esta aula não tem teste de fluência (o campo "fluencia" da avaliação vai como null).'
     : reg.fluencia
-      ? `Fluência registrada pelo tutor: ${reg.fluencia.passou ? 'passou' : 'não passou'} em ${reg.fluencia.tentativas} tentativa(s).`
+      // O resultado do tutor fica de fora de propósito (revisão de 05/10): é o
+      // juízo de quem deu a aula, e a fluência é julgada por quem lê, contra o
+      // critério escrito. A comparação entre os dois é feita no CRM.
+      ? 'A fluência foi registrada pelo tutor. O resultado dele não vem aqui de propósito: o juízo é seu, contra o critério escrito no plano da aula.'
       : 'Esta aula tem teste de fluência, mas ele não chegou a ser registrado.';
   const skill = trechosDaSkill(a.id);
   const blocos = [
@@ -63,7 +66,7 @@ function contextoDaAula(e, a, reg) {
       `- Unidade: ${a.id} — ${a.titulo}`,
       `- Marcos registrados:\n    ${fechados.join('\n    ')}`,
       `- ${fluencia}`,
-      `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1}.`,
+      `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1} (é contexto, não critério: aula longa ou dividida em chats não abaixa nota).`,
     ].join('\n'),
   ];
   if (!skill) {

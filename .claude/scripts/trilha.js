@@ -488,8 +488,20 @@ const comandos = {
       ...(p.url ? [`- página: ${p.url}`] : []),
       ...(exigida.includes('repo') || p.repo ? [p.repo ? `- repositório: ${p.repo}` : '- repositório: não registrado'] : []),
       '',
-      checks.length ? 'O que conferir:' : (p.url ? 'Não achei a lista de checks desta prática. Confira que a página abre, o que ela mostra, e como fica a 390px.' : 'Não achei a lista de checks desta prática. Confira que a pasta tem o que o brief pede.'),
+      checks.length ? 'O que conferir:' : (p.url ? 'Não achei a lista de checks desta prática. Confira que a página abre e o que o HTML dela mostra.' : 'Não achei a lista de checks desta prática. Confira que a pasta tem o que o brief pede.'),
       ...checks.map((c) => `- ${c}`),
+      // O que a régua julga e só a tela mostra: primeira dobra, ação, cores. Sem
+      // isto o corretor, que não tem navegador, julgaria conversão e execução às
+      // cegas (revisão de 05/10). Pedidos de descrição, nunca de juízo. O tutor
+      // também não lê a página pelo painel (ler, screenshot e redimensionar são
+      // negados): o texto sai do HTML pelo curl da URL registrada, que a guarda
+      // deixa, e a largura de celular, dos prints que o aluno pôs na pasta.
+      ...(p.url ? [
+        `- Rode \`curl -sL ${p.url}\` e transcreva da resposta o título, o primeiro bloco de texto e cada botão e link de ação, com o texto exato e para onde leva. O painel só abre a página, para o aluno ver junto; você não a lê por ele.`,
+        '- Se houver prints na pasta, descreva o que cada um mostra e se é de celular ou de computador. Sem print, diga que não há; não descreva largura que você não viu.',
+        '- Anote as cores que o CSS da página declara para fundo, texto e botão e, se houver logo em SVG na pasta, as cores dela.',
+      ] : []),
+      '- Onde um check acima diz o que é certo ("resposta honesta", "não pode quebrar"), descreva o que aconteceu e deixe o julgamento para o corretor.',
       '',
       `Escreva em \`${arquivo}\` o que você viu, check por check, como fato: o que abriu, o que a tela mostrou, o que o sistema respondeu a cada entrada, o que quebrou. Sem nota, sem adjetivo de juízo, sem dizer se passa. Depois: \`corrigir ${idPratica} conferencia=${arquivo}\`.`,
     ].join('\n'));
@@ -955,7 +967,10 @@ function validarAvaliacao(av, idAula, texto) {
     const v = av.criterios[c];
     if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${c} deve ser inteiro de 1 a 5`);
   }
-  if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 5 linhas (mínimo 120 caracteres)');
+  if (av.criterios && typeof av.criterios === 'object') {
+    for (const k of Object.keys(av.criterios)) if (!criterios.includes(k)) erros.push(`criterios.${k} não existe; os critérios são ${criterios.join(', ')}`);
+  }
+  if (typeof av.justificativa !== 'string' || av.justificativa.length < 120) erros.push('"justificativa" precisa de 3 a 6 linhas (mínimo 120 caracteres)');
   if (av.justificativa && av.justificativa.length > 1500) erros.push('"justificativa" longa demais (máximo 1500 caracteres)');
   // A ficha mostra a nota e a justificativa lado a lado. Medido na 1.2 de 05/10:
   // "Pensamento 4: ..." na justificativa e `pensamento: 3` no JSON - a tela
@@ -975,15 +990,29 @@ function validarAvaliacao(av, idAula, texto) {
     const falas = texto ? transcricao.falasDoAluno(texto) : null;
     for (const ev of av.evidencias) {
       if (typeof ev !== 'string' || ev.length > 300) erros.push('cada evidência é um trecho curto (máximo 300 caracteres)');
-      else if (falas !== null && !transcricao.evidenciaNaTranscricao(ev, falas)) {
-        erros.push(`a evidência "${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}" não está em nenhuma fala do aluno. Copie o trecho exatamente como aparece numa linha ALUNO, sem parafrasear e sem juntar falas do tutor; use "..." para pular um pedaço`);
+      else if (falas !== null) {
+        const origem = transcricao.origemDaEvidencia(ev, falas);
+        const curta = `"${ev.slice(0, 80)}${ev.length > 80 ? '…' : ''}"`;
+        if (!origem) {
+          erros.push(`a evidência ${curta} não está em nenhuma fala do aluno. Copie o trecho exatamente como aparece numa única linha ALUNO, sem parafrasear, sem juntar falas de momentos diferentes e sem juntar falas do tutor; use "..." para pular um pedaço dentro da mesma fala`);
+        } else if (['colou', 'anexou', 'longo'].includes(origem.tipo) && !origem.rotulada) {
+          // O CRM mostra a evidência entre aspas como as palavras do aluno. Um
+          // terminal ou a saída do agente da oficina, colados por ele, não são
+          // (revisão de 05/10): sobem dizendo de onde vieram.
+          erros.push(`a evidência ${curta} vem de um trecho que o aluno colou ou anexou, não de algo que ele digitou. Comece com "(colou) " ou "(anexou) ", ou prefira uma fala digitada`);
+        }
       }
     }
   }
   if (typeof av.resumo_qualitativo !== 'string' || av.resumo_qualitativo.length < 40 || av.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
+  // A fluência tem de bater com a aula: o CRM guarda tentativas a partir de 1, e
+  // uma fluência inventada numa aula que não tem fluência vira uma pílula na ficha.
+  let temFluencia = true;
+  try { temFluencia = Boolean(mapa.aula(idAula).fluencia); } catch { /* aula fora do mapa: sem conferência */ }
+  if (!temFluencia && av.fluencia !== null && av.fluencia !== undefined) erros.push('esta aula não tem teste de fluência: "fluencia" vai null');
   if (av.fluencia !== null && av.fluencia !== undefined) {
     if (typeof av.fluencia.passou !== 'boolean') erros.push('fluencia.passou deve ser booleano');
-    if (!Number.isInteger(av.fluencia.tentativas)) erros.push('fluencia.tentativas deve ser inteiro');
+    if (!Number.isInteger(av.fluencia.tentativas) || av.fluencia.tentativas < 1) erros.push('fluencia.tentativas deve ser inteiro a partir de 1; se a fluência não aconteceu, "fluencia" vai null');
     if (typeof av.fluencia.evidencia !== 'string' || av.fluencia.evidencia.length > 400) erros.push('fluencia.evidencia é texto de até 400 caracteres');
   }
   if (av.suspeita !== null && av.suspeita !== undefined) {
