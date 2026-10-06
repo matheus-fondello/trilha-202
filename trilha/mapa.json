@@ -1,6 +1,6 @@
 {
-  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos do M0 ao M4, com as práticas P0 a P4 e os quizzes Q1 a Q4. O mapa termina na última unidade escrita: depois dela, o resumo diz ao tutor que o material acabou e manda falar da atualização, e quando o mapa ganhar a unidade seguinte quem concluiu a última avança sozinho para ela. Unidade que entrar sem estar escrita leva milestones null, e o resumo diz ao tutor que ela não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. A correção abre com a entrega registrada e os marcos da prática fechados. O campo entrega lista o que a prática entrega (sem ele, pasta, url e repo); a P4 entrega só a pasta da síntese, e a conversa, que a correção lê pelo comando `conversa`. O campo persona_apos nomeia o marco depois do qual o comando `persona` abre o personagem da prática, e só no chat dela, antes da entrega. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Toda unidade é de tronco e a sequência é a ordem deste arquivo: a categoria \"aprofundamento\" saiu em 19/09, e a 2.15 foi dissolvida na 1.11 e na 2.14. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1. Unidade com tipo quiz não tem milestones: a ementa é o banco codificado em quiz/<id>/banco (pergunta a pergunta, gabarito e explicação), a skill conduz, e ela fecha com todas as perguntas respondidas. Sem fluência e sem avaliação de fim de aula: o que sobe é a resposta de cada pergunta, com a alternativa escolhida. Escritos: o Q1 ao Q4, com tamanho variável (de 6 a 10 fechadas e 1 ou 2 abertas).",
-  "versao": "0.17.0",
+  "$comment": "Ementa em forma de dados. Ordem padrão das aulas, milestones e se exige fluência. Estão escritos do M0 ao M6: as aulas, as práticas P0 a P6 e os quizzes Q1 a Q5; o Q6 entra sem banco até ser escrito. O mapa termina na última unidade escrita: depois dela, o resumo diz ao tutor que o material acabou e manda falar da atualização, e quando o mapa ganhar a unidade seguinte quem concluiu a última avança sozinho para ela. Unidade que entrar sem estar escrita leva milestones null, e o resumo diz ao tutor que ela não foi escrita em vez de saltar para a seguinte. Prática com campo correcao tem duas fases em chats separados: a skill da prática instrui e registra a entrega, e a skill `corrigir` julga depois, sem ter visto a conversa. A correção abre com a entrega registrada e os marcos da prática fechados. O campo entrega lista o que a prática entrega (sem ele, pasta, url e repo); a P4 entrega só a pasta da síntese, e a conversa, que a correção lê pelo comando `conversa`. O campo persona_apos nomeia o marco depois do qual o comando `persona` abre o personagem da prática, e só no chat dela, antes da entrega. Os ids de milestone têm que bater com a skill da aula. Milestone é marco de bloco tratado com o aluno acompanhando, não prova. Prática tem marcos como aula, mas não tem avaliação nem fluência: fecha com o artefato registrado. Toda unidade é de tronco e a sequência é a ordem deste arquivo: a categoria \"aprofundamento\" saiu em 19/09, e a 2.15 foi dissolvida na 1.11 e na 2.14. Aula com \"avaliacao\": false não é avaliada nem leva feedback ao aluno: é combinado, não matéria — hoje só a 0.1. Unidade com tipo quiz não tem milestones: a ementa é o banco codificado em quiz/<id>/banco (pergunta a pergunta, gabarito e explicação), a skill conduz, e ela fecha com todas as perguntas respondidas. Sem fluência e sem avaliação de fim de aula: o que sobe é a resposta de cada pergunta, com a alternativa escolhida. Escritos: o Q1 ao Q5, com tamanho variável (de 6 a 10 fechadas e 1 ou 2 abertas). Depois da última unidade do M6 a trilha acabou: o resumo diz isso, e não fala em material novo. A P5 entrega só a pasta do plano, registrada desde a 5.1; a correção abre quando o último marco da P5 fecha.",
+  "versao": "0.18.0",
   "aulas": [
     {
       "id": "0.1",
@@ -1309,6 +1309,363 @@
       "tipo": "quiz",
       "titulo": "Quiz do módulo 4",
       "skill": "quiz-m4",
+      "fluencia": false,
+      "avaliacao": false,
+      "milestones": null
+    },
+    {
+      "id": "5.1",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "Modelos de negócio e preço",
+      "skill": "aula-5-1",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "quem-paga",
+          "titulo": "Criar, entregar, capturar; de quem sai o dinheiro"
+        },
+        {
+          "id": "onde-ganham",
+          "titulo": "Os modelos, o gatilho e o número de cada um"
+        },
+        {
+          "id": "casos-e-dre",
+          "titulo": "Um DRE lido e os casos vivos: volume e margem"
+        },
+        {
+          "id": "preco",
+          "titulo": "Preço pelo valor e pela âncora; cobrar cedo"
+        },
+        {
+          "id": "one-feature",
+          "titulo": "Assinatura por padrão e o preço em reais"
+        }
+      ]
+    },
+    {
+      "id": "5.2",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "Unit economics I",
+      "skill": "aula-5-2",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "a-unidade",
+          "titulo": "A unidade: cliente, pedido, transação"
+        },
+        {
+          "id": "margem-de-contribuicao",
+          "titulo": "Variável e fixo; margem de contribuição"
+        },
+        {
+          "id": "cac-completo",
+          "titulo": "CAC completo e só de mídia; orgânico e pago"
+        },
+        {
+          "id": "ltv-sobre-margem",
+          "titulo": "LTV sobre a margem, nunca sobre receita"
+        }
+      ]
+    },
+    {
+      "id": "5.3",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "Unit economics II",
+      "skill": "aula-5-3",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "churn-domina",
+          "titulo": "Churn mensal e anual; a vida não é linear no churn"
+        },
+        {
+          "id": "coorte",
+          "titulo": "Retenção por coorte, número pequeno, período certo"
+        },
+        {
+          "id": "payback-e-caixa",
+          "titulo": "LTV:CAC, payback e o caixa"
+        },
+        {
+          "id": "custo-por-execucao",
+          "titulo": "Custo por execução com IA na margem"
+        },
+        {
+          "id": "sensibilidade",
+          "titulo": "Planilha com origem, uma entrada por vez"
+        }
+      ]
+    },
+    {
+      "id": "5.4",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "Distribuição: canais, fits e funil",
+      "skill": "aula-5-4",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "assimetria",
+          "titulo": "Construir ficou barato, distribuir não"
+        },
+        {
+          "id": "canais-um-a-um",
+          "titulo": "Os dez canais por público, custo e tempo"
+        },
+        {
+          "id": "fits",
+          "titulo": "Product-channel e channel-model fit; a zona de perigo"
+        },
+        {
+          "id": "bullseye",
+          "titulo": "Listar, testar barato, focar em um"
+        },
+        {
+          "id": "funil",
+          "titulo": "Funil AARRR, taxas multiplicadas e o gargalo"
+        }
+      ]
+    },
+    {
+      "id": "5.5",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "B2B, B2C e os dez primeiros",
+      "skill": "aula-5-5",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "b2b-ou-b2c",
+          "titulo": "Ciclo, ticket e decisor; onde o pequeno negócio cai"
+        },
+        {
+          "id": "coisas-que-nao-escalam",
+          "titulo": "Os dez à mão, o concierge e o limite da consultoria"
+        },
+        {
+          "id": "outbound",
+          "titulo": "Lista, mensagem e follow-up"
+        },
+        {
+          "id": "entrevista-ou-venda",
+          "titulo": "Na venda a solução entra e o pedido é testar ou pagar"
+        },
+        {
+          "id": "os-dez-da-lista",
+          "titulo": "Um canal: a lista da 4.4 relida pelo ICP"
+        }
+      ]
+    },
+    {
+      "id": "5.6",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "Startup, small business, lifestyle",
+      "skill": "aula-5-6",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "startup-e-crescimento",
+          "titulo": "Startup é crescimento, medido em taxa semanal"
+        },
+        {
+          "id": "outro-jogo",
+          "titulo": "Small business e lifestyle: outro jogo, não menor"
+        },
+        {
+          "id": "escada",
+          "titulo": "Bootstrapping pela escada do Walling"
+        },
+        {
+          "id": "pequeno-de-proposito",
+          "titulo": "O projeto final, pequeno de propósito"
+        }
+      ]
+    },
+    {
+      "id": "5.7",
+      "modulo": 5,
+      "tipo": "aula",
+      "titulo": "A matemática do venture",
+      "skill": "aula-5-7",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "power-law",
+          "titulo": "Power law: cada cheque precisa poder devolver o fundo"
+        },
+        {
+          "id": "o-que-o-dinheiro-cobra",
+          "titulo": "Crescimento contratado, piso que sobe, mão única"
+        },
+        {
+          "id": "default-alive",
+          "titulo": "Default alive: a conta, e quando levantar"
+        },
+        {
+          "id": "venture-backable",
+          "titulo": "Os sinais, e por que a maioria não tem"
+        },
+        {
+          "id": "a-202",
+          "titulo": "O que a 202 é, o que quer e o que procura"
+        }
+      ]
+    },
+    {
+      "id": "P5",
+      "modulo": 5,
+      "tipo": "pratica",
+      "titulo": "Plano de negócio do produto one-feature",
+      "skill": "pratica-p5",
+      "fluencia": false,
+      "correcao": true,
+      "entrega": ["pasta"],
+      "criterios": ["problema", "numeros", "distribuicao", "escopo", "risco"],
+      "milestones": [
+        {
+          "id": "entrevistas",
+          "titulo": "Três entrevistas registradas e no plano"
+        },
+        {
+          "id": "inventario",
+          "titulo": "O que falta no plano, seção por seção"
+        },
+        {
+          "id": "premissas",
+          "titulo": "Premissas desafiadas, uma de cada vez"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Plano fechado na pasta, registrado"
+        }
+      ]
+    },
+    {
+      "id": "Q5",
+      "modulo": 5,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 5",
+      "skill": "quiz-m5",
+      "fluencia": false,
+      "avaliacao": false,
+      "milestones": null
+    },
+    {
+      "id": "6.1",
+      "modulo": 6,
+      "tipo": "aula",
+      "titulo": "O fluxo pagou → tem acesso",
+      "skill": "aula-6-1",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "o-fluxo-inteiro",
+          "titulo": "Os sete passos e os estados, desenhados antes"
+        },
+        {
+          "id": "conta-de-usuario",
+          "titulo": "Cadastro, login e perfil no repositório da P6"
+        },
+        {
+          "id": "sandbox-e-preco",
+          "titulo": "Sandbox geral, preço em BRL e as chaves no servidor"
+        },
+        {
+          "id": "checkout-hospedado",
+          "titulo": "Checkout hospedado de assinatura com cartão de teste"
+        },
+        {
+          "id": "aguardando-pagamento",
+          "titulo": "Pix, Pix Automático e a tela de espera desenhada"
+        }
+      ]
+    },
+    {
+      "id": "6.2",
+      "modulo": 6,
+      "tipo": "aula",
+      "titulo": "Webhook e estado",
+      "skill": "aula-6-2",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "o-erro-classico",
+          "titulo": "O atalho da URL de retorno, atacado num branch descartável"
+        },
+        {
+          "id": "webhook-verificado",
+          "titulo": "Webhook com assinatura conferida, CLI e duplicata"
+        },
+        {
+          "id": "estado-no-banco",
+          "titulo": "Estado no banco, boleto e tela de espera pelo evento"
+        }
+      ]
+    },
+    {
+      "id": "6.3",
+      "modulo": 6,
+      "tipo": "aula",
+      "titulo": "Mostrar o trabalho",
+      "skill": "aula-6-3",
+      "fluencia": true,
+      "milestones": [
+        {
+          "id": "quem-le",
+          "titulo": "Os dois leitores e o README em camadas"
+        },
+        {
+          "id": "contar-o-processo",
+          "titulo": "O que o agente errou e como você pegou"
+        },
+        {
+          "id": "demo-que-prova",
+          "titulo": "Demo de três minutos: problema, fluxo, prova, decisão"
+        },
+        {
+          "id": "portfolio",
+          "titulo": "P1, P2 e P3: repositório público, URL viva, uma linha"
+        }
+      ]
+    },
+    {
+      "id": "P6",
+      "modulo": 6,
+      "tipo": "pratica",
+      "skill": "pratica-p6",
+      "fluencia": false,
+      "correcao": true,
+      "titulo": "MVP one-feature no ar",
+      "criterios": ["pagamento", "acesso", "feature", "pagina", "produto"],
+      "milestones": [
+        {
+          "id": "inventario",
+          "titulo": "O que falta e o que fica de fora, com motivo"
+        },
+        {
+          "id": "readme",
+          "titulo": "README em camadas, receitas e plano revisado no repositório"
+        },
+        {
+          "id": "entrega-vista",
+          "titulo": "O produto no ar, visto no painel, receitas rodadas"
+        },
+        {
+          "id": "registrada",
+          "titulo": "Pasta, URL e repositório registrados"
+        }
+      ]
+    },
+    {
+      "id": "Q6",
+      "modulo": 6,
+      "tipo": "quiz",
+      "titulo": "Quiz do módulo 6",
+      "skill": "quiz-m6",
       "fluencia": false,
       "avaliacao": false,
       "milestones": null

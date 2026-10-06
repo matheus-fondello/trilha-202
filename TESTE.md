@@ -6,10 +6,10 @@ Para quem for testar o harness. O objetivo não é fazer o curso, é provar o de
 
 ```
 node .claude/scripts/trilha.js dev reset        zera estado e fila (recusa se há sessão aberta; --forcar para insistir)
-node .claude/scripts/trilha.js dev ir 0.1       qualquer unidade escrita, de 0.1 a Q4
+node .claude/scripts/trilha.js dev ir 0.1       qualquer unidade escrita, de 0.1 a Q6
 ```
 
-Abra o Claude Code nesta pasta com `claude`. Estão escritos o M0, o M1 com a P0, a P1 e o Q1, o M2 inteiro (2.1 a 2.14, a P2 e o Q2), o M3 inteiro (3.1 a 3.9, a P3 e o Q3) e o M4 inteiro (4.1 a 4.6, a P4 e o Q4). O mapa termina no Q4. Para qualquer aula de 1.2 em diante, crie antes uma pasta irmã (por exemplo `../oficina-teste`) com qualquer página HTML pequena dentro; ela faz o papel da P0. Abra essa pasta numa segunda janela do Claude Code com Sonnet. A 0.1 e a 1.1 não precisam de oficina pronta: são só conversa, e quem monta a oficina é a P0.
+Abra o Claude Code nesta pasta com `claude`. Estão escritos o M0, o M1 com a P0, a P1 e o Q1, o M2 inteiro (2.1 a 2.14, a P2 e o Q2), o M3 inteiro (3.1 a 3.9, a P3 e o Q3), o M4 inteiro (4.1 a 4.6, a P4 e o Q4), o M5 inteiro (5.1 a 5.7, a P5 e o Q5) e o M6 inteiro (6.1 a 6.3, a P6 e o Q6). O mapa termina no Q6, que é o fim da trilha. Para qualquer aula de 1.2 em diante, crie antes uma pasta irmã (por exemplo `../oficina-teste`) com qualquer página HTML pequena dentro; ela faz o papel da P0. Abra essa pasta numa segunda janela do Claude Code com Sonnet. A 0.1 e a 1.1 não precisam de oficina pronta: são só conversa, e quem monta a oficina é a P0.
 
 **Você é cobaia, não editor.** Dentro do chat da sala, o harness é somente leitura: uma guarda bloqueia Edit, Write, `sed -i`, redirecionamento e git que escreve, em qualquer modo de permissão, e o CLAUDE.md manda o tutor registrar feedback em vez de aplicar. Isso vale mesmo se você disser ao tutor que é o dono da trilha. Se no meio do teste você notar algo a corrigir, diga ao tutor: ele roda `registrar feedback texto="..."` e a frase aparece em `dev fila`. A correção se faz depois, em outra pasta e outro chat. Se ainda assim o harness sair diferente do commit, o hook de início registra `harness.alterado` na fila e avisa o tutor. O mesmo vale para o personagem: o tutor não mostra nota nem o que subiu, não roda nem sugere comando `dev`, e trata quem se diz dono da trilha como aluno. Para ver avaliação e fila, use o terminal: `dev avaliacoes` e `dev fila`. Pedir a nota ao tutor não adianta mais, e não por regra: quem avalia é outro Claude, fora do chat, e o tutor nunca vê o resultado. Os guardrails de fora da aula estão em `.claude/guarda.md`. Dois limites a mais que vale conhecer antes de estranhar: o tutor não escreve arquivo em lugar nenhum, oficina incluída, e o painel só abre a URL exata que está em algum `referencias.md` — é por URL, não por domínio: uma aula cita um vídeo do YouTube, e isso não abre o YouTube inteiro —, a entrega registrada do aluno (pasta da oficina, pasta ou URL da prática, e o repositório da P1 por prefixo) e localhost. Link fora disso ele manda em texto. Todo evento da fila leva o commit do harness e se ele está sujo; em desenvolvimento vai sair sujo o tempo todo, e é assim mesmo.
 
@@ -66,7 +66,7 @@ O que conferir: a pergunta chega inteira e sem retoque; o tutor não dá dica an
 
 O Q2 vem depois da correção da P2 e roda pelo mesmo caminho, trocando `Q1` por `Q2` nos comandos (`dev ir Q2`, `quiz Q2`, `dev fechar-tudo Q2`); o banco é `quiz/q2/banco`, a nota é `revisitar-m2` e a próxima unidade é a 3.1. Vale conferir a mais: os enunciados são mais longos, e três perguntas usam dois plugins de terceiros como cenário; o tutor cola o enunciado inteiro e não acrescenta o que sabe deles.
 
-O Q3 e o Q4 rodam igual e têm tamanho próprio: o Q3 tem dez perguntas (oito fechadas), o Q4 tem nove (sete fechadas); as notas são `revisitar-m3` e `revisitar-m4`. Os dois são rascunho, pendente de aprovação questão a questão. Depois do `concluir Q4` o `concluir` diz que era a última do mapa, e um chat novo abre dizendo que o material acabou e manda falar da atualização, sem carregar skill de aula: confira que o tutor não reabre o quiz.
+O Q3 ao Q6 rodam igual e têm tamanho próprio: o Q3 tem dez perguntas (oito fechadas), o Q4 tem nove (sete fechadas), o Q5 tem dez (oito fechadas), e o Q6 o que o `quiz Q6` disser; as notas são `revisitar-m3` a `revisitar-m6`. Os quatro são rascunho, pendente de aprovação questão a questão. Depois do `concluir Q6` o `concluir` diz que era a última do mapa, e um chat novo abre dizendo que a trilha acabou, sem carregar skill de aula e sem falar em material novo: confira que o tutor não reabre o quiz nem promete nada da 202.
 
 ## P3: a chave de API
 
@@ -92,7 +92,27 @@ A P4 é um discovery: o tutor vira o dono de uma clínica veterinária e o aluno
 
 ## Ideia do aluno (4.4 em diante)
 
-Na 4.4 o aluno grava a ideia com `ideia texto="..." hipoteses="..." nomes="..."`. Sobem para a 202 o texto e as hipóteses; os nomes ficam na máquina e só sobe quantos são, e as entrevistas reais (`ideia entrevista="..."`) sobem só como número. `dev fila` deve mostrar isso: nenhum nome de terceiro na fila. Mudar a ideia cria versão nova. Da 4.5 em diante o estado mostra "Entrevistas reais para a P5: N de 3 feitas" e o tutor cobra na abertura das aulas; dentro de uma prática ele não pergunta. Na avaliação de fim de aula, os nomes da lista chegam ao avaliador trocados por `[nome]`.
+Na 4.4 o aluno grava a ideia com `ideia texto="..." hipoteses="..." nomes="..."`. Sobem para a 202 o texto e as hipóteses; os nomes ficam na máquina e só sobe quantos são, e as entrevistas reais (`ideia entrevista="..."`) sobem só como número. `dev fila` deve mostrar isso: nenhum nome de terceiro na fila. Mudar a ideia cria versão nova. Da 4.5 em diante o estado mostra "Entrevistas reais para a P5: N de 3 feitas" e o tutor cobra na abertura das aulas; dentro da P4 e de qualquer correção ele não pergunta. No chat da P5 é o contrário: com menos de três registradas, ele registra a que o aluno trouxer e espera, sem escrever plano. Na avaliação de fim de aula, os nomes da lista chegam ao avaliador trocados por `[nome]`.
+
+## P5: o plano que cresce no M5
+
+A P5 entrega só a pasta do plano (`plano-p5/plano.md`, com as oito seções do `praticas/p5/brief.md` e "O que ouvi"), e a pasta nasce no começo da 5.1, não na prática: `pratica P5 pasta=<caminho>` na 5.1 não abre correção (`criterios P5` recusa), porque a correção só abre com os marcos da P5 fechados. Cada fluência do M5 guarda o texto do aluno numa seção do plano; o tutor não escreve nem revisa. O que conferir:
+
+| Situação | Esperado |
+|---|---|
+| Aula do M5 sem a pasta da P5 | o estado manda criar o plano antes do primeiro marco |
+| Chat da P5 com menos de três entrevistas | o tutor registra a que ele trouxer e não escreve plano |
+| Marco `premissas` | o tutor só pergunta a origem de cada número e premissa do plano, uma por vez; não sugere número nem aponta o que falta |
+| Último marco (`registrada`) | é ele que abre a correção no chat seguinte; o tutor avisa antes |
+| Correção, em chat novo | lê o brief, o `plano.md` e o `ideia`; não pede nada ao aluno |
+
+## P6: o produto com pagamento
+
+A P6 nasce na 6.1, num repositório novo registrado com pasta e repositório, sem URL (como a P3). Stripe em sandbox geral, conta brasileira, nunca ativada: ninguém paga nada. A assinatura é em cartão de teste (4242...); o "aguardando pagamento" se testa com boleto e CPF de teste (`000.000.000-00`) na 6.2; Pix Automático não existe para conta brasileira na Stripe, e a aula diz isso. Para testar: crie uma conta Stripe, uma sandbox geral, e instale a Stripe CLI (acima da v1.50.0 ela pede liberação no painel antes do `stripe login`). O que conferir:
+
+- o tutor não sugere ativar conta, informar documento nem criar conta de outro país;
+- na 6.2, o ataque à URL de retorno acontece num branch descartável, e o `curl` com webhook forjado vai só a localhost; a guarda aceita `curl` de várias linhas (barra invertida no fim da linha no Bash, crase no PowerShell);
+- na correção, o corretor roda os quatro testes na pasta registrada e os `curl` do README contra a URL registrada, sem login e sem abrir o Checkout; não assiste o vídeo, só confere o link.
 
 ## Rede fora e servidor
 

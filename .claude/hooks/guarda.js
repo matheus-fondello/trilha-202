@@ -104,6 +104,10 @@ function conferirArquivo(entrada) {
 // comando (`$(...)` ou crase), ou aspas desbalanceadas, o texto entre aspas pode
 // rodar alguma coisa, e o corte volta a ser o de sempre, em todo separador.
 function segmentos(comando) {
+  // Continuação de linha (`\` no Bash, crase no PowerShell) é o mesmo comando:
+  // sem juntar, o `curl` de várias linhas de um README caía cortado, com a URL
+  // num pedaço e o `curl` noutro, e era bloqueado sem ir a lugar nenhum.
+  comando = comando.replace(/\\\r?\n/g, ' ').replace(/`\r?\n/g, ' ');
   const simples = () => comando.split(/&&|\|\||;|\||\n/).map((s) => s.trim()).filter(Boolean);
   if (/\$\(|`/.test(comando)) return simples();
   const partes = [];

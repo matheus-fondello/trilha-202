@@ -1573,3 +1573,427 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 - **Geoffrey A. Moore, *Crossing the Chasm*** — geoffreyamoore.com, página do livro no site do autor; 3ª edição, HarperBusiness, 2014
   https://geoffreyamoore.com/book/crossing-the-chasm/
   A fonte do abismo: a passagem dos primeiros compradores visionários para a maioria pragmática, e a escolha de um mercado-alvo como o jeito de atravessar.
+
+## Módulo 5
+
+### 5.1 Modelos de negócio e preço
+
+**Sugerida**
+
+- **Strategyzer, *Business Model Canvas Explained*** — canal da Strategyzer, YouTube, set/2011 · 2 min 20 s, em inglês
+  https://www.youtube.com/watch?v=QoAOzMTLP5s&hl=en&persist_hl=1
+  O canvas da referência da ementa, apresentado em dois minutos pela empresa dos autores: o modelo de negócio inteiro numa página só, com a infraestrutura que existe "to create, deliver and capture value". Tem legenda em português feita à mão.
+
+- **Kevin Hale, *Startup Pricing 101* — trecho "The pricing thermometer" e "Pricing mistakes", de 2:50 a 6:34** — Y Combinator, YouTube, set/2019 · 3 min 44 s (o vídeo tem 19 min 32 s), em inglês
+  https://www.youtube.com/watch?v=jwXlo9gy_k4&hl=en&persist_hl=1&t=170s
+  Um sócio da YC desenha custo, preço e valor num termômetro: entre custo e preço está a razão de vender, entre preço e valor a razão de comprar. Preço se faz pelo valor, não por custo mais margem, e o erro número um que ele vê é cobrar de menos.
+
+**Citadas na aula**
+
+- **Meta, *Preços da Plataforma do WhatsApp Business*** — whatsappbusiness.com, em português, página viva · consulta, não leitura
+  https://whatsappbusiness.com/pt-br/products/platform-pricing/
+  A resposta da previsão na fonte: as empresas pagam por mensagem entregue, por categoria (marketing, utilidade, autenticação, serviço), e quem conversa não paga nada.
+
+- **Meta, *Helping You Find More Channels and Businesses on WhatsApp*** — Meta Newsroom, jun/2025 · ~4 min de leitura, em inglês
+  https://about.fb.com/news/2025/06/helping-you-find-more-channels-businesses-on-whatsapp/
+  O anúncio de 16/06/2025: anúncio no Status, canais promovidos e assinatura mensal de canal, tudo na aba de Atualizações e longe das conversas. É a metade de verdade de quem responde "publicidade".
+
+- **Alexander Osterwalder e Yves Pigneur, *Business Model Generation*** — Wiley, 2010; página do livro no site da Strategyzer, empresa dos autores, com prévia gratuita de 72 páginas
+  https://www.strategyzer.com/library/business-model-generation
+  A referência da ementa, que deu ao mundo o vocabulário de modelo de negócio e o canvas de nove blocos.
+
+- **Bill Gurley, *A Rake Too Far: Optimal Platform Pricing Strategy*** — Above the Crowd, abr/2013 · ~10 min de leitura, em inglês
+  https://abovethecrowd.com/2013/04/18/a-rake-too-far-optimal-platformpricing-strategy/
+  O texto de referência sobre take rate, de um investidor de marketplaces: a fatia alta vira atrito no preço final, empurra quem vende para fora e abre espaço para o concorrente. A frase que fica: há diferença entre o que você consegue extrair e o que deveria.
+
+- **Stripe, *Modelos de assinatura SaaS 101*, seção "Quais são os tipos de modelos de assinatura de SaaS?"** — Stripe, em português, atualizado em jul/2026 · 1 a 2 min (a seção, ~300 palavras)
+  https://stripe.com/br/resources/more/saas-subscription-models-101-a-guide-for-getting-started#quais-sao-os-tipos-de-modelos-de-assinatura-de-saas
+  As variações da assinatura numa lista curta de sete tipos, a maioria com um exemplo conhecido: preço fixo, faixas, por usuário, por uso, freemium, pagamento conforme o uso e híbrido.
+
+- **Amazon, *Amazon.com Announces Fourth Quarter Results*** — release de resultados, fev/2026, dados do ano de 2025 · PDF, consulta
+  https://s2.q4cdn.com/299287126/files/doc_earnings/2025/q4/earnings-result/AMZN-Q4-2025-Earnings-Release.pdf
+  A tabela de segmentos: a AWS pequena nas vendas e grande no lucro.
+
+- **Apple, *Form 10-K* do ano fiscal de 2025** — SEC, out/2025 · consulta, seções "Products and Services Performance" e "Gross Margin"
+  https://www.sec.gov/Archives/edgar/data/320193/000032019325000079/aapl-20250927.htm
+  Receita e margem bruta separadas entre aparelho e serviço.
+
+- **Starbucks, *Form 10-K* do ano fiscal de 2025** — SEC, nov/2025 · consulta, quadro de lojas próprias e licenciadas e a tabela de receitas
+  https://www.sec.gov/Archives/edgar/data/829224/000082922425000114/sbux-20250928.htm
+  A mesma marca em dois modelos: a loja própria e a licenciada.
+
+- **Stripe, *Carta anual de 2025*** — Stripe, fev/2026 · página em português de um minuto; a carta é um PDF em inglês de 24/02/2026, ~20 min, linkado na página
+  https://stripe.com/br/annual-updates/2025
+  O volume que passou pela Stripe em 2025 está na página; a alta de 34%, na primeira linha do PDF. Separa o que passa pelo caixa do que fica.
+
+- **Stripe, *Preços*** — stripe.com, Brasil, em português, página viva · consulta
+  https://stripe.com/br/pricing
+  A tabela pública do que a Stripe cobra por transação, por cartão nacional e por Pix. Sai do preço que ele vai cobrar.
+
+### 5.2 Unit economics I
+
+**Sugerida**
+
+- **Tom Blomfield, *Consumer Startup Metrics*, trecho "Unit Economics"** — Y Combinator, Startup School, YouTube, jan/2024 · 22 min 26 s no total, trecho de 2 min 50 s, de 10:57 a 13:47
+  https://www.youtube.com/watch?v=fdD4y4Civp4&hl=en&persist_hl=1&t=657s
+  Um dos fundadores do Monzo, banco digital britânico, contando o que era custo variável por cliente (cartão de reposição, atendimento, fraude, tarifa de transferência), o que fica de fora por ser fixo, e que chegaram a meio milhão de clientes perdendo de 30 a 40 libras por cliente por ano antes de consertar.
+
+- **Tom Blomfield, *Consumer Startup Metrics*, trecho do canal barato que dava prejuízo** — Y Combinator, Startup School, YouTube, jan/2024 · trecho de 1 min 42 s, de 7:15 a 8:57
+  https://www.youtube.com/watch?v=fdD4y4Civp4&hl=en&persist_hl=1&t=435s
+  Um blog de economia trazia clientes baratíssimos que davam prejuízo com saque no exterior: CAC baixo não vale nada sem a margem do lado. E o CAC medido até o cliente que fica, não até o cadastro.
+
+**Citadas na aula**
+
+- **David Skok, *Startup Killer: the Cost of Customer Acquisition*, seção "Business Model"** — For Entrepreneurs, blog do autor, dez/2009 · ~2 min de leitura (a seção, no começo do texto)
+  https://www.forentrepreneurs.com/startup-killer/
+  A definição do autor da referência da aula: todo o custo de vender e de divulgar no período, salários incluídos, dividido pelos clientes que chegaram no período. E, no mesmo parágrafo, o LTV feito sobre a margem e não sobre a receita.
+
+- **David Skok, *SaaS Metrics 2.0 – Detailed Definitions*, de "Customer Lifetime" a "Lifetime Value of Customer"** — For Entrepreneurs, blog do autor, 2014, revisto em dez/2020 · ~4 min de leitura (o trecho)
+  https://www.forentrepreneurs.com/saas-metrics-2-definitions-2/#LTV
+  A vida média como 1 dividido pelo churn, com o exemplo dos 3% ao mês que dão 33 meses, e o LTV que só fica preciso quando a margem entra na conta.
+
+### 5.3 Unit economics II
+
+**Sugerida**
+
+- **Y Combinator (Tom Blomfield), *Consumer Startup Metrics | Startup School*** — YouTube, canal oficial, jan/2024 · 22 min 26 s no total, trecho de 1 min 11 s, de 13:47 a 14:58
+  https://www.youtube.com/watch?v=fdD4y4Civp4&hl=en&persist_hl=1&t=827s
+  Retenção quando o uso não é assinatura: qual período define um cliente ativo, que vai do Facebook todo dia ao Airbnb a cada seis meses, e por que esse período sai da frequência com que o cliente bom usa.
+
+- **Bill Gurley, *The Dangerous Seduction of the Lifetime Value (LTV) Formula*** — Above the Crowd, set/2012 · ~11 min de leitura
+  https://abovethecrowd.com/2012/09/04/the-dangerous-seduction-of-the-lifetime-value-ltv-formula/
+  Dez motivos para não idolatrar o LTV, escritos por um investidor: a fórmula é palpite com cara de ciência, e as variáveis se puxam umas às outras (preço maior aumenta o churn, mais mídia sobe o CAC e traz cliente pior), que é o limite da sensibilidade de uma entrada por vez.
+
+**Citadas na aula**
+
+- **Jeff Jordan, Anu Hariharan, Frank Chen e Preethi Kasireddy, *16 Startup Metrics*, itens 5 "LTV" e 11 "Churn"** — a16z, ago/2015 · ~5 min de leitura (os dois itens)
+  https://a16z.com/16-startup-metrics/
+  A referência da ementa: o LTV como margem de contribuição vezes vida média, com a vida em 1 dividido pelo churn mensal, e a diferença entre churn bruto e líquido, em que o líquido esconde a perda.
+
+- **Anu Hariharan, Frank Chen e Jeff Jordan, *16 More Startup Metrics*, item 10 "Cohort Analysis"** — a16z, set/2015 · ~3 min de leitura (o item)
+  https://a16z.com/16-more-startup-metrics/
+  Coorte passo a passo: escolher a ação que conta como uso, o período certo para o negócio, e o que se quer ver na curva, retenção que estabiliza depois de alguns meses e coorte nova melhor que a velha.
+
+- **David Skok, *SaaS Metrics 2.0 – A Guide to Measuring and Improving What Matters*, seções "The SaaS P&L / Cash Flow Trough", "Is your SaaS business viable?" e "Getting paid in advance"** — For Entrepreneurs, blog do autor, jan/2013, revisto em jun/2026 · ~8 min de leitura (as três seções); o artigo inteiro passa de meia hora
+  https://www.forentrepreneurs.com/saas-metrics-2/
+  A referência de fundo do tema: o buraco de caixa de quem paga o CAC hoje e recebe a margem mês a mês, mais fundo quanto mais rápido se cresce; as duas regras de bolso (razão acima de 3, CAC de volta em menos de 12 meses, nos melhores em 5 a 7), ditas pelo autor como guias; e cobrar adiantado como saída.
+
+- **David Skok, *SaaS Metrics 2.0 – Detailed Definitions*, seções "LTV : CAC Ratio" e "Months to recover CAC"** — For Entrepreneurs, blog do autor, 2014, revisto em dez/2020 · ~3 min de leitura (as duas seções)
+  https://www.forentrepreneurs.com/saas-metrics-2-definitions-2/
+  O suplemento do artigo acima, com o limite de cada regra escrito pelo próprio autor: o 3 supõe o LTV feito sobre a receita e margem bruta de 80% ou mais, e os 12 meses de payback são de 2011; em venda para grandes empresas, em que o cliente compra mais com o tempo, 20 meses funcionam.
+
+- **Martin Casado e Matt Bornstein, *The New Business of AI (and How It's Different From Traditional Software)*** — a16z, fev/2020 · ~15 min de leitura, mas basta a abertura (~2 min)
+  https://a16z.com/the-new-business-of-ai-and-how-its-different-from-traditional-software/
+  O mecanismo da margem que some, dito por quem investe em software: empresas de IA com margem bruta em torno de 50 a 60%, contra 60 a 80% ou mais no SaaS comparável, porque cada uso consome computação e às vezes gente.
+
+- **Banco Central do Brasil, *Conversor de moedas*** — bcb.gov.br, em português · consulta
+  https://www.bcb.gov.br/conversao
+  Fonte pública do câmbio do dia, com data, para a linha da planilha que converte o custo do modelo de dólar para real.
+
+### 5.4 Distribuição: canais, fits e funil
+
+**Sugerida**
+
+- **Brian Balfour com Lenny Rachitsky, *Why ChatGPT will be the next big growth channel (and how to capitalize on it)*, trecho "The importance of distribution"** — Lenny's Podcast, YouTube, ago/2025 · 1h29min no total, trecho de 3 min 23 s, de 4:45 a 8:08
+  https://www.youtube.com/watch?v=cX4cL6B-_aU&hl=en&persist_hl=1&t=285s
+  Produto ótimo é necessário e não basta, e por que ficou mais difícil: o incumbente copia mais rápido, a distribuição orgânica encolheu (busca, LinkedIn) e a IA escreve software para todo mundo.
+
+- **Peter Thiel, *Selling Customers -- Getting the Product Out*** — Entrepreneurship.org, YouTube, publicado em ago/2013 · 4 min 58 s
+  https://www.youtube.com/watch?v=1RrSEqcR2gY&hl=en&persist_hl=1
+  O PayPal de 1999 procurando canal: outdoor cada vez mais caro, o grande parceiro bancário que não deu em nada, os 10 dólares a quem entrava e mais 10 a quem indicava, uns 20 por cliente, contra uns 65 do clique pago, e os vendedores do eBay pedindo para usar o logo.
+
+**Citadas na aula**
+
+- **Peter Thiel com Blake Masters, *Zero to One*, cap. 11 "If You Build It, Will They Come?"** — penguinrandomhouse.com, página do livro na editora; Crown, 2014
+  https://www.penguinrandomhouse.com/books/234730/zero-to-one-by-peter-thiel-with-blake-masters/
+  O capítulo sobre distribuição: venda ruim, mais que produto ruim, é o que derruba a maioria, e quem constrói tende a subestimar a venda.
+
+- **Alex Rampell, *Distribution vs. Innovation*** — a16z, nov/2015 · ~6 min de leitura
+  https://a16z.com/distribution-vs-innovation/
+  A frase que resume a assimetria: a briga entre startup e incumbente se decide em quem chega primeiro, a startup à distribuição ou o incumbente à inovação.
+
+- **Guilherme Lima, *Distribuição: Fundamentos de Go-to-Market de Startups Escaláveis*** — Astella, mai/2023 · ~3 min de leitura, em português
+  https://www.astella.com.br/matrix/distribuicao-fundamentos-de-go-to-market-de-startups-escalaveis
+  Um fundo brasileiro dizendo a mesma coisa em português: produto três estrelas com distribuição cinco estrelas ganha do contrário.
+
+- **Gabriel Weinberg e Justin Mares, *Traction*, introdução e cap. 1 "Traction Channels"** — penguinrandomhouse.com, excerto na página do livro na editora; Portfolio, 2015 · ~10 min de leitura do excerto
+  https://www.penguinrandomhouse.com/books/319121/traction-by-gabriel-weinberg-and-justin-mares/
+  Os dezenove canais do livro, um parágrafo cada, com a empresa que cresceu por ele, e o erro do próprio Weinberg no começo do DuckDuckGo: usar o canal que tinha dado certo na empresa anterior.
+
+- **Andrew Chen, *The Law of Shitty Clickthroughs*** — andrewchen.com, abr/2012 · ~7 min de leitura
+  https://andrewchen.com/the-law-of-shitty-clickthroughs/
+  Por que canal alugado decai: todo canal que funciona atrai todo mundo e piora. O banner de 1994 teve 78% de cliques; o anúncio do Facebook de 2011, 0,05%.
+
+- **Brian Balfour, *Product Channel Fit Will Make or Break Your Growth Strategy*** — brianbalfour.com, jul/2017 · ~9 min de leitura
+  https://brianbalfour.com/essays/product-channel-fit-for-growth
+  "Produtos são feitos para caber em canais; canais não se moldam a produtos", com o que cada canal exige do produto: anúncio pede valor rápido e proposta larga, conteúdo gerado por usuário pede motivo para contribuir.
+
+- **Brian Balfour, *Get Out of the ARPU-CAC Danger Zone with Channel Model Fit*** — brianbalfour.com, jul/2017 · ~7 min de leitura
+  https://brianbalfour.com/essays/channel-model-fit-for-user-acquisition
+  O espectro entre receita por cliente e custo de aquisição, e a zona do meio: preço alto demais para o canal barato funcionar, baixo demais para pagar o canal caro.
+
+- **Brian Balfour, *Four Fits For $100M+ Growth*** — brianbalfour.com, índice da série, sem data · ~4 min de leitura
+  https://brianbalfour.com/four-fits-growth-framework
+  Os quatro encaixes de uma vez (mercado e produto, produto e canal, canal e modelo, modelo e mercado) e por que mexer em um mexe nos outros.
+
+- **Gabriel Weinberg, *Real Traction and How to Get It*** — Startup Grind Local, YouTube, jun/2014 (entrevista de jun/2013) · 3 min
+  https://www.youtube.com/watch?v=UcAiF42qaTM&hl=en&persist_hl=1
+  O autor do Bullseye contando o método antes de o livro sair: cortar o viés, olhar todos os canais, reduzir aos mais promissores, testar em paralelo e dobrar a aposta no que pegar.
+
+- **Dave McClure, *Startup Metrics for Pirates: AARRR!*** — SlideShare, slides da Startonomics SF, 2008 · 58 slides
+  https://www.slideshare.net/slideshow/startup-metrics-for-pirates-presentation/629833
+  A origem dos cinco estágios, cada um definido numa linha pelo autor: de onde vem o usuário, se a primeira visita foi boa, se ele volta, se indica, se paga.
+
+### 5.5 B2B, B2C e os dez primeiros
+
+**Sugerida**
+
+- **Gustaf Alströmer, *How to Get Your First Customers*, trecho do exemplo da Brex e de como escrever o e-mail** — Y Combinator, Startup School, YouTube, dez/2022 · 22 min 53 s no total, trecho de 3 min 30 s, de 5:05 a 8:35
+  https://www.youtube.com/watch?v=hyYCn_kAngI&hl=en&persist_hl=1&t=305s
+  Os dois fundadores brasileiros da Brex tirando os dez primeiros clientes do próprio lote da YC com um e-mail, e o sócio da YC desmontando o que fez o e-mail funcionar: curto, sem jargão, dizendo o que o produto faz e pelo problema de quem lê, texto puro, com um pedido no fim.
+
+- **Gustaf Alströmer, *How to Get Your First Customers*, trecho "The sales funnel"** — Y Combinator, Startup School, YouTube, dez/2022 · 22 min 53 s no total, trecho de 5 min 13 s, de 8:37 a 13:50
+  https://www.youtube.com/watch?v=hyYCn_kAngI&hl=en&persist_hl=1&t=517s
+  O funil do fundador em seis passos (lista, contato, conversa, preço, fechar, pôr para usar), e três conselhos que reordenam a lista da 4.4: os primeiros clientes têm que ser os mais fáceis, quem enrola em três conversas se dispensa, e a maioria não é adepta inicial, só não responde.
+
+**Citadas na aula**
+
+- **Paul Graham, *Do Things that Don't Scale*, seções "Recruit", "Consult" e "Manual"** — paulgraham.com, jul/2013 · ~20 min de leitura (o ensaio inteiro), em inglês
+  https://www.paulgraham.com/ds.html
+  A referência da aula. Recrutar usuário à mão é o mais comum que não escala; a instalação Collison; o limite em que atenção paga por hora vira consultoria; e ser o próprio software no começo para saber o que automatizar depois.
+
+- **Lenny Rachitsky, *How today's fastest growing B2B businesses found their first ten customers*** — Lenny's Newsletter, jul/2020 · ~15 min de leitura, em inglês
+  https://www.lennysnewsletter.com/p/how-todays-fastest-growing-b2b-businesses
+  Vinte empresas B2B e de onde vieram os dez primeiros: a rede pessoal (amigos, ex-colegas, investidores), o lugar onde o cliente já está, e imprensa. A Square indo de porta em porta em pequeno comércio é o caso mais perto da ideia dele.
+
+### 5.6 Startup, small business, lifestyle
+
+**Sugerida**
+
+- **Rob Walling, *If I Had To Start Over, Here's 3 Steps I'd Take to $1M+ Revenue*, trecho dos três degraus e do primeiro** — YouTube, canal Rob Walling, nov/2022 · 11 min no total, trecho de 2 min 20 s, de 0:33 a 2:52
+  https://www.youtube.com/watch?v=3qUJnFyRlyQ&hl=en&persist_hl=1&t=33s
+  O autor resume os três degraus e diz por que o primeiro produto mora dentro de um ecossistema que já traz o cliente, com a analogia de jogar nas ligas menores antes da principal.
+
+**Citadas na aula**
+
+- **Paul Graham, *Startup = Growth*** — paulgraham.com, set/2012 · ~20 min de leitura
+  https://paulgraham.com/growth.html
+  A definição que a aula usa, "uma empresa desenhada para crescer rápido", com o barbeiro e o buscador lado a lado, a taxa semanal de 5 a 7% da YC e a tabela que mostra o que 1%, 5% e 10% por semana viram em um ano.
+
+- **David Heinemeier Hansson, *RECONSIDER*** — Signal v. Noise, blog da Basecamp, 05/11/2015 · ~12 min de leitura
+  https://signalvnoise.com/posts/3972-reconsider
+  As razões de quem recusou investidor (independência, cliente que paga pelo produto, raízes longas, semana de quarenta horas) e a conta das chances: 30% de chance de ganhar US$ 3 milhões e 0,3% de chance de ganhar US$ 300 milhões valem o mesmo no papel e pedem estratégias opostas.
+
+- **Rob Walling, *The Stair Step Method of Bootstrapping*** — robwalling.com, 26/03/2015 · ~9 min de leitura
+  https://robwalling.com/essays/2015/03/26/the-stair-step-method-of-bootstrapping
+  Os três degraus por quem os nomeou, com os casos de quem subiu, e a conta que explica o canal gratuito dos primeiros degraus: produto de US$ 10 a 15 de valor por cliente não paga anúncio nem conteúdo.
+
+### 5.7 A matemática do venture
+
+**Sugerida**
+
+- **Paul Graham, *Default Alive or Default Dead?*, do começo até "plan A isn't working"** — paulgraham.com, out/2015 · ~3 min o trecho, ~7 min o ensaio
+  https://paulgraham.com/aord.html
+  A pergunta na formulação original, por que tanto fundador não sabe a resposta, e o conselho de começar a fazê-la cedo demais em vez de tarde, com um plano B escrito para o caso de o dinheiro não vir.
+
+- **Dalton Caldwell e Michael Seibel, *Should Your Startup Bootstrap or Raise Venture Capital?*, trecho "Why Seek VC?" e "It's Not Personal"** — Y Combinator, YouTube, fev/2024 · 14 min no total, trecho de 2 min 23 s, de 8:37 a 11:00
+  https://www.youtube.com/watch?v=D81y-kh11oI&hl=en&persist_hl=1&t=517s
+  Quando o venture faz sentido: precisar de milhões antes de se pagar e não haver outro jeito de conseguir; e por que o não do fundo é conta, não juízo sobre a pessoa ou a ideia.
+
+**Citadas na aula**
+
+- **Chris Dixon, *The Babe Ruth Effect in Venture Capital*** — cdixon.org, jun/2015 · 3 min de leitura
+  https://cdixon.org/2015/06/07/the-babe-ruth-effect-in-venture-capital/
+  A fonte dos 6% que geram 60% do retorno, com dados da Horsley Bridge sobre centenas de fundos, e o achado que contraria o bom senso: os melhores fundos perdem dinheiro em mais investimentos do que os bons.
+
+- **Bruno Peroni, *Messy Middle e os órfãos de VC*** — Astella, gestora brasileira, jun/2023 · ~7 min de leitura, em português
+  https://www.astella.com.br/matrix/messy-middle-e-os-orfaos-de-vc
+  O *fund returner* explicado por quem investe aqui: a empresa que sozinha devolve o fundo, mais de 10x o cheque; e, na seção "Stable Growers", o que acontece com quem levantou, tem cliente e às vezes lucro, e cresce pouco para o fundo.
+
+- **Brian Balfour, *The Model Market Fit Threshold & What it Means for Your Growth Strategy*** — brianbalfour.com, jul/2017 · ~7 min de leitura
+  https://brianbalfour.com/essays/model-market-fit-threshold-for-growth
+  A régua de bolso que liga o teto ao fundo sem falar de valuation: receita anual por cliente, vezes clientes no mercado, vezes a fatia que dá para pegar, tem que dar US$ 100 milhões por ano ou mais.
+
+- **Paul Graham, *How to Raise Money*, seção "Don't raise money unless you want it and it wants you"** — paulgraham.com, set/2013 · a seção tem 1 min; o ensaio inteiro é longo
+  https://paulgraham.com/fr.html
+  O que faz uma startup é crescer rápido, não captar; quem não quer crescer mais rápido, ou não cresceria mais rápido com o dinheiro, não deve levantar, e nem quem ainda não consegue convencer ninguém.
+
+- **Paul Graham, *The Fatal Pinch*** — paulgraham.com, dez/2014 · ~6 min de leitura
+  https://paulgraham.com/pinch.html
+  Por que a empresa que conta em levantar de novo para sobreviver chega na conversa na pior posição: gasta mais do que da primeira vez, o investidor exige mais, e ela já começa a parecer fracasso.
+
+- **202 Lab, *A tese*** — 202lab.com.br, site oficial, sem data · ~4 min de leitura, em português
+  https://202lab.com.br/tese
+  O que a 202 diz que é e o que quer: ecossistema de talentos nas universidades, as cinco frentes (trilhas, rede, serviço, produto, alocação) e a missão de que esses talentos criem ou façam crescer startups.
+
+- **202 Lab, *A trilha*, seção "O percurso"** — 202lab.com.br, site oficial, sem data · 2 min a seção, em português
+  https://202lab.com.br/trilha/inscricao
+  O que vem depois da trilha, dito pela 202: o que ela acompanha (ritmo, entregas, jeito de pensar), o convite possível ao time, a apresentação a startups e parceiras, e a 202 junto de quem quer fundar.
+
+## Módulo 6
+
+### 6.1 O fluxo pagou → tem acesso
+
+**Sugerida**
+
+- **Stripe, *Como funciona o Checkout* — seção "Checkout lifecycle"** — Stripe Docs, em inglês, sem data · ~2 min (quatro passos e um diagrama)
+  https://docs.stripe.com/payments/checkout/how-checkout-works?payment-ui=stripe-hosted&locale=pt-BR#lifecycle
+  O ciclo inteiro do Checkout hospedado em quatro passos e um diagrama de quem fala com quem: aplicação, servidor, Stripe, cliente.
+
+**Citadas na aula**
+
+- **Stripe, *Como funcionam as assinaturas*** — Stripe Docs, em português, sem data · consulta, não leitura
+  https://docs.stripe.com/billing/subscriptions/overview?locale=pt-BR
+  Os estados de uma assinatura (`incomplete`, `active`, `past_due`, `unpaid`, `canceled` e outros), as 23 horas para pagar a primeira fatura, `canceled` como estado final e a instrução de revogar o acesso em `unpaid`.
+
+- **Supabase, *Auth*** — Supabase Docs, em inglês, sem data · ~5 min de leitura
+  https://supabase.com/docs/guides/auth
+  A visão geral do que vem pronto: cadastro, login, sessão. É o "não invente autenticação" da 2.3 com nome.
+
+- **Supabase, *User Management*** — Supabase Docs, em inglês, sem data · ~6 min de leitura
+  https://supabase.com/docs/guides/auth/managing-user-data
+  O perfil numa tabela `public.profiles` que aponta para o usuário do Auth, porque o esquema do Auth não sai na API. É onde mora o id do cliente na Stripe.
+
+- **Supabase, *Creating a Supabase client for SSR*** — Supabase Docs, em inglês, sem data · consulta
+  https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs
+  A sessão mora em cookie, e a página diz com todas as letras: no servidor, nunca confiar em `getSession()`, que lê o cookie sem revalidar; conferir com `getClaims()`.
+
+- **Stripe, *Create a Checkout Session*** — Stripe API Reference, em inglês, sem data · consulta, não leitura
+  https://docs.stripe.com/api/checkout/sessions/create
+  Os campos que ligam a sessão ao usuário dele: `client_reference_id` e `customer`. Também `mode`, `success_url` e `cancel_url`.
+
+- **Stripe, *Contas da Stripe*** — Stripe Docs, em português, sem data · ~3 min de leitura
+  https://docs.stripe.com/get-started/account?locale=pt-BR
+  Logo depois de criar a conta dá para usar a área restrita, sem movimentar dinheiro; configurar a conta é só para pagamento real.
+
+- **Stripe, *Áreas restritas*** — Stripe Docs, em português com trechos em inglês, sem data · ~5 min de leitura
+  https://docs.stripe.com/sandboxes?locale=pt-BR
+  A sandbox geral contra a do modo de teste, e a recomendação da Stripe: integração nova vai numa geral, que isola dados e configurações da produção.
+
+- **Stripe, *Chaves de API*** — Stripe Docs, em português, sem data · ~6 min de leitura
+  https://docs.stripe.com/keys?locale=pt-BR
+  A tabela das chaves: a publicável (`pk_`) pode ir para o navegador; a restrita (`rk_`) e a secreta (`sk_`) não. A Stripe não recomenda mais a secreta para uso novo.
+
+- **Stripe, *Criar uma página de pagamentos*** — Stripe Docs, em português, sem data · ~4 min de leitura
+  https://docs.stripe.com/payments/checkout?locale=pt-BR
+  As três formas de pôr o pagamento na tela, com a página completa hospedada pela Stripe como a recomendada e a de menor manutenção.
+
+- **Stripe, *Guia de segurança de integração*** — Stripe Docs, em português, sem data · ~8 min de leitura
+  https://docs.stripe.com/security/guide?locale=pt-BR
+  O argumento contra o formulário próprio: quem lida com número de cartão direto pode ter de cumprir mais de 300 controles do PCI DSS; com o Checkout, o dado vai direto para a Stripe.
+
+- **Stripe, *Testes*** — Stripe Docs, em português, sem data · consulta
+  https://docs.stripe.com/testing?locale=pt-BR
+  O `4242 4242 4242 4242`, com qualquer data futura e qualquer CVC, e os cartões que recusam.
+
+- **Stripe, *Disponibilize um portal do cliente aos seus clientes*** — Stripe Docs, em português, sem data · ~5 min de leitura
+  https://docs.stripe.com/customer-management?locale=pt-BR
+  Trocar cartão, ver fatura e cancelar, imediatamente ou no fim do período, numa página que a Stripe hospeda: o passo de cancelamento do desenho dele.
+
+- **Banco Central do Brasil, *Pix Automático*** — bcb.gov.br, em português, sem data · ~4 min de leitura
+  https://www.bcb.gov.br/estabilidadefinanceira/pix-automatico
+  O que é, pela fonte: o pagador autoriza uma vez, define o valor máximo, e o banco agenda e avisa antes de cada cobrança.
+
+- **Stripe, *Pagamentos com PIX*** — Stripe Docs, em português, sem data · ~6 min de leitura
+  https://docs.stripe.com/payments/pix?locale=pt-BR
+  A frase que decide a P6: "O Pix Automático não está disponível no Brasil". Sobre o Pix avulso, a página diz que a conta brasileira aceita; a tabela geral diz que é sob convite. A recorrência por Pix só existe para empresa de fora cobrando brasileiro.
+
+- **Stripe, *Payment method support*** — Stripe Docs, em inglês, sem data · consulta
+  https://docs.stripe.com/payments/payment-methods/payment-method-support?locale=pt-BR
+  A tabela geral, onde o Pix aparece como "BR (Invite only)": a contradição com a página do Pix, que ninguém resolve sem conta criada.
+
+- **Stripe, *Pagamentos por boleto*** — Stripe Docs, em português com trechos em inglês, sem data · ~3 min de leitura (o topo)
+  https://docs.stripe.com/payments/boleto?locale=pt-BR
+  O boleto como forma de pagamento só da conta brasileira, em reais, com a confirmação em até um dia útil: é o estado de espera que o desenho dele precisa ter.
+
+- **Aurora Harley, *Visibility of System Status*** — Nielsen Norman Group, jun/2018 · ~9 min de leitura, em inglês
+  https://www.nngroup.com/articles/visibility-system-status/
+  A primeira heurística de usabilidade: o sistema sempre diz em que estado está, com retorno em tempo razoável. É a "tela honesta" com nome.
+
+### 6.2 Webhook e estado
+
+**Sugerida**
+
+- **Stripe Developers (James Beswick), *Webhook handling – Building rock-solid Stripe integrations #1*** — YouTube, canal oficial, jun/2025 · 6 min
+  https://www.youtube.com/watch?v=47sSju0UhPk&hl=en&persist_hl=1
+  Os três cuidados do marco na voz de quem faz a Stripe: verificar a assinatura, aguentar o evento duplicado e responder rápido, processando depois.
+
+**Citadas na aula**
+
+- **Stripe, *Executar pedidos* — seção "Execução de gatilhos na sua página de destino"** — Stripe Docs, em português, sem data · ~4 min de leitura (a seção e o aviso do topo)
+  https://docs.stripe.com/checkout/fulfillment?payment-ui=stripe-hosted&locale=pt-BR#trigger-fulfillment-on-landing-page
+  O aviso de que não dá para depender da página de retorno, porque não é garantido que o cliente chegue a ela, e a receita certa de liberar também ali: consultar a sessão na API, no servidor, e ler o `payment_status`.
+
+- **Stripe, *Receba eventos da Stripe no seu endpoint de webhook* — seção "Verificar se eventos são enviados da Stripe"** — Stripe Docs, em português, sem data · ~5 min de leitura (a seção)
+  https://docs.stripe.com/webhooks?locale=pt-BR#verify-events
+  A frase da Stripe sobre o ataque: sem verificação, um invasor manda evento falso para conceder acesso; e como conferir o `Stripe-Signature` com a biblioteca oficial, o segredo `whsec_` e o corpo cru.
+
+- **Stripe, *Receba eventos...* — seção "Práticas recomendadas para uso de webhooks"** — Stripe Docs, em português, sem data · ~6 min de leitura (a seção inteira: duplicados é a primeira subseção, a resposta rápida é a última)
+  https://docs.stripe.com/webhooks?locale=pt-BR#best-practices
+  Evento duplicado acontece e se trata guardando o ID de cada evento processado, e o 2xx sai rápido, antes da lógica demorada.
+
+- **Stripe, *stripe listen*** — Stripe CLI Reference, sem data · ~2 min de leitura
+  https://docs.stripe.com/cli/listen?locale=pt-BR
+  O `--forward-to` que encaminha os eventos da sandbox para a rota local e devolve o segredo de assinatura dele, que não muda entre reinícios.
+
+- **Stripe, *stripe login*** — Stripe CLI Reference, sem data · ~1 min de leitura
+  https://docs.stripe.com/cli/login?locale=pt-BR
+  O passo que trava: nas versões da CLI acima da 1.50.0, o administrador da conta libera o acesso da CLI no painel antes de o login funcionar. Ele é o administrador da conta dele.
+
+- **Stripe, *stripe trigger*** — Stripe CLI Reference, sem data · ~2 min de leitura
+  https://docs.stripe.com/cli/trigger?locale=pt-BR
+  Dispara um evento com objetos de verdade na sandbox, entre eles os do checkout, da fatura e da assinatura que a aula usa.
+
+- **Stripe, *stripe-node* — seção "Testing Webhook signing"** — GitHub, README da biblioteca oficial, sem data · ~1 min de leitura
+  https://github.com/stripe/stripe-node#testing-webhook-signing
+  A biblioteca gera um cabeçalho de assinatura válido para um evento montado no teste, com um segredo de teste: é o que deixa os quatro testes da fluência rodarem sem rede e sem chave.
+
+- **OWASP, *Logging Cheat Sheet* — seção "Data to exclude"** — OWASP Cheat Sheet Series, sem data · ~2 min de leitura (a seção)
+  https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude
+  A lista do que não vai para o log, ou vai mascarado: token, chave, identificador de governo, dado de cartão e dado pessoal sensível. É o "log limpo" da ementa, item por item.
+
+- **Stripe, *Pagamentos por boleto* — seção "Execute seu pedidos"** — Stripe Docs, em português, sem data · ~2 min de leitura (a tabela)
+  https://docs.stripe.com/payments/boleto/accept-a-payment?payment-ui=checkout&locale=pt-BR#fulfill-your-orders
+  A tabela que desmonta o atalho: `checkout.session.completed` quer dizer que a Stripe gerou o boleto, e só o `async_payment_succeeded` quer dizer pago; o `async_payment_failed` é o boleto vencido.
+
+- **Stripe, *Visão geral das assinaturas* — seção "Formas de pagamento com confirmação de pagamento adiada"** — Stripe Docs, em português, sem data · ~1 min de leitura (a seção)
+  https://docs.stripe.com/billing/subscriptions/overview?locale=pt-BR#delayed-payment-confirmation
+  A assinatura paga por forma adiada pode ir direto para `active` sem passar por `incomplete`, e continua `active` se o pagamento falhar depois.
+
+- **Stripe, *Usar webhooks com assinaturas* — seção "Capturar alterações de status de assinaturas"** — Stripe Docs, em português, sem data · ~3 min de leitura (a seção e a tabela de status)
+  https://docs.stripe.com/billing/subscriptions/webhooks?locale=pt-BR#state-changes
+  `canceled` e `unpaid` revogam o acesso, e o que acontece depois de uma renovação que falha (`past_due`, `canceled` ou `unpaid`) depende da configuração que ele escolhe no painel.
+
+### 6.3 Mostrar o trabalho
+
+**Sugerida**
+
+- **Simon Willison, *Your job is to deliver code you have proven to work*** — simonwillison.net, 18/12/2025 · ~6 min de leitura, em inglês
+  https://simonwillison.net/2025/Dec/18/code-proven-to-work/
+  O trabalho não é entregar código, é entregar código com a prova de que funciona: o teste manual com a saída colada ou um vídeo da tela, o teste automático, e o agente obrigado a provar antes de você.
+
+- **Julia Evans, *Get your work recognized: write a brag document*** — jvns.ca, 28/06/2019 · ~11 min de leitura, em inglês
+  https://jvns.ca/blog/brag-documents/
+  Anotar o que você fez e por que importou enquanto ainda lembra, porque ninguém lembra por você, nem você mesmo seis meses depois.
+
+**Citadas na aula**
+
+- **GitHub, *Sobre o arquivo README do repositório*** — GitHub Docs, em português, sem data · ~3 min de leitura
+  https://docs.github.com/pt/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
+  "Um README, muitas vezes, é o primeiro item que um visitante verá", e a lista do que ele costuma dizer: o que o projeto faz, por que é útil, como começar.
+
+- **Jina Yoon, *24 tips for giving S-tier demos*** — PostHog, newsletter, 28/05/2026 · ~7 min de leitura, em inglês
+  https://posthog.com/newsletter/how-to-demo
+  Dicas tiradas de demos de hackathon: um ponto só, abrir pela dor que todo mundo conhece, demonstrar contra o jeito de hoje, nada de código puro na tela, ensaiar em voz alta.
+
+- **GitHub, *Gerenciar o README do seu perfil*** — GitHub Docs, em português, sem data · ~3 min de leitura
+  https://docs.github.com/pt/account-and-profile/how-tos/profile-customization/managing-your-profile-readme
+  Um repositório público com o mesmo nome do usuário vira a apresentação do perfil: o lugar natural para a linha de cada projeto.
+
+- **GitHub, *Fixar itens no seu perfil*** — GitHub Docs, em português, sem data · ~2 min de leitura
+  https://docs.github.com/pt/account-and-profile/how-tos/profile-customization/pinning-items-to-your-profile
+  Até seis repositórios fixados no topo do perfil: P1, P2, P3 e, depois, a P6 cabem com folga.
+
+- **Supabase, *Project Pausing*** — Supabase Docs, sem data · ~2 min de leitura, em inglês
+  https://supabase.com/docs/guides/platform/free-project-pausing
+  Projeto do plano gratuito com pouca atividade em sete dias é pausado, e se retoma pelo painel: é por isso que a URL que abria em setembro pode não responder hoje.

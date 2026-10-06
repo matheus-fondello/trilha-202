@@ -25,7 +25,7 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 
 ## Estado do protótipo
 
-Em construção. Escritos do módulo 0 ao módulo 4: as aulas, as práticas P0 a P4 (da P1 em diante com correção) e os quizzes dos módulos 1 a 4. O material para no quiz do módulo 4; o módulo 5 chega numa atualização, e quem já terminou segue para ele sozinho.
+Em construção. Escritos do módulo 0 ao módulo 6: as aulas, as práticas P0 a P6 (da P1 em diante com correção) e os quizzes dos módulos 1 a 6. O quiz do módulo 6 é a última unidade: depois dele a trilha acabou.
 
 O módulo 3 constrói uma feature que chama um modelo por API, com uma chave sua e gratuita: a recomendada é a do Gemini, criada no Google AI Studio com a sua conta Google, sem cartão; o Groq é a alternativa. Ninguém paga nada. O plano gratuito tem limite de requisições por minuto e por dia, e lidar com ele faz parte da matéria.
 

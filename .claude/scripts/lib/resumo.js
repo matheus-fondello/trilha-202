@@ -69,9 +69,12 @@ function resumo(e, { fonte = 'startup' } = {}) {
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
 
   // Depois da última unidade escrita não há o que carregar: o material novo
-  // chega pela atualização, e o chat não reabre a unidade que já fechou.
+  // chega pela atualização, e o chat não reabre a unidade que já fechou. Quando a
+  // última é do M6, não há material novo a esperar: a trilha acabou.
   const fimDoMapa = reg.status === 'concluida' && !mapa.proxima(a.id);
-  if (fimDoMapa) {
+  if (fimDoMapa && a.modulo === 6) {
+    linhas.push('Fim da trilha: o aluno concluiu a última unidade, e não há aula neste chat nem material novo a esperar. Diga isso em poucas linhas, sem cerimônia e sem prometer nada da 202 que não esteja escrito aqui, e ofereça tirar dúvidas do que já foi visto ou revisitar qualquer aula, que continuam no disco. Não registre nada.');
+  } else if (fimDoMapa) {
     linhas.push('Fim do material escrito: esta era a última unidade do mapa, e está concluída. Não há aula neste chat. Diga ao aluno, em poucas linhas, que o próximo módulo chega com a atualização do material (a receita da 1.2), sem prometer data, e ofereça tirar dúvidas do que já foi visto.');
   } else if (!mapa.escrita(a)) {
     linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : a.tipo === 'quiz' ? 'unidade' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
@@ -133,14 +136,29 @@ function resumo(e, { fonte = 'startup' } = {}) {
 
   for (const [idP, p] of Object.entries(e.praticas || {})) {
     if (idP === 'P0' || idP === a.id || !p.pasta) continue;
-    linhas.push(`${idP}: ${p.pasta}${p.url ? ' — no ar em ' + p.url : ''}${p.repo ? ' — ' + p.repo : ''}${p.corrigida_em ? '' : ' (ainda não corrigida)'}`);
+    linhas.push(`${idP}: ${p.pasta}${p.url ? ' — no ar em ' + p.url : ''}${p.repo ? ' — ' + p.repo : ''}${p.corrigida_em ? '' : p.entregue_em ? ' (ainda não corrigida)' : ' (em construção)'}`);
+  }
+  // O plano da P5 nasce no começo da 5.1 e as fluências do M5 guardam texto nele.
+  // Sem a pasta, a aula do M5 a cria antes do primeiro marco.
+  if (a.modulo === 5 && a.tipo === 'aula' && !((e.praticas || {}).P5 || {}).pasta) {
+    linhas.push('Plano da P5: pasta não registrada. Antes do primeiro marco, ele lê `praticas/p5/brief.md` e cria na oficina `plano-p5/plano.md` com as seções do brief, e você registra com `pratica P5 pasta=<caminho>` (isso não abre correção).');
+  }
+  // A prática que cresceu nas aulas (P3, P5, P6) já chega com pasta registrada, e
+  // o chat dela precisa saber onde: registrar de novo é só para quando mudou.
+  if (a.tipo === 'pratica' && !emCorrecao && entrega.pasta) {
+    linhas.push(`Registro desta prática até agora: ${entrega.pasta}${entrega.url ? ' — no ar em ' + entrega.url : ''}${entrega.repo ? ' — ' + entrega.repo : ''}.`);
   }
 
   // A P3 chama um modelo pela API, e a trilha usa só plano gratuito (decisão de
   // 05/10): ninguém paga nada. A regra mora aqui, no estado, porque vale da 3.3
   // à P3 e o tutor não pode improvisar um cartão ou um plano pago.
-  if (a.modulo === 3 && !['3.1', '3.2', 'Q3'].includes(a.id) && !emCorrecao) {
-    linhas.push('API da P3: a chave é do plano gratuito do Gemini (Google AI Studio), criada na 3.3; o Groq é a alternativa. Ninguém paga nada: não sugira cartão, plano pago nem crédito. Quando o sistema bater no limite do gratuito (erro de limite de requisições ou de tokens), isso é matéria, não defeito da conta: espere a janela ou diminua as chamadas (trocar de modelo só fora de uma rodada de eval, que compara no mesmo modelo), e o sistema dele precisa tratar esse erro sem quebrar a tela. Os limites mudam: não afirme número de cabeça; o número do projeto dele está no AI Studio dele (aistudio.google.com/rate-limit, que ele abre no navegador), e a página de limites está nas referências da 3.4.');
+  // No M6 a mesma regra vale para a feature da P6, que parte do motor da P3 por
+  // padrão; e o Stripe, que entra na 6.1, também roda sem ninguém pagar nada.
+  if (['6.1', '6.2', 'P6'].includes(a.id) && !emCorrecao) {
+    linhas.push('Stripe da P6: conta brasileira, sandbox geral criada no painel na 6.1, nunca ativada. Ninguém paga nada nem ativa conta: não sugira informar documento, conta bancária ou cartão, nem criar conta de outro país. A assinatura é em cartão de teste; o Pix Automático não existe para conta brasileira na Stripe, e o pagamento pendente se testa com boleto. Forma de pagamento, nome de tela e sandbox mudam: não afirme de cabeça; as páginas estão nas referências da 6.1.');
+  }
+  if ((a.modulo === 3 && !['3.1', '3.2', 'Q3'].includes(a.id) || a.modulo === 6 && a.id !== 'Q6') && !emCorrecao) {
+    linhas.push((a.modulo === 6 ? 'API da feature (se a P6 usa IA, como na P3): a chave' : 'API da P3: a chave') + ' é do plano gratuito do Gemini (Google AI Studio), criada na 3.3; o Groq é a alternativa. Ninguém paga nada: não sugira cartão, plano pago nem crédito. Quando o sistema bater no limite do gratuito (erro de limite de requisições ou de tokens), isso é matéria, não defeito da conta: espere a janela ou diminua as chamadas (trocar de modelo só fora de uma rodada de eval, que compara no mesmo modelo), e o sistema dele precisa tratar esse erro sem quebrar a tela. Os limites mudam: não afirme número de cabeça; o número do projeto dele está no AI Studio dele (aistudio.google.com/rate-limit, que ele abre no navegador), e a página de limites está nas referências da 3.4.');
   }
 
   // A ideia do aluno nasce na 4.4 e é o objeto das fluências do trilho de negócio.
@@ -154,7 +172,10 @@ function resumo(e, { fonte = 'startup' } = {}) {
     if (a.modulo === 4 || a.modulo === 5) {
       const feitas = (e.ideia.entrevistas || []).length;
       const nomes = (e.ideia.nomes || []).length;
-      if (a.tipo === 'pratica') linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas. Neste chat não se pergunta por elas.`);
+      // A P5 é o plano que as entrevistas alimentam: ela só começa com as três, e
+      // é o chat dela que confere. Na P4 e em qualquer correção, não se pergunta.
+      if (a.id === 'P5' && !emCorrecao) linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas.${feitas < 3 ? ' A P5 só começa com as três: registre a que ele trouxer (`ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`); se com ela ainda não chegar a três, este chat espera, sem escrever plano.' : ''}`);
+      else if (a.tipo === 'pratica') linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas. Neste chat não se pergunta por elas.`);
       else linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}`);
     }
   } else if (a.modulo === 4 && a.id !== '4.1' && a.id !== '4.2' && a.id !== '4.3') {
