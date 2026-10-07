@@ -25,6 +25,7 @@
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
@@ -36,7 +37,7 @@ const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
-const { contextoDaAula } = require('./lib/contexto');
+const { contextoDaAula, trechosDaSkill } = require('./lib/contexto');
 const produto = require('./lib/produto');
 const entregaLib = require('./lib/entrega');
 const documentos = require('./lib/documentos');
@@ -236,17 +237,18 @@ const comandos = {
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
       produto: anexo.texto,
-      validar: (av) => validarAvaliacao(av, idAula, t.texto),
+      validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
     });
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
-    // Versão 2 do contrato (05/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
+    // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
     // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
     // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
     // de ela ficar perdida numa frase da justificativa.
     const payload = {
-      versao: 2,
       ...r.avaliacao,
+      versao: 3,
+      rubrica_sha: crypto.createHash('sha256').update(avaliador.regua(), 'utf8').digest('hex').slice(0, 12),
       fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}) } : null,
     };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
@@ -980,7 +982,7 @@ function fimDoQuiz(banco, reg, idQuiz) {
 
 // `texto` é a transcrição que o avaliador leu. Sem ela (só em teste), a evidência
 // é conferida pela forma e não pelo conteúdo.
-function validarAvaliacao(av, idAula, texto) {
+function validarAvaliacao(av, idAula, texto, semTarefa = false) {
   const erros = [];
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
@@ -990,7 +992,10 @@ function validarAvaliacao(av, idAula, texto) {
   if (!av.criterios || typeof av.criterios !== 'object') erros.push('falta "criterios"');
   else for (const c of criterios) {
     const v = av.criterios[c];
-    if (!Number.isInteger(v) || v < 1 || v > 5) erros.push(`criterios.${c} deve ser inteiro de 1 a 5`);
+    if ((c === 'esforco' || c === 'autonomia') && semTarefa && v === null) continue;
+    if (!Number.isInteger(v) || v < 1 || v > 5 || ((c === 'esforco' || c === 'autonomia') && semTarefa)) {
+      erros.push(`criterios.${c} deve ser ${semTarefa && (c === 'esforco' || c === 'autonomia') ? 'null nesta aula sem tarefa' : 'inteiro de 1 a 5'}`);
+    }
   }
   if (av.criterios && typeof av.criterios === 'object') {
     for (const k of Object.keys(av.criterios)) if (!criterios.includes(k)) erros.push(`criterios.${k} não existe; os critérios são ${criterios.join(', ')}`);
@@ -1045,6 +1050,9 @@ function validarAvaliacao(av, idAula, texto) {
   }
   if (av.suspeita !== null && av.suspeita !== undefined) {
     if (typeof av.suspeita.descricao !== 'string' || typeof av.suspeita.evidencia !== 'string') erros.push('suspeita precisa de "descricao" e "evidencia"');
+    else if (texto && !transcricao.evidenciaNaTranscricao(av.suspeita.evidencia, transcricao.falasDoAluno(texto))) {
+      erros.push('suspeita.evidencia precisa ser trecho literal de uma fala do aluno');
+    }
   }
   return erros;
 }

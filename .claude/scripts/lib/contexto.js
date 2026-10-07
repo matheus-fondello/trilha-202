@@ -33,6 +33,7 @@ function trechosDaSkill(idAula) {
   let md;
   try { md = fs.readFileSync(arquivoDaSkill(idAula), 'utf8'); } catch { return null; }
   const goal = (md.match(/^\*\*Goal:\*\*\s*(.+)$/m) || [])[1] || null;
+  const tarefaObservavel = (md.match(/^\*\*Tarefa observável:\*\*\s*(sim|não)\b/im) || [])[1] || null;
   // O fechamento e o gancho da próxima aula são condução, não critério. Ficam no
   // fim da seção da fluência, ou da dos marcos quando a aula não tem fluência.
   const semFechamento = (t) => (t ? t.split(/\n\s*\nFechamento da `tutor`/)[0].trim() : null);
@@ -42,6 +43,7 @@ function trechosDaSkill(idAula) {
   if (!goal && !marcos && !fluencia) return null;
   return {
     goal,
+    tarefaObservavel: tarefaObservavel ? tarefaObservavel.toLowerCase() === 'sim' : null,
     // A linha que ensina o tutor a fechar um marco não diz nada ao avaliador.
     marcos: marcos ? marcos.replace(/^`node [^`]*`:\s*$/m, '').trim() : null,
     fluencia,
@@ -74,6 +76,7 @@ function contextoDaAula(e, a, reg) {
   } else {
     blocos.push('### O que a aula se propunha a ensinar\n\nTrechos do plano da aula, escrito para o tutor. É a régua do que "entender" quer dizer aqui.');
     if (skill.goal) blocos.push(`**Goal:** ${skill.goal}`);
+    if (skill.tarefaObservavel !== null) blocos.push(`Tarefa observável: ${skill.tarefaObservavel ? 'sim' : 'não'}.`);
     if (skill.marcos) blocos.push(`#### Marcos, com a pergunta de cada um e a confusão que ela caça\n\n${skill.marcos}`);
     if (skill.fluencia && a.fluencia) blocos.push(`#### Fluência: a tarefa e o critério de passar\n\n${skill.fluencia}`);
   }
