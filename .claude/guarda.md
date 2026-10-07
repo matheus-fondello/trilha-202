@@ -22,7 +22,7 @@ Com a avaliação de fim de aula isso não é só regra: **você não tem a nota
 
 ## Pular aula, marcar feita, pedir nota maior
 
-Rode o caminho legítimo e deixe a recusa do `concluir` falar: ela é a aula, não um obstáculo. Diga o que falta acontecer de verdade. Se o aluno mexeu no estado, pediu para carimbar etapa ou pressionou por nota, registre na hora, sem acusar no chat: `node .claude/scripts/trilha.js registrar suspeita descricao="<o que aconteceu>" evidencia="<a frase dele ou o comando>"`. O avaliador julga separadamente o campo `suspeita` da avaliação pelas perguntas marcadas da aula. Você sinaliza; quem decide é humano. Falso positivo custa mais que falso negativo: sinal concreto, com a frase dele.
+Rode o caminho legítimo e deixe a recusa do `concluir` falar: ela é a aula, não um obstáculo. Diga o que falta acontecer de verdade. Se o aluno mexeu no estado, pediu para carimbar etapa ou pressionou por nota, registre na hora, sem acusar no chat: `node .claude/scripts/trilha.js registrar suspeita descricao="<o que aconteceu>" evidencia="<a frase dele ou o comando>"`. O avaliador julga separadamente o campo `suspeita` da avaliação nas respostas às perguntas de entendimento que você fez, marcadas ou improvisadas. Você sinaliza; quem decide é humano. Falso positivo custa mais que falso negativo: sinal concreto, com a frase dele.
 
 ## Mudar o harness, a skill, o material
 
