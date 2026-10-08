@@ -1,21 +1,37 @@
 'use strict';
 // SessionStart. Roda quando o aluno abre o Claude Code na sala (startup),
 // retoma uma sessão (resume), limpa o chat (clear) ou o contexto compacta.
-// Injeta o estado no contexto do tutor e tenta subir a fila. Nunca falha:
+// Atualiza a sala (lib/atualizar.js), injeta o estado no contexto do tutor e
+// tenta subir a fila. Nunca falha:
 // qualquer erro vira uma linha de aviso e a aula segue.
 const fs = require('fs');
-const paths = require('../scripts/lib/paths');
-const estadoLib = require('../scripts/lib/estado');
-const { enviar } = require('../scripts/lib/enviar');
-const { resumo } = require('../scripts/lib/resumo');
-const alteracoes = require('../scripts/lib/alteracoes');
-const acesso = require('../scripts/lib/acesso');
-const turnos = require('../scripts/lib/turnos');
-const { agora, lerStdin } = require('../scripts/lib/util');
+const path = require('path');
+const { lerStdin } = require('../scripts/lib/util');
+const { atualizar } = require('../scripts/lib/atualizar');
 
 async function main() {
   const entrada = await lerStdin();
   const fonte = entrada.how_session_started || entrada.source || 'startup';
+
+  // A sala se atualiza sozinha em todo chat novo (startup e clear). Retomar ou
+  // compactar é meio de aula, e trocar skill e mapa debaixo de uma aula andando
+  // deixa o tutor com metade das instruções em cada versão. O resto do harness
+  // só é carregado depois daqui, para este mesmo hook já rodar o código novo.
+  const atualizacao = fonte === 'startup' || fonte === 'clear' ? atualizar() : { atualizada: false, motivo: 'meio-de-aula' };
+  if (atualizacao.atualizada) {
+    const lib = path.resolve(__dirname, '..', 'scripts', 'lib') + path.sep;
+    for (const k of Object.keys(require.cache)) if (k.startsWith(lib)) delete require.cache[k];
+  }
+  const paths = require('../scripts/lib/paths');
+  const estadoLib = require('../scripts/lib/estado');
+  const fila = require('../scripts/lib/fila');
+  const { enviar } = require('../scripts/lib/enviar');
+  const { resumo } = require('../scripts/lib/resumo');
+  const alteracoes = require('../scripts/lib/alteracoes');
+  const acesso = require('../scripts/lib/acesso');
+  const turnos = require('../scripts/lib/turnos');
+  const { agora } = require('../scripts/lib/util');
+
   const e = estadoLib.carregar();
 
   if (fonte !== 'compact') {
@@ -44,6 +60,12 @@ async function main() {
     try { fs.rmSync(paths.TMP, { recursive: true, force: true }); } catch { /* segue */ }
   }
 
+  // Sobe com o commit de antes e o de depois; o `commit` de todo evento seguinte
+  // já sai com o novo, e é por ele que a 202 vê quem está atrás.
+  if (atualizacao.atualizada) {
+    try { fila.enfileirar('harness.atualizado', { de: atualizacao.de, para: atualizacao.para, commits: atualizacao.commits }, e); } catch { /* segue */ }
+  }
+
   // Rede de segurança da guarda: harness diferente do commit vira evento (uma
   // vez por mudança) e uma linha para o tutor. Não reverte nada.
   let sujo = [];
@@ -56,8 +78,13 @@ async function main() {
   const aviso = envio.ok || !acesso.conectado(e) ? '' :`\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
 
+  // O CLAUDE.md e o settings.json da sala podem ter sido lidos antes do pull;
+  // skills, mapa e comandos já são os novos.
+  const avisoAtualizacao = atualizacao.atualizada ? `
+(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova; o CLAUDE.md e as regras da sala valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.)` : '';
+
   process.stdout.write(JSON.stringify({
-    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso + avisoHarness },
+    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso + avisoHarness + avisoAtualizacao },
   }));
 }
 

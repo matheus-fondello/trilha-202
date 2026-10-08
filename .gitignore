@@ -11,6 +11,9 @@ credenciais.json
 *.tmp
 .DS_Store
 trilha/seq
+# Desliga a atualização automática da sala (lib/atualizar.js): para a cópia de
+# quem desenvolve o harness, que não pode andar sozinha.
+trilha/sem-atualizar
 
 # Saída de ferramentas de navegador de quem testa; não é da sala.
 .playwright-mcp/

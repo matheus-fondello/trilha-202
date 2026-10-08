@@ -12,7 +12,7 @@ O manual completo, para Windows, Mac e Linux, está no site da 202 — é ele qu
 
 O token é pessoal, como uma senha. Ele fica guardado em `~/.trilha-202/credenciais.json`, na sua pasta pessoal e **fora deste repositório**, que é público. Se ele vazar, peça outro à 202.
 
-Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conteúdo recebe aula nova de tempos em tempos; atualizar é uma linha só, e o professor te mostra quando for a hora.
+Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conteúdo recebe aula nova de tempos em tempos, e a sala se atualiza sozinha: todo chat novo traz o que a 202 publicou. Se você mexer num arquivo da sala, a atualização para, para não apagar a sua mudança; sem internet, ela espera o próximo chat.
 
 ## Como funciona
 
