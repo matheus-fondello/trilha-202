@@ -44,6 +44,17 @@ function portaFechada(e, a, linhas) {
   return linhas.join('\n');
 }
 
+// Avaliação de aula que o limite de uso adiou (trilha.js, adiar): roda no começo
+// do chat seguinte, quando a cota voltou. A aula da vez fica de fora enquanto não
+// fecha, porque o fechamento dela já roda o `avaliar`.
+function pendencias(e, linhas) {
+  const adiadas = Object.entries(e.aulas || {})
+    .filter(([id, r]) => r.avaliacao_adiada && !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual))
+    .map(([id]) => id);
+  if (!adiadas.length) return;
+  linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou porque o limite de uso da conta bateu. No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando disser que o limite bateu de novo, siga a aula normalmente.`);
+}
+
 // Duas frentes abertas e o chat ainda sem escolha: o resumo inteiro vira a
 // pergunta, e nada de aula aparece. O `seguir` imprime o resumo da escolhida.
 function escolhaDeFrente(e, linhas) {
@@ -64,6 +75,7 @@ function escolhaDeFrente(e, linhas) {
   linhas.push('Antes de qualquer conteúdo, cumprimente em uma linha e pergunte qual ele quer fazer agora, com as opções acima em palavras simples: número, título e onde ele parou em cada uma. Não recomende nem empurre uma delas: a ordem é dele, nenhuma pula a outra, e as duas fecham antes do M6. Se a primeira mensagem dele já disse qual, não pergunte de novo. Com a resposta, rode:');
   linhas.push('  node .claude/scripts/trilha.js seguir <aula>');
   linhas.push('O comando imprime o estado da aula escolhida e a skill a carregar: siga dali, neste mesmo chat.');
+  pendencias(e, linhas);
   const memoria = notas.paraContexto();
   if (memoria) { linhas.push(''); linhas.push(memoria); }
   linhas.push('');
@@ -220,6 +232,8 @@ function resumo(e, { fonte = 'startup' } = {}) {
   const concluidas = Object.entries(e.aulas).filter(([, r]) => r.status === 'concluida').map(([id]) => id);
   if (concluidas.length) linhas.push(`Aulas concluídas: ${concluidas.join(', ')}.`);
 
+  pendencias(e, linhas);
+
   // A memória do aluno entra inteira: são no máximo sete linhas e é o que
   // permite retomar o fio pessoal entre aulas separadas por dias.
   const memoria = notas.paraContexto();
@@ -233,6 +247,10 @@ function resumo(e, { fonte = 'startup' } = {}) {
     else linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
     if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
       linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
+    } else if (reg.status === 'em_andamento' && a.tipo === 'aula' && Array.isArray(a.milestones) && a.milestones.every((m) => reg.milestones[m.id]) && (!a.fluencia || (reg.fluencia && reg.fluencia.passou))) {
+      // Tudo registrado e a aula aberta: o chat anterior parou no fechamento (o
+      // limite de uso bateu, a janela fechou). Não se refaz a aula: só se fecha.
+      linhas.push('Retomada no fechamento: os marcos' + (a.fluencia ? ' e a fluência' : '') + ' já estão registrados, e o chat anterior parou antes de fechar a aula. Cumprimente em uma linha, diga que falta só fechar a aula e feche como a `tutor` manda, sem reabrir a matéria' + (a.avaliacao === false || reg.avaliada_em ? '' : ': o `avaliar` lê também o chat anterior') + '.');
     } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
     }

@@ -258,6 +258,7 @@ const comandos = {
       produto: anexo.texto,
       validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
     });
+    if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
     // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
@@ -278,6 +279,7 @@ const comandos = {
     fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, produto: anexo.resumo, ...revisao }, e);
     reg.avaliada_em = agora();
     delete reg.avaliacao_falhou;
+    delete reg.avaliacao_adiada;
     estadoLib.salvar(e);
     console.log(`Avaliação da aula ${idAula} registrada e enfileirada.`);
   },
@@ -329,7 +331,8 @@ const comandos = {
       // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
       // Avaliação que o `avaliar` tentou e não conseguiu não segura a aula: o aluno
       // fez o trabalho dele, a falha é do harness, e ela já virou evento para a 202.
-      if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
+      if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente pelo limite de uso e roda no começo do próximo chat');
+      else if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
       else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
     }
     if (problemas.length) falhar(`não dá para concluir a aula ${idAula}:\n  - ${problemas.join('\n  - ')}`);
@@ -777,7 +780,22 @@ const comandos = {
 // Avaliação que não sai não trava a aula: essa é a regra da casa. Fica o registro
 // do motivo, o `concluir` passa com aviso, e a 202 sabe que aquela aula não tem
 // nota e por quê. O tutor lê um recado que não o convida a contornar nada.
+// O limite de uso da conta bateu no meio da avaliação: o avaliador usa a cota do
+// aluno. Isso não é falha, e a avaliação não se perde: fica adiada, e o resumo
+// do próximo chat manda rodá-la de novo, quando a cota já voltou. Três adiamentos
+// seguidos viram falha, para não tentar para sempre.
+const MAX_ADIAMENTOS = 3;
+function adiar(e, reg, idAula, motivo, uso) {
+  const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + 1;
+  if (vezes > MAX_ADIAMENTOS) return desistir(e, reg, idAula, `${motivo}; adiada ${MAX_ADIAMENTOS} vezes`, uso);
+  reg.avaliacao_adiada = { em: agora(), motivo, vezes };
+  estadoLib.salvar(e);
+  fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, avaliador: uso || null }, e);
+  console.log(`O limite de uso da conta bateu antes de a avaliação da aula ${idAula} terminar. Ela não se perdeu: fica pendente e roda no começo do próximo chat, quando a cota tiver voltado. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
+}
+
 function desistir(e, reg, idAula, motivo, uso) {
+  delete reg.avaliacao_adiada;
   reg.avaliacao_falhou = { em: agora(), motivo };
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, avaliador: uso || null }, e);
@@ -958,7 +976,17 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     material: material.texto,
     validar: (c) => validarCorrecao(c, idPratica, conferido),
   });
+  // No limite de uso a correção não falhou: espera a cota voltar, no mesmo chat
+  // (o aluno manda "continue") ou num novo, que reabre a correção sozinho.
+  if (!r.ok && r.limite) {
+    p.correcao_adiada = { em: agora(), motivo: r.motivo };
+    estadoLib.salvar(e);
+    fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, corretor: r.uso || null }, e);
+    console.log(`O limite de uso da conta bateu antes de a correção da ${idPratica} terminar. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Diga ao aluno, em duas linhas, que a leitura termina quando o limite renovar (o horário aparece na mensagem do Claude) e que é só mandar "continue" neste chat depois disso; aí rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    return;
+  }
   if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
+  delete p.correcao_adiada;
   const b64 = Buffer.from(JSON.stringify(r.correcao), 'utf8').toString('base64');
   const revisao = p.corrigida_em ? { revisao: true, substitui_de: p.corrigida_em } : {};
   fila.enfileirar('pratica.correcao', {

@@ -242,6 +242,13 @@ function converter(bruto, tirar = (t) => t) {
     let ev;
     try { ev = JSON.parse(linha); } catch { continue; }
     if (ev.isMeta || ev.isSidechain) continue;
+    // A mensagem de erro da API ("You've hit your session limit · resets ...")
+    // vem como fala do assistente. Não é do tutor nem do aluno: vira uma marca, e
+    // o "continue" que o aluno manda depois do limite fica com contexto.
+    if (ev.isApiErrorMessage) {
+      itens.push({ quem: 'aviso', linha: `  [o Claude Code parou aqui${ev.error === 'rate_limit' ? ', no limite de uso da conta' : ', por erro da API'}; não é fala do tutor nem falta do aluno]` });
+      continue;
+    }
     const msg = ev.message;
     if (!msg || (ev.type !== 'user' && ev.type !== 'assistant')) continue;
     for (const b of blocos(msg.content)) {

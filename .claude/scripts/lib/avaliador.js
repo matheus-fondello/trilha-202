@@ -50,6 +50,8 @@ function extrairJson(texto) {
   try { return JSON.parse(limpo.slice(i, j + 1)); } catch { return null; }
 }
 
+const LIMITE = /hit your (session |usage |weekly )?limit|usage limit|rate[ _]limit|429/i;
+
 function chamar(prompt) {
   const args = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
     '--setting-sources', '', '--disallowed-tools', SEM_FERRAMENTAS];
@@ -74,10 +76,16 @@ function chamar(prompt) {
   if (r.signal) return { ok: false, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido` };
   let envelope;
   try { envelope = JSON.parse(r.stdout); } catch {
+    const cru = String(r.stderr || r.stdout || '');
+    if (LIMITE.test(cru)) return { ok: false, limite: true, motivo: `limite de uso da conta (${cru.trim().slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador respondeu fora do formato esperado (${String(r.stderr || r.stdout || '').trim().slice(0, 200) || 'sem saída'})` };
   }
   if (envelope.is_error || envelope.subtype !== 'success') {
-    return { ok: false, motivo: `o avaliador falhou: ${String(envelope.result || envelope.subtype || 'motivo não informado').slice(0, 200)}` };
+    const texto = String(envelope.result || envelope.subtype || 'motivo não informado');
+    // O avaliador usa a cota do aluno. No limite ("You've hit your session limit
+    // · resets 10:20pm"), a avaliação não falhou: ela espera a cota voltar.
+    if (envelope.api_error_status === 429 || LIMITE.test(texto)) return { ok: false, limite: true, motivo: `limite de uso da conta (${texto.slice(0, 120)})` };
+    return { ok: false, motivo: `o avaliador falhou: ${texto.slice(0, 200)}` };
   }
   const u = envelope.usage || {};
   return {
@@ -152,7 +160,7 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
   let uso = null;
   for (let tentativa = 1; tentativa <= Math.min(TENTATIVAS, limite); tentativa++) {
     const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }));
-    if (!r.ok) return { ok: false, motivo: r.motivo, tentativas: tentativa, uso };
+    if (!r.ok) return { ok: false, limite: Boolean(r.limite), motivo: r.motivo, tentativas: tentativa, uso };
     if (!uso) uso = { ...r.uso };
     else {
       for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
@@ -273,7 +281,7 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   let uso = null;
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }));
-    if (!r.ok) return { ok: false, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    if (!r.ok) return { ok: false, limite: Boolean(r.limite), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
     uso = r.uso;
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o corretor não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
