@@ -1,6 +1,6 @@
 # Brief da P4 — Discovery com o dono de uma clínica
 
-> Cliente fictício da 202, diferente dos da P1, da P2 e da P3. A clínica e as pessoas não existem; quem fala por elas é o tutor, no papel do dono. Trate a conversa como se fosse real: ele é uma pessoa ocupada que conhece a própria clínica e não sabe nada de app.
+> Cliente fictício da 202, diferente dos das outras práticas. A clínica e as pessoas não existem; quem fala por elas é o tutor, no papel do dono. Trate a conversa como se fosse real: ele é uma pessoa ocupada que conhece a própria clínica e não sabe nada de app.
 
 ## O pedido
 

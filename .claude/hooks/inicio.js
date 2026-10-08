@@ -52,6 +52,9 @@ async function main() {
       // transcricao: o caminho do .jsonl desta sessão, que só o Claude Code sabe.
       // É o que o avaliador de fim de aula lê — ele não esteve na conversa.
       e.sessao_atual = { id: entrada.session_id || null, inicio: agora(), ultima_atividade: agora(), aula: e.aula_atual, turnos: 0, fonte, contada: false, transcricao: entrada.transcript_path || null, turno_aberto: null, ultimo_turno_fim: null, trabalho_ms: 0 };
+      // Chat novo com duas frentes abertas começa com o aluno escolhendo por
+      // qual seguir. Retomar um chat antigo não pergunta: ele volta à aula dele.
+      if (fonte === 'startup' || fonte === 'clear') estadoLib.oferecerEscolha(e);
     }
     estadoLib.salvar(e);
     // O rascunho da avaliação vive em trilha/tmp só até o `avaliar` consumir. Se

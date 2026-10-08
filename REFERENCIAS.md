@@ -1690,6 +1690,10 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://www.bcb.gov.br/conversao
   Fonte pública do câmbio do dia, com data, para a linha da planilha que converte o custo do modelo de dólar para real.
 
+- **Google, *Gemini Developer API pricing*** — Gemini API Docs, atualizado em out/2026 · ~3 min de leitura (o bloco do modelo que a ideia usaria)
+  https://ai.google.dev/gemini-api/docs/pricing
+  A tabela oficial em dólar por milhão de tokens, entrada e saída separadas, modelo por modelo: a fonte pública com data para estimar uma execução de quem ainda não tem o número da P3.
+
 ### 5.4 Distribuição: canais, fits e funil
 
 **Sugerida**

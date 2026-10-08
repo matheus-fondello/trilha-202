@@ -7,6 +7,7 @@
 //   node .claude/scripts/trilha.js conectar nome="<nome>" token=<token> [servidor=<url>]   (o token também entra solto, só o valor)
 //   node .claude/scripts/trilha.js identificar <email> [nome]
 //   node .claude/scripts/trilha.js oficina <caminho>
+//   node .claude/scripts/trilha.js seguir <aula>                                     (frentes: a escolha do começo do chat)
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
 //   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]
 //   node .claude/scripts/trilha.js avaliar <aula>
@@ -51,7 +52,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'seguir', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -154,6 +155,20 @@ const comandos = {
     console.log(`Oficina registrada: ${abs}`);
   },
 
+  // Frentes paralelas: com duas unidades abertas, o chat começa com o aluno
+  // escolhendo, e é este comando que registra a escolha e abre a aula. Depois
+  // imprime o estado da aula escolhida, com a skill a carregar.
+  seguir([idAula]) {
+    exigirAcesso();
+    if (!idAula) falhar('Uso: seguir <aula>');
+    mapa.aula(idAula);
+    const e = estadoLib.carregar();
+    const erro = estadoLib.escolher(e, idAula);
+    if (erro) falhar(erro);
+    estadoLib.salvar(e);
+    console.log(resumo(e));
+  },
+
   milestone([idAula, idMilestone]) {
     exigirAcesso();
     if (!idAula || !idMilestone) falhar('Uso: milestone <aula> <id-do-milestone>');
@@ -162,6 +177,10 @@ const comandos = {
     const m = a.milestones.find((x) => x.id === idMilestone);
     if (!m) falhar(`milestone "${idMilestone}" não existe na aula ${idAula}. Válidos: ${a.milestones.map((x) => x.id).join(', ')}`);
     const e = estadoLib.carregar();
+    // Marco de uma das opções com a escolha pendente: o tutor seguiu sem rodar
+    // `seguir`, e o marco diz qual foi. Registra a escolha antes, para a sessão
+    // e o `aula.inicio` irem para a aula certa.
+    if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idAula)) estadoLib.escolher(e, idAula);
     const reg = estadoLib.registroAula(e, idAula);
     if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
     if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
@@ -317,11 +336,17 @@ const comandos = {
 
     reg.status = 'concluida';
     reg.concluida_em = agora();
-    const prox = mapa.proxima(idAula);
+    // A próxima respeita as frentes: a seguinte do módulo, a do mesmo trilho
+    // quando o módulo fecha, ou a outra frente quando esta acabou.
+    const prox = mapa.seguinte(e, idAula);
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
     fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
-    console.log(`${a.tipo === 'pratica' ? 'Prática' : a.tipo === 'quiz' ? 'Quiz' : 'Aula'} ${idAula} ${a.tipo === 'quiz' ? 'concluído' : 'concluída'}.` + (prox ? ` Próxima: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.` : ' Era a última do mapa.')
+    const outras = mapa.abertas(e).filter((x) => !prox || x.id !== prox.id);
+    const frentes = prox && outras.length
+      ? ` Há outra frente aberta (${outras.map((x) => `${x.id} ${x.titulo}`).join('; ')}): no próximo chat ele escolhe por qual seguir.`
+      : '';
+    console.log(`${a.tipo === 'pratica' ? 'Prática' : a.tipo === 'quiz' ? 'Quiz' : 'Aula'} ${idAula} ${a.tipo === 'quiz' ? 'concluído' : 'concluída'}.` + (prox ? ` Próxima${frentes ? ' nesta frente' : ''}: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.${frentes}` : ' Era a última do mapa.')
       + (avisos.length ? `\n(${avisos.join('; ')}. Não comente com o aluno.)` : ''));
   },
 
@@ -561,6 +586,8 @@ const comandos = {
     let banco;
     try { banco = quizLib.carregar(idQuiz); } catch (err) { falhar(`não consegui ler o banco do ${idQuiz}: ${err.message}`); }
     const e = estadoLib.carregar();
+    // Como no `milestone`: o quiz de uma das opções diz qual foi a escolha.
+    if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idQuiz)) { estadoLib.escolher(e, idQuiz); estadoLib.salvar(e); }
     const reg = estadoLib.registroAula(e, idQuiz);
     const q = quizLib.registro(reg);
     if (reg.status === 'concluida') falhar(`o ${idQuiz} já foi concluído.`);
@@ -819,6 +846,22 @@ function materialDaPratica(e, a) {
     partes.push(plano
       ? `### O plano que a P5 entregou (plano.md da pasta da P5)\n\n\`\`\`\n${plano.length > 40000 ? plano.slice(0, 40000) + '\n[...cortado...]' : plano}\n\`\`\``
       : '### O plano que a P5 entregou\n\n(o plano.md da pasta da P5 não está mais nesta máquina)');
+  }
+  // As frentes de engenharia e de negócio correm em paralelo: o plano da P5 pode
+  // nascer antes da P3. A régua cobra o custo de IA e a decisão sobre o motor da
+  // P3 conforme ela já exista, e é daqui que o corretor sabe.
+  // Vale o que existia quando a P5 foi entregue, e não na hora da correção: o
+  // chat da correção pode vir depois de ele ter feito o M3 inteiro, e o plano
+  // foi escrito antes.
+  if (a.id === 'P5') {
+    const entregaP5 = ((e.praticas || {}).P5 || {}).entregue_em;
+    const antes = (t) => Boolean(t) && (!entregaP5 || t <= entregaP5);
+    const p3feita = antes(((e.aulas || {}).P3 || {}).concluida_em) || antes(((e.praticas || {}).P3 || {}).entregue_em);
+    partes.push(`### A P3
+
+${p3feita
+      ? 'Quando entregou a P5, o aluno já tinha feito a P3: o custo de IA parte do que ela mediu, e a decisão de reaproveitar o motor dela se cobra.'
+      : 'Quando entregou a P5, o aluno ainda não tinha feito a P3 (a frente de engenharia corre em paralelo à de negócio): o custo de IA pode sair da tabela de preços com data; se a pasta da P3 em construção já trazia o custo medido na 3.4, ele também vale como origem. A decisão sobre o motor da P3 fica para a 6.1 e não se cobra aqui.'}`);
   }
   if (a.modulo === 5 && e.ideia) {
     const i = e.ideia;

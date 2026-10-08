@@ -35,7 +35,7 @@ Use estes títulos: as aulas citam cada seção pelo número e pelo nome.
 
 **4. Como ganha dinheiro.** Quem paga, pelo quê, o que dispara a cobrança. O preço mensal em reais, que é o que vai para o Stripe na 6.1, e de onde ele saiu. Preço zero não é resposta: se ninguém pagaria, o plano diz isso.
 
-**5. Quanto custa rodar.** O custo de uma execução da feature e de um cliente por mês, com o cliente que mais usa e não o da média. Se há modelo no meio, cada uso tem preço, e a P3 já te deu o número de partida. A margem, o que trazer um cliente custa, quanto ele vale, em quanto tempo devolve o que custou, e quantos clientes pagam o custo de rodar e um salário seu.
+**5. Quanto custa rodar.** O custo de uma execução da feature e de um cliente por mês, com o cliente que mais usa e não o da média. Se há modelo no meio, cada uso tem preço: se você já fez a P3, ela te deu o número de partida; se não, ele sai da tabela de preços do modelo, com a data. A margem, o que trazer um cliente custa, quanto ele vale, em quanto tempo devolve o que custou, e quantos clientes pagam o custo de rodar e um salário seu.
 
 **6. De onde vêm os dez primeiros.** Canal concreto: um grupo, uma comunidade, a lista que você alcança esta semana, com a mensagem que você manda. "Redes sociais" e "marketing digital" são categorias, não canais. E, depois dos dez, os canais que você testaria e o funil até a receita.
 
@@ -47,7 +47,7 @@ Use estes títulos: as aulas citam cada seção pelo número e pelo nome.
 
 ## Três regras
 
-**Todo número tem de onde veio.** "Custa uns R$ 30 por mês" não passa. "Cada execução gasta uns quatro mil tokens, que na tabela de tal data dá tanto, e o cliente que mais usa roda vinte por mês" passa. A origem é uma de quatro: o que alguém fez e te contou numa entrevista, o que você mediu (o log da P3), uma fonte pública com a data, ou um chute dito como chute, com o jeito de conferir. Chute marcado é honesto; chute com cara de análise é o que a trilha inteira tentou tirar de você.
+**Todo número tem de onde veio.** "Custa uns R$ 30 por mês" não passa. "Cada execução gasta uns quatro mil tokens, que na tabela de tal data dá tanto, e o cliente que mais usa roda vinte por mês" passa. A origem é uma de quatro: o que alguém fez e te contou numa entrevista, o que você mediu (o log da P3, por exemplo), uma fonte pública com a data, ou um chute dito como chute, com o jeito de conferir. Chute marcado é honesto; chute com cara de análise é o que a trilha inteira tentou tirar de você.
 
 **Direto, não volumoso.** O plano inteiro cabe em umas 2.000 palavras, fora a planilha: umas quatro páginas. Documento longo gerado por IA conta contra, não a favor. O que se lê aqui é decisão tomada, não texto. Use o Claude da oficina para pensar junto, desafiar suas premissas e fazer as contas; as escolhas são suas.
 
@@ -57,7 +57,7 @@ Use estes títulos: as aulas citam cada seção pelo número e pelo nome.
 
 A P6 é o produto deste plano, no ar: a página que vende, a conta, a feature da seção 2 no escopo da seção 7, a assinatura no preço da seção 4, em modo de teste, liberando o acesso quando o pagamento confirma. O plano revisado vai junto, no repositório, com o que mudou e por quê.
 
-Por padrão, a P6 parte do motor da P3: a chamada no servidor, a saída validada, o teto, o log, o eval, com o domínio trocado para o seu problema. Reaproveitar ou recomeçar é decisão sua, e não conta ponto nem desconto; só precisa estar escrita, na seção 2 ou na 7, com o porquê. Se a sua ideia não usa IA, você recomeça, e a feature é a regra que você mesmo escreve.
+Por padrão, a P6 parte do motor da P3: a chamada no servidor, a saída validada, o teto, o log, o eval, com o domínio trocado para o seu problema. Reaproveitar ou recomeçar é decisão sua, e não conta ponto nem desconto; se você já fez a P3, ela precisa estar escrita, na seção 2 ou na 7, com o porquê. Se ainda não fez, a decisão fica para a 6.1, quando o M3 já tiver te dado o motor. Se a sua ideia não usa IA, você recomeça, e a feature é a regra que você mesmo escreve.
 
 ## O que não há
 

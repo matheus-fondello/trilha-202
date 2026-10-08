@@ -44,6 +44,33 @@ function portaFechada(e, a, linhas) {
   return linhas.join('\n');
 }
 
+// Duas frentes abertas e o chat ainda sem escolha: o resumo inteiro vira a
+// pergunta, e nada de aula aparece. O `seguir` imprime o resumo da escolhida.
+function escolhaDeFrente(e, linhas) {
+  const s = e.sessao_atual;
+  linhas.push('Frentes paralelas: depois do M1 a trilha corre em duas frentes ao mesmo tempo, engenharia (M2, depois M3) e negócio (M4, depois M5), e o M6 abre quando as duas fecharem. Neste chat ele escolhe por qual seguir agora:');
+  for (const id of s.escolha.opcoes) {
+    const a = mapa.aula(id);
+    const m = mapa.modulo(a.modulo) || {};
+    const reg = e.aulas[id] || { status: 'nao_iniciada', milestones: {} };
+    let onde = 'não iniciada';
+    if (reg.status === 'em_andamento') {
+      onde = a.tipo === 'quiz'
+        ? `em andamento, ${quiz.respondidas(reg)} pergunta(s) respondida(s)`
+        : `em andamento, ${(a.milestones || []).filter((x) => (reg.milestones || {})[x.id]).length} de ${(a.milestones || []).length} marcos fechados`;
+    }
+    linhas.push(`  - ${a.id} ${a.titulo} (módulo ${a.modulo}, ${m.titulo || ''}${m.frente ? `; frente de ${m.frente}` : ''}): ${onde}`);
+  }
+  linhas.push('Antes de qualquer conteúdo, cumprimente em uma linha e pergunte qual ele quer fazer agora, com as opções acima em palavras simples: número, título e onde ele parou em cada uma. Não recomende nem empurre uma delas: a ordem é dele, nenhuma pula a outra, e as duas fecham antes do M6. Se a primeira mensagem dele já disse qual, não pergunte de novo. Com a resposta, rode:');
+  linhas.push('  node .claude/scripts/trilha.js seguir <aula>');
+  linhas.push('O comando imprime o estado da aula escolhida e a skill a carregar: siga dali, neste mesmo chat.');
+  const memoria = notas.paraContexto();
+  if (memoria) { linhas.push(''); linhas.push(memoria); }
+  linhas.push('');
+  linhas.push('Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula antes do `seguir`.');
+  return linhas.join('\n');
+}
+
 function rotuloDe(a) {
   return a.tipo === 'pratica' ? 'Prática atual' : a.tipo === 'quiz' ? 'Quiz atual' : 'Aula atual';
 }
@@ -65,17 +92,18 @@ function resumo(e, { fonte = 'startup' } = {}) {
 
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
+  if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas);
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
 
   // Depois da última unidade escrita não há o que carregar: o material novo
   // chega pela atualização, e o chat não reabre a unidade que já fechou. Quando a
   // última é do M6, não há material novo a esperar: a trilha acabou.
-  const fimDoMapa = reg.status === 'concluida' && !mapa.proxima(a.id);
+  const fimDoMapa = reg.status === 'concluida' && !mapa.abertas(e).length;
   if (fimDoMapa && a.modulo === 6) {
     linhas.push('Fim da trilha: o aluno concluiu a última unidade, e não há aula neste chat nem material novo a esperar. Diga isso em poucas linhas, sem cerimônia e sem prometer nada da 202 que não esteja escrito aqui, e ofereça tirar dúvidas do que já foi visto ou revisitar qualquer aula, que continuam no disco. Não registre nada.');
   } else if (fimDoMapa) {
-    linhas.push('Fim do material escrito: esta era a última unidade do mapa, e está concluída. Não há aula neste chat. Diga ao aluno, em poucas linhas, que o próximo módulo chega com a atualização do material (a receita da 1.2), sem prometer data, e ofereça tirar dúvidas do que já foi visto.');
+    linhas.push('Fim do material escrito: esta era a última unidade do mapa, e está concluída. Não há aula neste chat. Diga ao aluno, em poucas linhas, que o próximo módulo chega com a atualização do material, que a sala faz sozinha a cada chat novo, sem prometer data, e ofereça tirar dúvidas do que já foi visto.');
   } else if (!mapa.escrita(a)) {
     linhas.push(`Esta ${a.tipo === 'pratica' ? 'prática' : a.tipo === 'quiz' ? 'unidade' : 'aula'} ainda não foi escrita neste protótipo do harness. Diga isso ao aluno com franqueza e ofereça tirar dúvidas do que já foi visto. Não invente ementa.`);
   } else if (a.tipo === 'quiz') {

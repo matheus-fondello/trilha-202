@@ -65,14 +65,69 @@ function contarSessao(e) {
   if (!s || s.contada !== false) return false;
   s.contada = true;
   s.inicio = agora();
-  const reg = registroAula(e, s.aula);
-  reg.sessoes = (reg.sessoes || 0) + 1;
-  abrirAula(e, s.aula);
+  // Com a escolha de frente pendente, a sessão conta mas nenhuma aula abre: a
+  // aula é a que ele escolher, e é o `seguir` que a abre. Senão subia um
+  // `aula.inicio` da frente que ele não escolheu.
+  if (!escolhaPendente(e)) {
+    const reg = registroAula(e, s.aula);
+    reg.sessoes = (reg.sessoes || 0) + 1;
+    abrirAula(e, s.aula);
+  }
   // mono_ms e boot_ms ancoram o relógio monotônico dos turnos: o servidor liga a
   // contagem monotônica ao horário real desta sessão, e vê pelo boot se a máquina
   // reiniciou entre dois trechos (o monotônico recomeça do zero).
-  fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula, mono_ms: monoMs(), boot_ms: bootMs() }, e);
+  fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula, ...(escolhaPendente(e) ? { escolha: s.escolha.opcoes } : {}), mono_ms: monoMs(), boot_ms: bootMs() }, e);
   return true;
+}
+
+// Frentes paralelas (08/10): depois do M1 o aluno pode ter duas unidades
+// abertas, uma por frente, e todo chat novo começa com ele escolhendo por qual
+// seguir. A sessão nasce com as opções; até o `seguir`, a aula dela é a padrão
+// (a última em que ele trabalhou) só como etiqueta, e nada abre.
+function oferecerEscolha(e) {
+  const s = e.sessao_atual;
+  if (!s) return false;
+  const abertas = mapa.abertas(e);
+  // Prática entregue e ainda sem correção não entra na escolha: o chat seguinte
+  // à entrega é a correção, como sempre foi, e a pergunta volta no chat depois.
+  const emCorrecao = abertas.find((a) => a.tipo === 'pratica' && a.correcao
+    && mapa.prontaParaCorrigir(a, (e.praticas || {})[a.id], (e.aulas || {})[a.id])
+    && !((e.praticas || {})[a.id] || {}).corrigida_em);
+  if (emCorrecao) { e.aula_atual = emCorrecao.id; s.aula = emCorrecao.id; return false; }
+  const opcoes = abertas.map((a) => a.id);
+  if (opcoes.length < 2) return false;
+  // A padrão é uma das opções: com o estado antigo, aula_atual podia apontar
+  // para outra, e a etiqueta da sessão ficaria numa aula que não está na mesa.
+  if (!opcoes.includes(e.aula_atual)) e.aula_atual = opcoes[0];
+  s.aula = e.aula_atual;
+  s.escolha = { opcoes, feita: null };
+  return true;
+}
+
+function escolhaPendente(e) {
+  const s = e.sessao_atual;
+  return Boolean(s && s.escolha && !s.escolha.feita);
+}
+
+// O aluno escolheu. Devolve o erro em texto, ou null. A aula escolhida passa a
+// ser a da sessão e a atual; se a sessão já conta, ela abre agora, com o
+// `aula.inicio` na hora certa, e a sessão conta para ela.
+function escolher(e, idAula) {
+  const s = e.sessao_atual;
+  if (!escolhaPendente(e)) return 'a escolha de frente é no começo do chat, e neste chat não há escolha pendente (ou ela já foi feita). Para trocar de frente, o aluno abre um chat novo.';
+  if (!s.escolha.opcoes.includes(idAula)) return `a ${idAula} não está entre as que ele pode fazer agora: ${s.escolha.opcoes.join(' ou ')}.`;
+  const padrao = s.aula;
+  s.escolha.feita = idAula;
+  s.escolha.em = agora();
+  s.aula = idAula;
+  e.aula_atual = idAula;
+  if (s.contada) {
+    const reg = registroAula(e, idAula);
+    reg.sessoes = (reg.sessoes || 0) + 1;
+    abrirAula(e, idAula);
+  }
+  fila.enfileirar('frente.escolha', { aula: idAula, opcoes: s.escolha.opcoes, padrao }, e);
+  return null;
 }
 
 // A aula começa a valer aqui, com o `aula.inicio` na fila. Sala fechada não abre
@@ -90,23 +145,19 @@ function abrirAula(e, idAula) {
   return true;
 }
 
-// A unidade atual concluída, com uma seguinte no mapa, é material que chegou
-// depois: o `concluir` da última unidade não tinha para onde avançar, e o
-// `git pull` trouxe o módulo novo. Sem isto o resumo voltava a apresentar a
-// unidade fechada como a da vez, e nenhum comando do tutor saía dela. Avança
-// para a primeira não concluída depois dela. Devolve se mudou.
+// A unidade atual concluída, com outra aberta, é material que chegou depois
+// (o `concluir` da última unidade não tinha para onde avançar, e a atualização
+// trouxe o módulo novo) ou uma frente que fechou com a outra ainda aberta. Sem
+// isto o resumo voltava a apresentar a unidade fechada como a da vez, e nenhum
+// comando do tutor saía dela. Avança pelas frentes (mapa.seguinte). Devolve se mudou.
 function avancarSeConcluida(e) {
-  let mudou = false;
-  for (;;) {
-    const reg = (e.aulas || {})[e.aula_atual];
-    if (!reg || reg.status !== 'concluida') break;
-    let prox;
-    try { prox = mapa.proxima(e.aula_atual); } catch { prox = null; }
-    if (!prox) break;
-    e.aula_atual = prox.id;
-    mudou = true;
-  }
-  return mudou;
+  const reg = (e.aulas || {})[e.aula_atual];
+  if (!reg || reg.status !== 'concluida') return false;
+  let prox;
+  try { prox = mapa.seguinte(e, e.aula_atual); } catch { prox = null; }
+  if (!prox) return false;
+  e.aula_atual = prox.id;
+  return true;
 }
 
 // Quando a sessão acabou de verdade. Silêncio longo é terminal esquecido aberto,
@@ -157,4 +208,4 @@ function fecharSessao(e, fimIso, motivo) {
   return registro;
 }
 
-module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, fecharSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
+module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };

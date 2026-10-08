@@ -44,13 +44,19 @@ Mande ler só as seções, pelo título: o artigo principal é longo e é SaaS B
   https://a16z.com/the-new-business-of-ai-and-how-its-different-from-traditional-software/
   O mecanismo da margem que some, dito por quem investe em software: empresas de IA com margem bruta em torno de 50 a 60%, contra 60 a 80% ou mais no SaaS comparável, porque cada uso consome computação e às vezes gente.
 
-É de antes das APIs de modelo de linguagem: o custo de que eles falam é treino, nuvem e revisão humana, não token. O número é anedótico, como o texto admite, e de 2020; vale o mecanismo, que é o da aula: no software comum servir mais um uso custa quase nada, com modelo não. A conta da ideia dele sai do custo da P3, não daqui. O ensaio do Ethan Ding que a 3.4 deixou para cá é o mesmo mecanismo em escala de empresa; se ele lembrar, ligue os dois, sem reabrir.
+É de antes das APIs de modelo de linguagem: o custo de que eles falam é treino, nuvem e revisão humana, não token. O número é anedótico, como o texto admite, e de 2020; vale o mecanismo, que é o da aula: no software comum servir mais um uso custa quase nada, com modelo não. A conta da ideia dele sai do custo da P3 ou da tabela de preços abaixo, não daqui. Se ele já fez a 3.4, o ensaio do Ethan Ding que ela deixou para cá é o mesmo mecanismo em escala de empresa; se ele lembrar, ligue os dois, sem reabrir.
 
 - **Banco Central do Brasil, *Conversor de moedas*** — bcb.gov.br, em português · consulta
   https://www.bcb.gov.br/conversao
   Fonte pública do câmbio do dia, com data, para a linha da planilha que converte o custo do modelo de dólar para real.
 
-Câmbio de qualquer outra fonte vale se tiver data e origem escritas; o que não vale é número sem data. A tabela de preço do modelo é a que a 3.4 citou: o README da P3 já traz modelo, preço e data, e se o preço mudou desde então, a linha da planilha muda e a data junto.
+Câmbio de qualquer outra fonte vale se tiver data e origem escritas; o que não vale é número sem data.
+
+- **Google, *Gemini Developer API pricing*** — Gemini API Docs, atualizado em out/2026 · ~3 min de leitura (o bloco do modelo que a ideia usaria)
+  https://ai.google.dev/gemini-api/docs/pricing
+  A tabela oficial em dólar por milhão de tokens, entrada e saída separadas, modelo por modelo: a fonte pública com data para estimar uma execução de quem ainda não tem o número da P3.
+
+É a mesma tabela que a 3.4 usa. Quem fez a P3 já tem modelo, preço e data no README dela, e só volta aqui se o preço mudou desde então: a linha da planilha muda e a data junto. Quem não fez lê só o bloco do modelo que a ideia usaria, e nele só a primeira tabela (Standard), e a conta sai da coluna do pago: a do gratuito diz "Free of charge" ou "Not available", e não é preço. Se a linha do preço diz que vale até uma data, a planilha usa o preço de depois dela, ou diz que usou o promocional e até quando. Se a ideia usaria outro provedor, vale a tabela dele, na mesma unidade.
 
 ## Sugeridas
 
