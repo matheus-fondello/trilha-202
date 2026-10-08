@@ -349,12 +349,16 @@ function falasDoAluno(texto) {
 
 // Aspas, travessões, reticências e espaços variam entre o que o aluno escreveu e
 // o que o modelo devolve sem que ninguém tenha parafraseado nada. Isso não conta.
+// Nem as marcas de Markdown: "**Quem abre o WhatsApp ... sem rastro.** A SPEC",
+// citado sem os asteriscos, derrubava a correção da P1 do Davi (07/10). As marcas
+// saem dos dois lados, então não abrem espaço para trecho inventado.
 function normalizar(texto) {
   return String(texto)
     .normalize('NFC')
     .toLowerCase()
+    .replace(/[*_`]+/g, '')
     .replace(/[“”«»„]/g, '"')
-    .replace(/[‘’`´]/g, "'")
+    .replace(/[‘’´]/g, "'")
     .replace(/[–—]/g, '-')
     .replace(/…/g, '...')
     .replace(/\s+/g, ' ')
