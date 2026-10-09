@@ -44,6 +44,7 @@ const entregaLib = require('./lib/entrega');
 const documentos = require('./lib/documentos');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
+const quizAvaliador = require('./lib/quiz-avaliador');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -299,6 +300,12 @@ const comandos = {
       try { banco = quizLib.carregar(idAula); } catch { /* sem banco */ }
       if (!banco) problemas.push('banco do quiz não encontrado nesta cópia do harness');
       else if (!quizLib.completo(banco, reg)) problemas.push(`perguntas respondidas: ${quizLib.respondidas(reg)} de ${banco.questoes.length}. O quiz fecha com todas (\`quiz ${idAula}\` imprime a da vez).`);
+      if (banco && quizLib.completo(banco, reg)) {
+        avaliarAbertasPendentes(e, reg, banco, idAula);
+        if (Object.values(quizLib.registro(reg).respostas).some((r) => r.texto_pendente)) {
+          avisos.push('a avaliação de uma resposta aberta ficou pendente; o próximo chat tenta novamente');
+        }
+      }
     } else if (!Array.isArray(a.milestones) || !a.milestones.length) problemas.push('aula sem ementa no mapa');
     else {
       const pend = a.milestones.filter((x) => !reg.milestones[x.id]);
@@ -593,7 +600,11 @@ const comandos = {
     if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idQuiz)) { estadoLib.escolher(e, idQuiz); estadoLib.salvar(e); }
     const reg = estadoLib.registroAula(e, idQuiz);
     const q = quizLib.registro(reg);
-    if (reg.status === 'concluida') falhar(`o ${idQuiz} já foi concluído.`);
+    if (reg.status === 'concluida' && sub === 'responder') falhar(`o ${idQuiz} já foi concluído.`);
+    // Uma leitura interrompida nao perde a resposta: a proxima chamada do quiz
+    // tenta novamente, inclusive depois de o quiz ter sido concluido.
+    avaliarAbertasPendentes(e, reg, banco, idQuiz);
+    if (reg.status === 'concluida') { console.log(`O ${idQuiz} já foi concluído.`); return; }
 
     if (!sub || sub === 'proxima') {
       if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
@@ -632,11 +643,12 @@ const comandos = {
       }
       texto = String(texto || '').trim();
       if (!texto) falhar('a resposta da aberta é o que o aluno escreveu, inteira e com as palavras dele: grave em trilha/tmp e passe arquivo=<txt>, ou texto="..." se for curta.');
-      q.respostas[String(n)] = { texto_caracteres: texto.length, ts: agora() };
+      q.respostas[String(n)] = { texto_caracteres: texto.length, texto_pendente: texto, ts: agora() };
       estadoLib.salvar(e);
       fila.enfileirar('quiz.resposta', { aula: idQuiz, questao: n, tipo: 'aberta', aulas: questao.aulas, texto }, e);
       if (kv.arquivo) { try { fs.unlinkSync(path.resolve(kv.arquivo)); } catch { /* já foi */ } }
       console.log(`Resposta da pergunta ${n} registrada (${texto.length} caracteres).`);
+      avaliarAbertasPendentes(e, reg, banco, idQuiz);
       console.log(quizLib.formatarRegua(questao));
     }
 
@@ -727,10 +739,10 @@ const comandos = {
       anotar = { dados: { eventos: eventos.length } };
     } else if (sub === 'avaliacoes') {
       // Decodifica as avaliações ainda na fila local. Se o mock já consumiu, elas apareceram no terminal dele.
-      const avs = fila.ler().filter((ev) => ev.tipo === 'avaliacao' || ev.tipo === 'pratica.correcao');
+      const avs = fila.ler().filter((ev) => ev.tipo === 'avaliacao' || ev.tipo === 'pratica.correcao' || ev.tipo === 'quiz.avaliacao');
       if (!avs.length) console.log('Nenhuma avaliação nem correção na fila local.');
       for (const ev of avs) {
-        const rotulo = ev.tipo === 'avaliacao' ? 'Avaliação da aula' : 'Correção da prática';
+        const rotulo = ev.tipo === 'avaliacao' ? 'Avaliação da aula' : ev.tipo === 'quiz.avaliacao' ? `Avaliação da resposta ${ev.dados.questao} do quiz` : 'Correção da prática';
         console.log(`\n=== ${rotulo} ${ev.aula || ev.dados.aula} (${ev.ts}) ===`);
         console.log(JSON.stringify(JSON.parse(Buffer.from(ev.dados.payload, 'base64').toString('utf8')), null, 2));
       }
@@ -1039,6 +1051,36 @@ function validarCorrecao(c, idPratica, material) {
     if (typeof c.suspeita.descricao !== 'string' || typeof c.suspeita.evidencia !== 'string') erros.push('suspeita precisa de "descricao" e "evidencia"');
   }
   return erros;
+}
+
+function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
+  const respostas = quizLib.registro(reg).respostas;
+  const sessao = e.sessao_atual?.id || 'sem-sessao';
+  for (const questao of banco.questoes.filter((x) => x.tipo === 'aberta')) {
+    const gravada = respostas[String(questao.n)];
+    if (!gravada || typeof gravada.texto_pendente !== 'string') continue;
+    if (gravada.avaliacao_tentada_sessao === sessao) continue;
+    gravada.avaliacao_tentada_sessao = sessao;
+    estadoLib.salvar(e);
+    const resultado = quizAvaliador.avaliar(idQuiz, questao, gravada.texto_pendente);
+    if (resultado.ok) {
+      const payload = Buffer.from(JSON.stringify(resultado.avaliacao), 'utf8').toString('base64');
+      fila.enfileirar('quiz.avaliacao', {
+        aula: idQuiz, questao: questao.n, codificado: 'base64', payload,
+        avaliador: resultado.uso || null,
+      }, e);
+      delete gravada.texto_pendente;
+      delete gravada.avaliacao_tentada_sessao;
+      estadoLib.salvar(e);
+      console.log(`Avaliação separada da pergunta ${questao.n} registrada. A nota não passa pelo chat.`);
+    } else {
+      fila.enfileirar(resultado.limite ? 'quiz.avaliacao.adiada' : 'quiz.avaliacao.falhou', {
+        aula: idQuiz, questao: questao.n, motivo: resultado.motivo,
+        avaliador: resultado.uso || null,
+      }, e);
+      console.log(`A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
+    }
+  }
 }
 
 // O fechamento do quiz, para o tutor: o que ficou para revisitar não é placar.

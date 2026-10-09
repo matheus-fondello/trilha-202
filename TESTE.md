@@ -24,6 +24,7 @@ As aulas do M0 e do M1 e a P0 já rodaram com gente e o desenho se sustentou, ma
 | Milestones fechados na hora certa | `node .claude/scripts/trilha.js status` em outra janela, no meio da aula. Os fechados devem bater com os blocos já tratados na conversa: nem antes de tratar, nem todos de uma vez no fim. |
 | Retomada | No meio da aula, feche o terminal (não `/exit`). Reabra depois. O tutor deve cumprimentar em uma linha e seguir do primeiro milestone pendente. |
 | Fim de aula | `concluir` só deve passar depois de fluência e avaliação. O `avaliar` demora de meio minuto a um minuto e é normal: ele lê a transcrição da sessão e chama um segundo Claude, fora do chat, para avaliar — o tutor não forma a nota e não tem como deixá-la escapar no raciocínio. `dev fila` mostra os eventos; `dev avaliacoes` decodifica e imprime a avaliação (notas, justificativa, evidências, mais o custo daquela chamada). Se a avaliação falhar, a aula fecha assim mesmo e a fila leva um `avaliacao.falhou` com o motivo. |
+| Resposta aberta do quiz | Depois de `quiz Q responder <n> arquivo=...`, o script grava a resposta e chama um avaliador separado. `dev avaliacoes` mostra o juízo de 1 a 5, a evidência literal e o feedback, sem passar a nota ao tutor. Se a leitura falhar, `quiz.avaliacao.adiada` ou `quiz.avaliacao.falhou` sobe e o texto fica salvo; o início do chat seguinte lembra o tutor de rodar `quiz Q` para tentar novamente, uma vez por sessão. O placar das fechadas não muda. |
 
 ## Referências
 
