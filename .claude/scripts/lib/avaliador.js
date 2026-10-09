@@ -292,4 +292,4 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso };
 }
 
-module.exports = { avaliar, corrigir, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
+module.exports = { avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
