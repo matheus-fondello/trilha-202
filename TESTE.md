@@ -26,6 +26,8 @@ As aulas do M0 e do M1 e a P0 já rodaram com gente e o desenho se sustentou, ma
 | Fim de aula | `concluir` só deve passar depois de fluência e avaliação. O `avaliar` demora de meio minuto a um minuto e é normal: ele lê a transcrição da sessão e chama um segundo Claude, fora do chat, para avaliar — o tutor não forma a nota e não tem como deixá-la escapar no raciocínio. `dev fila` mostra os eventos; `dev avaliacoes` decodifica e imprime a avaliação (notas, justificativa, evidências, mais o custo daquela chamada). Se a avaliação falhar, a aula fecha assim mesmo e a fila leva um `avaliacao.falhou` com o motivo. |
 | Resposta aberta do quiz | Depois de `quiz Q responder <n> arquivo=...`, o script grava a resposta e chama um avaliador separado. `dev avaliacoes` mostra o juízo de 1 a 5, a evidência literal e o feedback, sem passar a nota ao tutor. Se a leitura falhar, `quiz.avaliacao.adiada` ou `quiz.avaliacao.falhou` sobe e o texto fica salvo; o início do chat seguinte lembra o tutor de rodar `quiz Q` para tentar novamente, uma vez por sessão. O placar das fechadas não muda. |
 
+Cada questão aberta tem duas respostas de calibração: uma parcial (nota 3) e uma completa (nota 5). Para conferir a consistência sem revelar a nota esperada ao avaliador, rode `node .claude/scripts/calibrar-quizzes.js Q1 --repeticoes=2`. Sem o `Q1`, o comando verifica as 12 questões. `--limite=4` reduz a amostra para uma conferência rápida. O avaliador recebe só o enunciado, a pergunta, a régua e a resposta; o resultado aponta divergências e não altera respostas de alunos. Cada nova avaliação enviada ao CRM leva a versão da escala e a assinatura da régua utilizada.
+
 ## Referências
 
 Se você mexeu num `referencias.md` de aula, regenere a bibliografia e confira o resultado:

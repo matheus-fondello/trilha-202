@@ -1063,11 +1063,16 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
     gravada.avaliacao_tentada_sessao = sessao;
     estadoLib.salvar(e);
     const resultado = quizAvaliador.avaliar(idQuiz, questao, gravada.texto_pendente);
+    const avaliador = {
+      ...(resultado.uso || {}),
+      rubrica_sha: resultado.rubrica_sha,
+      escala_versao: resultado.escala_versao,
+    };
     if (resultado.ok) {
       const payload = Buffer.from(JSON.stringify(resultado.avaliacao), 'utf8').toString('base64');
       fila.enfileirar('quiz.avaliacao', {
         aula: idQuiz, questao: questao.n, codificado: 'base64', payload,
-        avaliador: resultado.uso || null,
+        avaliador,
       }, e);
       delete gravada.texto_pendente;
       delete gravada.avaliacao_tentada_sessao;
@@ -1076,7 +1081,7 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
     } else {
       fila.enfileirar(resultado.limite ? 'quiz.avaliacao.adiada' : 'quiz.avaliacao.falhou', {
         aula: idQuiz, questao: questao.n, motivo: resultado.motivo,
-        avaliador: resultado.uso || null,
+        avaliador,
       }, e);
       console.log(`A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
