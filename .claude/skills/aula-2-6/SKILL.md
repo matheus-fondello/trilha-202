@@ -14,7 +14,7 @@ Sala e oficina. Fica para depois: segurança de entrada e dado pessoal, que são
 
 ## Antes de começar
 
-Confira no estado a pasta, a URL e o repositório da P1, e pergunte a ele se o repositório está ligado à Vercel por Git: sem isso não existe preview por PR, e conectar é a primeira coisa da aula — a 1.10 permitiu publicar de outros jeitos. A chave a guardar é a do Supabase que a P1 ganhou na 2.3; se não houver, qualquer API gratuita com cadastro resolve.
+Confira no estado a pasta, a URL e o repositório da P1, e pergunte a ele se o repositório está ligado à Vercel por Git: sem isso não existe preview por PR, e conectar é a primeira coisa da aula — a P0 publicou por esse caminho, mas a P1 é outro repositório e pode ter ido por outro. A chave a guardar é a do Supabase que a P1 ganhou na 2.3; se não houver, qualquer API gratuita com cadastro resolve.
 
 ## Marcos
 

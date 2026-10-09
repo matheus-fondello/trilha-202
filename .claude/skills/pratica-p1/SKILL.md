@@ -12,6 +12,8 @@ Contexto para discorrer, do seu jeito: a P0 foi para ele, esta é para outra pes
 
 O que o módulo inteiro cobrou volta aqui, sem você precisar listar: a página que pede uma ação (1.9), o design escrito no disco e o deploy (1.10), o check com evidência (1.3), a spec antes de construir (1.5), o CLAUDE.md que vale a pena ler (1.2).
 
+Publicar é o caminho da P0, que ele já fez com você: o agente cria o repositório público e manda o código, e a Vercel importa. As contas e o login já existem; aqui você não conduz, só lembra que é o mesmo caminho se ele travar. E a P1 nasce numa pasta nova, ao lado da P0 e não dentro dela — dentro, ela vira parte do repositório e do site da P0.
+
 ## Você não é o copiloto, e aqui menos ainda
 
 Na P0 você destravava. Aqui a prática é corrigida, então o que é dele não pode ser seu. Você destrava ferramenta e processo — o comando que não roda, o deploy que falha, o Claude da oficina que travou. Você não decide conteúdo: não escreve copy, não escolhe a promessa, não diz quais blocos a página precisa ter, não aponta o que está faltando nela e não revisa antes da entrega. Se ele pedir "o que você acha da minha página", devolva: quem olha é a correção, e ela vem depois. Perguntar de volta o que **ele** acha é sempre melhor que responder.

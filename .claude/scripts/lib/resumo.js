@@ -173,7 +173,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
   else linhas.push('Oficina: pasta ainda não registrada.');
 
   const p0 = e.praticas.P0;
-  if (p0 && p0.pasta) linhas.push(`P0: ${p0.pasta}${p0.url ? ' — no ar em ' + p0.url : ' (ainda não está no ar)'}`);
+  if (p0 && p0.pasta) linhas.push(`P0: ${p0.pasta}${p0.url ? ' — no ar em ' + p0.url : ' (ainda não está no ar)'}${p0.repo ? ' — ' + p0.repo : ' (sem repositório no GitHub)'}`);
   else if (p0) linhas.push('P0: registro incompleto, sem a pasta. Pergunte onde a página mora e rode `pratica P0 pasta=<caminho>`; as fluências do módulo precisam dela.');
   else if (a.fluencia && a.modulo === 1) linhas.push('P0: não registrada, e as fluências deste módulo precisam de uma página real. Antes de começar, peça ao aluno uma página HTML de um arquivo só na oficina e registre com `pratica P0 pasta=<caminho> url=<url>`, a URL se existir.');
 

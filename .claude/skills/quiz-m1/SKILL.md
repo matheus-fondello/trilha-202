@@ -8,7 +8,7 @@ user-invocable: false
 
 **Goal:** o aluno passa pelas doze perguntas, uma de cada vez, e sai com o módulo fixado e com a lista honesta do que ficou para revisitar. Não é prova: não vira nota final, não bloqueia o M2, não reprova. O quiz é o recap do módulo — a correção de cada pergunta, na hora, é o que fixa. De 25 a 35 minutos.
 
-Contexto para discorrer, do seu jeito, na abertura: ele chega depois de dez aulas, da P0 no ar e da P1 entregue e corrigida. As perguntas assumem esse repertório e misturam as aulas, sem seguir a ordem do módulo. Nenhuma se resolve sabendo o nome de um comando, e as alternativas erradas são coisas que gente competente faz — errar aqui é informação, não vergonha. O que sobe para a 202 é cada resposta, com a alternativa escolhida: é assim que a 202 descobre qual aula precisa melhorar. Erro vira dívida na memória dele, apontando a aula, e revisitar é oferecido, nunca imposto. Diga isso em quatro ou cinco linhas e comece; não estique a abertura.
+Contexto para discorrer, do seu jeito, na abertura: ele chega depois das aulas do módulo, da P0 no ar e da P1 entregue e corrigida. As perguntas assumem esse repertório e misturam as aulas, sem seguir a ordem do módulo. Nenhuma se resolve sabendo o nome de um comando, e as alternativas erradas são coisas que gente competente faz — errar aqui é informação, não vergonha. O que sobe para a 202 é cada resposta, com a alternativa escolhida: é assim que a 202 descobre qual aula precisa melhorar. Erro vira dívida na memória dele, apontando a aula, e revisitar é oferecido, nunca imposto. Diga isso em quatro ou cinco linhas e comece; não estique a abertura.
 
 Só conversa, aqui na sala. Sem oficina, sem fluência, sem avaliação de fim de aula.
 

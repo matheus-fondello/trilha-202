@@ -66,7 +66,7 @@ dois cortes do mesmo vídeo no mesmo marco é demais.
   https://www.youtube.com/watch?v=mhbYavuW9T4&hl=en&persist_hl=1
   Três minutos, em português, conectando o repositório e vendo o site no ar. Aqui o obstáculo é de interface, e ver alguém clicando resolve melhor que ler.
 
-Ofereça na hora de pôr no ar. Canal pequeno e a tela da Vercel muda de versão em versão: se não
+Ofereça só se a P0 não foi ao ar na prática e a publicação acontece hoje; quem viu na P0 não precisa de novo. Canal pequeno e a tela da Vercel muda de versão em versão: se não
 bater, a documentação citada acima é a rede, e você não inventa nome de botão.
 
 **fechamento**

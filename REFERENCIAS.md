@@ -74,6 +74,42 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
   https://x.com/karpathy/status/2019137879310836075
   O autor do termo, um ano depois, cunhando "agentic engineering" como o nome que sucede vibe coding: "agentic" porque você quase não escreve o código direto, "engineering" porque é arte e ciência que se aprende.
 
+### B1 Aula bônus: GitHub e Vercel
+
+**Sugerida**
+
+- **Fireship, *Git Explained in 100 Seconds*** — YouTube, mar/2020 · 2 min
+  https://www.youtube.com/watch?v=hwP7WQkmECE&hl=en&persist_hl=1
+  Repositório, commit e o remoto em dois minutos, com desenho. Em inglês e rápido: vale como imagem do que a aula explicou, não como aula.
+
+**Citadas na aula**
+
+- **GitHub, *Sobre o Git*** — documentação do GitHub, em português · 6 min de leitura
+  https://docs.github.com/pt/get-started/using-git/about-git
+  Repositório, commit e o que o GitHub acrescenta ao git, na língua dele. Para quem quiser reler o que a aula disse; a matéria inteira de git é a 2.4.
+
+- **Vercel, *Deploying Git Repositories with Vercel*** — documentação da Vercel · 5 min de leitura
+  https://vercel.com/docs/git
+  A fonte de "cada push vira uma versão nova": a Vercel publica a cada push e a cada junção na linha principal. É a página que ele volta a abrir na P0 se a tela não bater com o que você descreveu.
+
+### P0 Landing page livre
+
+**Sugerida**
+
+- **Breno Luiz, *Como hospedar um site na Vercel em 3 minutos*** — YouTube, em português, dez/2025 · 3 min 1 s
+  https://www.youtube.com/watch?v=mhbYavuW9T4&hl=en&persist_hl=1
+  Três minutos, em português, conectando o repositório e vendo o site no ar. Aqui o obstáculo é de interface, e ver alguém clicando resolve melhor que ler.
+
+**Citadas na aula**
+
+- **GitHub, *Criando uma conta no GitHub*** — documentação do GitHub, em português · 3 min de leitura
+  https://docs.github.com/pt/get-started/start-your-journey/creating-an-account-on-github
+  O passo a passo oficial da conta, para quando a tela de cadastro não bater com o que você descreveu.
+
+- **Vercel, *Getting started with Vercel*** — documentação da Vercel · 4 min de leitura
+  https://vercel.com/docs/getting-started-with-vercel
+  Os caminhos oficiais para o primeiro projeto, incluindo importar um repositório do GitHub. A rede quando a interface mudar.
+
 ### 1.2 Claude Code por dentro
 
 **Sugerida**
