@@ -73,7 +73,7 @@ O Q3 ao Q6 rodam igual e têm tamanho próprio: o Q3 tem dez perguntas (oito fec
 
 ## P3: a chave de API
 
-A P3 nasce na 3.3 e cresce até a 3.8 sobre uma chave gratuita do próprio aluno: a do Gemini, criada no Google AI Studio, sem cartão, com o Groq de alternativa. Ninguém paga nada; o custo continua sendo matéria como "quanto custaria no plano pago". Para testar, crie uma chave gratuita sua, ponha no `.env` da oficina e confira:
+A P3 nasce na 3.3 e cresce até a 3.8 sobre uma chave do próprio aluno, de um provedor que ele escolhe (desde 09/10): o Gemini ou o Groq no plano gratuito, o Claude Haiku pela API paga da Anthropic, ou outro. O custo por mensagem sai dos tokens registrados e da tabela de preço pago do modelo, com a data. Para testar, crie uma chave sua (a do Gemini é gratuita e sem cartão), ponha no `.env` da oficina e confira:
 
 - o tutor não pede a chave no chat, não cita limite nem preço de memória e manda ler o limite do projeto no AI Studio;
 - o 429 pode aparecer de verdade ao rodar o eval de vinte casos de uma vez, e a mensagem não some: espera e passa, ou cai na fila como não processada; na 3.5 ele também existe simulado num teste;

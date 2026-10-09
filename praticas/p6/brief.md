@@ -28,7 +28,7 @@ Quatro coisas que não se negociam, e que a 6.1 e a 6.2 puseram no seu projeto: 
 
 ## Se a feature usa IA
 
-As regras da P3 valem inteiras. A chave do modelo fica no servidor, e é a do plano gratuito do Gemini ou do Groq: ninguém paga a API. Cada uso tem um teto por assinante, ligado ao preço e à margem da seção 5, conferido antes de chamar o modelo. A saída é validada antes de virar tela, e quando vem quebrada o produto diz que não entendeu em vez de inventar. O limite do gratuito vai aparecer, e o produto trata o erro sem quebrar nem perder o que a pessoa mandou. Cada chamada vai para o log com os tokens, que é de onde sai quanto o uso custaria no plano pago.
+As regras da P3 valem inteiras. A chave do modelo fica no servidor, e o provedor é o que você escolheu na P3, ou outro: gratuito ou pago, a escolha é sua. Cada uso tem um teto por assinante, ligado ao preço e à margem da seção 5, conferido antes de chamar o modelo. A saída é validada antes de virar tela, e quando vem quebrada o produto diz que não entendeu em vez de inventar. O limite do provedor vai aparecer, e o produto trata o erro sem quebrar nem perder o que a pessoa mandou. Cada chamada vai para o log com os tokens, que é de onde sai quanto o uso custa no preço pago do modelo, com a data.
 
 ## Reaproveitar ou recomeçar
 

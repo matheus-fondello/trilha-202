@@ -192,16 +192,17 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`Registro desta prática até agora: ${entrega.pasta}${entrega.url ? ' — no ar em ' + entrega.url : ''}${entrega.repo ? ' — ' + entrega.repo : ''}.`);
   }
 
-  // A P3 chama um modelo pela API, e a trilha usa só plano gratuito (decisão de
-  // 05/10): ninguém paga nada. A regra mora aqui, no estado, porque vale da 3.3
-  // à P3 e o tutor não pode improvisar um cartão ou um plano pago.
+  // A P3 chama um modelo pela API, e o provedor é escolha do aluno (09/10; de
+  // 05/10 até ali era só gratuito): Gemini ou Groq no gratuito, Claude Haiku pela
+  // API paga da Anthropic, ou outro. A regra mora aqui, no estado, porque vale da
+  // 3.3 à P3 e o tutor não pode empurrar provedor nem afirmar preço de cabeça.
   // No M6 a mesma regra vale para a feature da P6, que parte do motor da P3 por
-  // padrão; e o Stripe, que entra na 6.1, também roda sem ninguém pagar nada.
+  // padrão; e o Stripe, que entra na 6.1, roda sem ninguém pagar nada.
   if (['6.1', '6.2', 'P6'].includes(a.id) && !emCorrecao) {
     linhas.push('Stripe da P6: conta brasileira, sandbox geral criada no painel na 6.1, nunca ativada. Ninguém paga nada nem ativa conta: não sugira informar documento, conta bancária ou cartão, nem criar conta de outro país. A assinatura é em cartão de teste; o Pix Automático não existe para conta brasileira na Stripe, e o pagamento pendente se testa com boleto. Forma de pagamento, nome de tela e sandbox mudam: não afirme de cabeça; as páginas estão nas referências da 6.1.');
   }
   if ((a.modulo === 3 && !['3.1', '3.2', 'Q3'].includes(a.id) || a.modulo === 6 && a.id !== 'Q6') && !emCorrecao) {
-    linhas.push((a.modulo === 6 ? 'API da feature (se a P6 usa IA, como na P3): a chave' : 'API da P3: a chave') + ' é do plano gratuito do Gemini (Google AI Studio), criada na 3.3; o Groq é a alternativa. Ninguém paga nada: não sugira cartão, plano pago nem crédito. Quando o sistema bater no limite do gratuito (erro de limite de requisições ou de tokens), isso é matéria, não defeito da conta: espere a janela ou diminua as chamadas (trocar de modelo só fora de uma rodada de eval, que compara no mesmo modelo), e o sistema dele precisa tratar esse erro sem quebrar a tela. Os limites mudam: não afirme número de cabeça; o número do projeto dele está no AI Studio dele (aistudio.google.com/rate-limit, que ele abre no navegador), e a página de limites está nas referências da 3.4.');
+    linhas.push((a.modulo === 6 ? 'API da feature (se a P6 usa IA, como na P3): a chave' : 'API da P3: a chave') + ' é do provedor que ele escolheu na 3.3: o Gemini ou o Groq no plano gratuito, o Claude Haiku pela API paga da Anthropic (créditos comprados antes; o plano Pro do Claude não inclui a API, o Max e o Team trazem um crédito mensal), ou outro. A escolha é dele: não empurre provedor nem plano. No pago, ele compra pouco crédito e deixa a recarga automática desligada. Seja qual for, cada chamada vai para o log com os tokens, e o custo por mensagem em reais sai desse log e da tabela de preço pago do modelo, com a data; no gratuito é quanto custaria, no pago tem de bater com o gasto do painel do provedor. Quando o sistema bater no limite do provedor (erro de limite de requisições ou de tokens), isso é matéria, não defeito da conta: espere a janela ou diminua as chamadas (trocar de modelo só fora de uma rodada de eval, que compara no mesmo modelo), e o sistema dele precisa tratar esse erro sem quebrar a tela. Preço e limites mudam: não afirme número de cabeça; estão no painel do provedor dele, que ele abre no navegador, e as páginas de preço e de limites estão nas referências da 3.4.');
   }
 
   // A ideia do aluno nasce na 4.4 e é o objeto das fluências do trilho de negócio.

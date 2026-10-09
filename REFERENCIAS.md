@@ -1106,15 +1106,27 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 
 - **Google, *Preços da API Gemini Developer*** — Gemini API Docs, em português, atualizada em out/2026 · consulta, não leitura
   https://ai.google.dev/gemini-api/docs/pricing?hl=pt-br
-  A coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o quanto custaria.
+  Para quem escolher o Gemini: a coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o custo.
 
 - **Groq, *Quickstart*** — GroqDocs, em inglês, sem data · ~4 min de leitura
   https://console.groq.com/docs/quickstart
-  A alternativa, se o Gemini não abrir para ele: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
+  Para quem escolher o Groq: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
 
 - **Groq, *Rate Limits*** — GroqDocs, em inglês, sem data · consulta, não leitura
   https://console.groq.com/docs/rate-limits
   A tabela do plano Free, que é a lista dos modelos que ele pode usar de graça.
+
+- **Anthropic, *Get started with Claude*** — Claude Platform Docs, em inglês, sem data · ~4 min de leitura (a aba TypeScript)
+  https://platform.claude.com/docs/en/get-started
+  Para quem escolher o Claude: a conta no Console, a chave, a variável `ANTHROPIC_API_KEY` que o SDK lê sozinho, e a primeira chamada com os tokens de entrada e de saída na resposta.
+
+- **Anthropic, *How do I pay for my Claude API usage?*** — Claude Help Center, em inglês, sem data · ~2 min de leitura
+  https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-api-usage
+  A API é paga com créditos comprados antes, e a recarga automática liga e desliga na página de cobrança.
+
+- **Anthropic, *Why is Claude API usage billed separately from my paid Claude plan?*** — Claude Help Center, em inglês, sem data · ~1 min de leitura
+  https://support.claude.com/en/articles/9876003-i-have-a-paid-claude-plan-pro-max-team-or-enterprise-plans-why-do-i-have-to-pay-separately-to-use-the-claude-api-and-console
+  Por que a assinatura desta sala não paga a API: o plano cobre o Claude no aplicativo, e a API é cobrada à parte; o Max e o Team trazem um crédito mensal de API.
 
 - **Rajasekaran, Dixon, Ryan e Hadfield, *Effective context engineering for AI agents* — seção "The anatomy of effective context"** — Anthropic Engineering, set/2025 · ~13 min de leitura, em inglês
   https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
@@ -1133,6 +1145,10 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 - **Google, *Gemini Developer API pricing*** — Gemini API Docs, atualizado em out/2026 · ~3 min de leitura (o bloco do modelo que ele usa)
   https://ai.google.dev/gemini-api/docs/pricing
   A tabela oficial em dólar por milhão de tokens, com a coluna do gratuito ao lado da do pago: entrada, saída "incluindo os tokens de raciocínio" e cache, modelo por modelo.
+
+- **Anthropic, *Pricing*** — Claude Platform Docs, em inglês, sem data · ~3 min de leitura (a primeira tabela, Model pricing)
+  https://platform.claude.com/docs/en/about-claude/pricing
+  A tabela oficial em dólar por milhão de tokens, modelo por modelo: entrada, saída e cache, e o desconto de lote mais abaixo.
 
 - **Google, *Understand and count tokens* — seção "Count tokens"** — Gemini API Docs, atualizado em set/2026 · ~3 min de leitura (a seção)
   https://ai.google.dev/gemini-api/docs/tokens#count-tokens
@@ -1153,6 +1169,10 @@ As **sugeridas** são o que o tutor oferece abrir ao lado durante a aula, cada u
 - **Groq, *Rate Limits* — seção "Rate Limits"** — GroqCloud Docs, sem data · ~2 min de leitura (a tabela do plano Free)
   https://console.groq.com/docs/rate-limits#rate-limits
   Um provedor que publica a tabela: requisições e tokens por minuto e por dia de cada modelo no plano gratuito, por organização, e o erro 429 com o tempo de espera quando passa.
+
+- **Anthropic, *Rate limits*** — Claude Platform Docs, em inglês, sem data · ~4 min de leitura (as seções "Spend limits" e "Rate limits")
+  https://platform.claude.com/docs/en/api/rate-limits
+  O pago também tem limite: requisições e tokens de entrada e de saída por minuto, por organização e por modelo, com o 429 e o tempo de espera; e o limite de gasto mensal que ele mesmo põe no Console.
 
 - **Ethan Ding, *tokens are getting more expensive*** — mandates (Substack), jul/2025 · ~9 min de leitura, em inglês
   https://ethanding.substack.com/p/ai-subscriptions-get-short-squeezed

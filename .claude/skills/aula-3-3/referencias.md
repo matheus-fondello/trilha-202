@@ -68,17 +68,29 @@ Na referência da Interactions API, o `usage` completo vem no evento `interactio
 
 - **Google, *Preços da API Gemini Developer*** — Gemini API Docs, em português, atualizada em out/2026 · consulta, não leitura
   https://ai.google.dev/gemini-api/docs/pricing?hl=pt-br
-  A coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o quanto custaria.
+  Para quem escolher o Gemini: a coluna "Nível sem custo financeiro" diz quais modelos estão no gratuito hoje; é dali que ele escolhe o modelo, e é a mesma página que a 3.4 usa para o custo.
 
 - **Groq, *Quickstart*** — GroqDocs, em inglês, sem data · ~4 min de leitura
   https://console.groq.com/docs/quickstart
-  A alternativa, se o Gemini não abrir para ele: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
+  Para quem escolher o Groq: onde nasce a chave, a variável `GROQ_API_KEY`, e a chamada no formato de lista de mensagens com papéis.
 
 - **Groq, *Rate Limits*** — GroqDocs, em inglês, sem data · consulta, não leitura
   https://console.groq.com/docs/rate-limits
   A tabela do plano Free, que é a lista dos modelos que ele pode usar de graça.
 
-Só cite o Groq se o Gemini travar. O exemplo do quickstart usa um modelo que hoje não está na tabela do Free: o modelo sai da tabela de limites, não do exemplo. A página de preços do Gemini é consulta para a escolha do modelo; não abra a conta do pago hoje, que é a 3.4.
+- **Anthropic, *Get started with Claude*** — Claude Platform Docs, em inglês, sem data · ~4 min de leitura (a aba TypeScript)
+  https://platform.claude.com/docs/en/get-started
+  Para quem escolher o Claude: a conta no Console, a chave, a variável `ANTHROPIC_API_KEY` que o SDK lê sozinho, e a primeira chamada com os tokens de entrada e de saída na resposta.
+
+- **Anthropic, *How do I pay for my Claude API usage?*** — Claude Help Center, em inglês, sem data · ~2 min de leitura
+  https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-api-usage
+  A API é paga com créditos comprados antes, e a recarga automática liga e desliga na página de cobrança.
+
+- **Anthropic, *Why is Claude API usage billed separately from my paid Claude plan?*** — Claude Help Center, em inglês, sem data · ~1 min de leitura
+  https://support.claude.com/en/articles/9876003-i-have-a-paid-claude-plan-pro-max-team-or-enterprise-plans-why-do-i-have-to-pay-separately-to-use-the-claude-api-and-console
+  Por que a assinatura desta sala não paga a API: o plano cobre o Claude no aplicativo, e a API é cobrada à parte; o Max e o Team trazem um crédito mensal de API.
+
+Os quatro provedores são opções do mesmo tamanho: apresente-os juntos e deixe a escolha com ele, com o que cada um custa em dinheiro e em limite. No Groq, o exemplo do quickstart usa um modelo que hoje não está na tabela do Free: o modelo sai da tabela de limites, não do exemplo. Quem escolher o Claude pago compra pouco crédito, deixa a recarga automática desligada e põe um limite de gasto no Console; a página de limites está nas referências da 3.4. As páginas de preço são consulta para a escolha do modelo; a conta do custo é a 3.4.
 
 **no fechamento**
 

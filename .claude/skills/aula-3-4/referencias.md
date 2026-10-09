@@ -4,7 +4,7 @@ Formato dos itens: bullet de três linhas, título, link, por que vale. É esse 
 que o `REFERENCIAS.md` da raiz lê. A prosa fora dos bullets é instrução para você,
 o tutor, e não chega ao aluno.
 
-Três cuidados que valem para a aula inteira. A documentação do Gemini vive em `ai.google.dev` e é em inglês: use as URLs exatas daqui, porque âncora errada não dá erro, só abre a página no topo. Preço, modelos do gratuito e limites mudam sem aviso, e a data pesa: o preço pago do Flash atual tem aumento marcado para 01/01/2027, então o número que vale é o do dia em que ele mediu, com modelo, preço, câmbio e data escritos no README, e nunca um que você lembra. E os limites do gratuito do Gemini não são publicados em tabela: cada projeto vê os seus no AI Studio, em https://aistudio.google.com/rate-limit, página que pede login. Ele abre no navegador dele, não no painel, e é o número que ele leu ali que entra no teto; não cite número de blog nem de memória. Ninguém paga nada nesta aula: se a página oferecer subir de nível ou ligar cobrança, não é para a P3.
+Três cuidados que valem para a aula inteira. A documentação do Gemini vive em `ai.google.dev` e é em inglês: use as URLs exatas daqui, porque âncora errada não dá erro, só abre a página no topo. Preço, modelos e limites mudam sem aviso, e a data pesa: o preço pago do Flash atual tem aumento marcado para 01/01/2027, então o número que vale é o do dia em que ele mediu, com modelo, preço, câmbio e data escritos no README, e nunca um que você lembra. E os limites do gratuito do Gemini não são publicados em tabela: cada projeto vê os seus no AI Studio, em https://aistudio.google.com/rate-limit, página que pede login. Ele abre no navegador dele, não no painel, e é o número que ele leu ali que entra no teto; não cite número de blog nem de memória. Pagar ou não foi a escolha dele na 3.3, e não se troca no meio da aula para fugir de um limite: quem está no gratuito não sobe de nível por causa do 429, e quem está no pago confere o gasto no painel do provedor. As referências abaixo são do Gemini, do Groq e da Anthropic; ele lê as do provedor que escolheu.
 
 ## Citadas
 
@@ -17,6 +17,12 @@ Link solto no parágrafo em que o assunto aparece. Sem convite, sem cerimônia, 
   A tabela oficial em dólar por milhão de tokens, com a coluna do gratuito ao lado da do pago: entrada, saída "incluindo os tokens de raciocínio" e cache, modelo por modelo.
 
 A pergunta do marco é de previsão: só abra a tabela depois que ele responder. Quatro minas na página. Ela lista dezenas de modelos, de imagem, áudio e vídeo inclusive; mande ler só o bloco do modelo que a P3 usa, e nele só a primeira tabela (Standard). As tabelas Batch, Flex e Priority logo abaixo são outros jeitos de chamar: Batch volta no marco `reduzir`, as outras duas não são desta aula. A coluna do gratuito diz "Free of charge" em tudo, e a conta sai da coluna do pago. E a última linha de cada tabela, "Used to improve our products", é Yes no gratuito e No no pago: é o motivo de a Denise de verdade não poder usar o gratuito, e é gancho da 3.6, não matéria de hoje. Quem está no Groq lê o preço pago na página de modelos dele (https://console.groq.com/docs/models), na mesma unidade.
+
+- **Anthropic, *Pricing*** — Claude Platform Docs, em inglês, sem data · ~3 min de leitura (a primeira tabela, Model pricing)
+  https://platform.claude.com/docs/en/about-claude/pricing
+  A tabela oficial em dólar por milhão de tokens, modelo por modelo: entrada, saída e cache, e o desconto de lote mais abaixo.
+
+Para quem está no Claude. Duas minas: o Haiku 5.5 tem dois preços, um para prompt de até 100 mil tokens e outro, mais alto, para prompt maior, e a P3 fica no primeiro; e os modelos 4.7 em diante contam mais tokens para o mesmo texto que os antigos, então o número de tokens que vale é o que a resposta da API devolve, não uma estimativa por caractere.
 
 **marco `custo-por-execucao`**
 
@@ -48,7 +54,11 @@ A primeira só entra depois da resposta à pergunta de conceito, senão ela resp
   https://console.groq.com/docs/rate-limits#rate-limits
   Um provedor que publica a tabela: requisições e tokens por minuto e por dia de cada modelo no plano gratuito, por organização, e o erro 429 com o tempo de espera quando passa.
 
-A primeira é o teto real que o sistema bate, e é contraste, não solução: é da conta inteira, não sabe quem é o Nilton, e quando bate, bate para os 140 clientes de uma vez, o contrário do que a Denise pediu. O teto por cliente mora no código, antes da chamada, abaixo desse. Meia-noite do Pacífico é de madrugada em Brasília, entre 4h e 5h conforme o horário de verão de lá: a cota do dia não vira à meia-noite dele. O erro que volta é o 429, e a tabela de erros do Gemini tem duas linhas dele: o do minuto, que passa esperando, e o da cota do dia, que não. Ele entra no log como resultado. A segunda é para quem está no Groq, e serve a todos como ordem de grandeza: oito mil tokens por minuto acabam em poucas mensagens com o contexto da P3. Para barrar a entrada de tamanho absurdo antes de chamar, volte à contagem do marco anterior.
+- **Anthropic, *Rate limits*** — Claude Platform Docs, em inglês, sem data · ~4 min de leitura (as seções "Spend limits" e "Rate limits")
+  https://platform.claude.com/docs/en/api/rate-limits
+  O pago também tem limite: requisições e tokens de entrada e de saída por minuto, por organização e por modelo, com o 429 e o tempo de espera; e o limite de gasto mensal que ele mesmo põe no Console.
+
+A primeira é o teto real que o sistema bate, e é contraste, não solução: é da conta inteira, não sabe quem é o Nilton, e quando bate, bate para os 140 clientes de uma vez, o contrário do que a Denise pediu. O teto por cliente mora no código, antes da chamada, abaixo desse. Meia-noite do Pacífico é de madrugada em Brasília, entre 4h e 5h conforme o horário de verão de lá: a cota do dia não vira à meia-noite dele. O erro que volta é o 429, e a tabela de erros do Gemini tem duas linhas dele: o do minuto, que passa esperando, e o da cota do dia, que não. Ele entra no log como resultado. A do Groq serve a todos como ordem de grandeza: oito mil tokens por minuto acabam em poucas mensagens com o contexto da P3. A da Anthropic é para quem está no pago: organização nova começa com limite menor que o da tabela, e o limite de gasto que ele põe no Console devolve outro erro, que o sistema também precisa tratar sem perder a mensagem. Para barrar a entrada de tamanho absurdo antes de chamar, volte à contagem do marco anterior.
 
 **marco `margem`**
 
