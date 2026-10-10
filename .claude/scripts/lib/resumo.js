@@ -23,8 +23,16 @@ function portaFechada(e, a, linhas) {
     linhas.push('Diga isso em duas linhas, sem jargão, e peça o token novo que a 202 mandou. Se ele não recebeu, é com a 202, pelo canal por onde entrou na trilha. Registre com:');
     linhas.push(`  node .claude/scripts/trilha.js conectar nome="${e.aluno.nome || '<primeiro nome>'}" token=<token>${comServidor}`);
   } else if (guardado) {
-    linhas.push('Acesso à 202: esta máquina já tem um token da 202 guardado, mas esta sala ainda não foi conectada. Apresente-se em duas linhas, peça só o primeiro nome e conecte com o token que já está aqui:');
+    // O acesso guardado pode ser de outra pessoa (máquina dividida, quem testa com conta nova): o tutor diz de quem
+    // é antes de usar, e a resposta do aluno decide entre reaproveitar e trocar.
+    const c = acesso.credenciais();
+    linhas.push(c.email
+      ? `Acesso à 202: esta máquina já tem guardado o acesso de ${c.email}${c.turma ? ` (${c.turma})` : ''}, mas esta sala ainda não foi conectada. Apresente-se em duas linhas, diga de quem é o acesso guardado e pergunte o primeiro nome dele e se esse e-mail é o dele.`
+      : 'Acesso à 202: esta máquina já tem um acesso da 202 guardado de antes, sem registro de quem é, e esta sala ainda não foi conectada. Apresente-se em duas linhas e pergunte o primeiro nome dele e se ele já usou a trilha nesta máquina, com o acesso dele.');
+    linhas.push('Se for dele, conecte com o token que já está aqui:');
     linhas.push('  node .claude/scripts/trilha.js conectar nome="<primeiro nome>"');
+    linhas.push(`Se não for (outra pessoa, ou ele quer entrar com uma conta nova), peça o token que a 202 mandou para a conta nova e conecte com ele; o novo substitui o guardado nesta máquina:`);
+    linhas.push(`  node .claude/scripts/trilha.js conectar nome="<primeiro nome>" token=<token>${comServidor}`);
   } else {
     linhas.push(e.sessoes.length
       ? 'Acesso à 202: não conectado. A trilha passou a exigir o acesso da 202; o progresso dele está guardado e continua de onde parou assim que conectar.'

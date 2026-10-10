@@ -131,7 +131,9 @@ const comandos = {
       fila.remover([ev.id]);
       falhar('a 202 recusou este token: ele não existe, foi revogado ou a turma foi encerrada. Confira com o aluno se ele colou a linha inteira; se colou, o acesso novo é com a 202. A sala continua fechada.');
     }
-    if (novoToken || novoServidor) acesso.guardar({ token: novoToken, servidor: novoServidor });
+    // De quem é o token, para a próxima sala nova desta máquina dizer antes de reaproveitá-lo.
+    const quem = r.ok ? await acesso.quemE(chave, destino) : null;
+    if (novoToken || novoServidor || quem) acesso.guardar({ token: novoToken, servidor: novoServidor, ...(quem || {}) });
     const e2 = estadoLib.carregar();
     e2.acesso = { conectado_em: agora(), verificado_em: r.ok ? agora() : null };
     // Se o aluno já falou nesta sessão (a que pediu o token), a aula abre agora,

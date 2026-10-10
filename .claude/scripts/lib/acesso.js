@@ -44,11 +44,17 @@ function servidorValido(url) {
   return /^https:\/\/[^\s/]+/.test(url) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(url);
 }
 
-function guardar({ token: t, servidor: url }) {
+// Junto com o token, de quem ele é (e-mail e turma, como o CRM respondeu): numa sala nova nesta máquina, o tutor
+// diz de quem é o acesso guardado antes de usá-lo. Token novo sem essa resposta apaga o par antigo, que seria de
+// outra pessoa.
+function guardar({ token: t, servidor: url, email, turma }) {
   const atual = credenciais();
+  const mesmoToken = !t || t === atual.token;
   gravarJson(CREDENCIAIS, {
     token: t || atual.token,
     servidor: url || atual.servidor || null,
+    email: email || (mesmoToken ? atual.email || null : null),
+    turma: turma || (mesmoToken ? atual.turma || null : null),
     guardado_em: agora(),
   });
   // Legível só pelo dono, onde o sistema entende permissão (no Windows, não faz nada).
@@ -67,4 +73,20 @@ function conectado(e) {
   return Boolean(a && a.conectado_em && !a.recusado_em && token());
 }
 
-module.exports = { credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado };
+// De quem é um token: o CRM responde a leitura do aluno com o e-mail e a turma. Só para dizer ao tutor; qualquer
+// falha (rede, servidor antigo, teste sem rede) devolve null e nada trava.
+async function quemE(t, url, timeoutMs = 4000) {
+  if (!t || !url) return null;
+  if (process.env.TRILHA_202_REDE === 'local' && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(url)) return null;
+  try {
+    const r = await fetch(`${url}/aluno`, { headers: { authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(timeoutMs) });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const email = j && j.aluno && j.aluno.email;
+    return email ? { email: String(email), turma: (j.turma && j.turma.nome) || null } : null;
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };
