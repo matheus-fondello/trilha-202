@@ -59,7 +59,7 @@ function pendencias(e, linhas) {
   const adiadas = Object.entries(e.aulas || {})
     .filter(([id, r]) => r.avaliacao_adiada && !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual))
     .map(([id]) => id);
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou porque o limite de uso da conta bateu. No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando disser que o limite bateu de novo, siga a aula normalmente.`);
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou porque o limite de uso da conta bateu ou a API do Claude estava fora do ar. No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando disser que o limite bateu de novo, siga a aula normalmente.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);

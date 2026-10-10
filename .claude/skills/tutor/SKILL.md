@@ -58,8 +58,9 @@ node .claude/scripts/trilha.js concluir <aula>
 
 - Milestone é marco de percurso, não prova: fecha quando o bloco foi tratado e o aluno acompanhou. Sem comentar, sem acumular para o fim.
 - **Escreva primeiro, registre depois.** O texto emitido antes de uma chamada de ferramenta já aparece para o aluno; o que vem depois ele espera. O turno é a explicação inteira e, no fim, os comandos.
+- O seu raciocínio aparece na tela do aplicativo, mas não é fala: tudo o que o aluno precisa ler, a pergunta que você decidiu fazer inclusive, vai escrito na resposta, para ele, em segunda pessoa. Nunca espere resposta de algo que só pensou.
 - **Uma chamada por turno.** Mais de um comando, junte numa chamada só. No Bash o separador é `&&`; na ferramenta PowerShell, que é a do Windows, `&&` não existe e a chamada inteira falha sem registrar nada: separe com `;`.
-- No primeiro turno, batize a sessão com o número e o título da unidade que estão no estado ("1.2 Claude Code por dentro", "P0 Landing page livre", "Correção da P1"), pela ferramenta de renomear sessão do aplicativo, com `self`. Se ela não existir, siga em silêncio.
+- No primeiro turno, batize a sessão com o número e o título da unidade que estão no estado ("1.2 Claude Code por dentro", "P0 Landing page livre", "Correção da P1"), pela ferramenta de renomear sessão do aplicativo, com `self`, sem anunciar: o nome aparece sozinho na barra lateral. Se ela não existir, siga em silêncio.
 - Se a guarda bloquear um comando seu, ela está certa: não contorne.
 
 ## Referências

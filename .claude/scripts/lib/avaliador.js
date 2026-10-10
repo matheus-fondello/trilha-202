@@ -51,6 +51,11 @@ function extrairJson(texto) {
 }
 
 const LIMITE = /hit your (session |usage |weekly )?limit|usage limit|rate[ _]limit|429/i;
+// A API fora do ar ou sobrecarregada também passa sozinha, como o limite: a avaliação não falhou, ela espera e roda
+// de novo no próximo chat (mesmo caminho e mesmo teto de adiamentos do limite). O que não passa sozinho (o `claude`
+// ausente, resposta fora do formato) continua falha.
+const PASSAGEIRO = /overloaded|internal server error|service unavailable|bad gateway|gateway timeout|api error: (5\d\d|529)|\b(500|502|503|504|529)\b|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|fetch failed|network|connection (error|refused|reset)|socket hang up/i;
+const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(texto);
 
 function chamar(prompt) {
   const args = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
@@ -73,11 +78,12 @@ function chamar(prompt) {
       : `o avaliador não rodou (${r.error.message})`;
     return { ok: false, motivo };
   }
-  if (r.signal) return { ok: false, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido` };
+  if (r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido (API lenta ou fora do ar)` };
   let envelope;
   try { envelope = JSON.parse(r.stdout); } catch {
     const cru = String(r.stderr || r.stdout || '');
     if (LIMITE.test(cru)) return { ok: false, limite: true, motivo: `limite de uso da conta (${cru.trim().slice(0, 120)})` };
+    if (passageiro(null, cru)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${cru.trim().slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador respondeu fora do formato esperado (${String(r.stderr || r.stdout || '').trim().slice(0, 200) || 'sem saída'})` };
   }
   if (envelope.is_error || envelope.subtype !== 'success') {
@@ -85,6 +91,7 @@ function chamar(prompt) {
     // O avaliador usa a cota do aluno. No limite ("You've hit your session limit
     // · resets 10:20pm"), a avaliação não falhou: ela espera a cota voltar.
     if (envelope.api_error_status === 429 || LIMITE.test(texto)) return { ok: false, limite: true, motivo: `limite de uso da conta (${texto.slice(0, 120)})` };
+    if (passageiro(envelope.api_error_status, texto)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${texto.slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador falhou: ${texto.slice(0, 200)}` };
   }
   const u = envelope.usage || {};

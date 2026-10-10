@@ -340,7 +340,7 @@ const comandos = {
       // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
       // Avaliação que o `avaliar` tentou e não conseguiu não segura a aula: o aluno
       // fez o trabalho dele, a falha é do harness, e ela já virou evento para a 202.
-      if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente pelo limite de uso e roda no começo do próximo chat');
+      if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
       else if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
       else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
     }
@@ -805,7 +805,7 @@ function adiar(e, reg, idAula, motivo, uso) {
   reg.avaliacao_adiada = { em: agora(), motivo, vezes };
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, avaliador: uso || null }, e);
-  console.log(`O limite de uso da conta bateu antes de a avaliação da aula ${idAula} terminar. Ela não se perdeu: fica pendente e roda no começo do próximo chat, quando a cota tiver voltado. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
+  console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
 }
 
 function desistir(e, reg, idAula, motivo, uso) {
@@ -996,7 +996,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     p.correcao_adiada = { em: agora(), motivo: r.motivo };
     estadoLib.salvar(e);
     fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, corretor: r.uso || null }, e);
-    console.log(`O limite de uso da conta bateu antes de a correção da ${idPratica} terminar. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Diga ao aluno, em duas linhas, que a leitura termina quando o limite renovar (o horário aparece na mensagem do Claude) e que é só mandar "continue" neste chat depois disso; aí rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    console.log(`A correção da ${idPratica} não terminou agora (${r.motivo}). Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Diga ao aluno, em duas linhas, que a leitura termina quando o Claude voltar (no limite de uso, o horário aparece na mensagem do Claude; com a API fora do ar, em alguns minutos) e que é só mandar "continue" neste chat depois disso; aí rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
     return;
   }
   if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
