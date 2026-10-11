@@ -182,6 +182,7 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
     }
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o avaliador não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    aplicarIniciativa(json);
     erros = validar(json);
     if (!erros.length) return { ok: true, avaliacao: json, uso, tentativas: tentativa };
     ultimo = `a avaliação não passou na validação (${erros[0]})`;
@@ -202,6 +203,41 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
 // A suspeita usa as mesmas leituras: ela só vale quando duas leituras independentes apontam a mesma fala do aluno.
 // Se alguma leitura suspeitou e só houve duas, uma terceira é feita para confirmar ou descartar.
 const CRITERIOS = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio', 'iniciativa'];
+
+// A iniciativa sai de uma conta, não da impressão do modelo (11/10). Pedida direto,
+// ela tirava nota de quem respondeu tudo bem e não perguntou nada a mais, mesmo com
+// a régua dizendo o contrário. O modelo classifica cada resposta e cada sinal
+// próprio (`empenho`), o que é bem mais estável, e a nota é esta conta: a média
+// das respostas (desenvolvida 5, conclusão 3, telegráfica 2), mais um por sinal
+// até dois, teto 5; má vontade é 1; sem resposta, base 3.
+const PESO_RESPOSTA = { desenvolvida: 5, conclusao: 3, telegrafica: 2 };
+const NIVEIS_RESPOSTA = [...Object.keys(PESO_RESPOSTA), 'ma_vontade'];
+const TIPOS_SINAL = ['pergunta', 'exemplo', 'ligacao', 'revisao'];
+function iniciativaDoEmpenho(empenho) {
+  const respostas = (empenho && empenho.respostas) || [];
+  const sinais = (empenho && empenho.sinais) || [];
+  if (respostas.some((r) => r.nivel === 'ma_vontade')) return 1;
+  const base = respostas.length
+    ? Math.floor(respostas.reduce((t, r) => t + PESO_RESPOSTA[r.nivel], 0) / respostas.length + 0.5)
+    : 3;
+  return Math.min(5, base + Math.min(2, sinais.length));
+}
+
+// A nota é a conta, sempre: medido na B1 de uma cobaia, o modelo classificou as
+// duas respostas como desenvolvidas e escreveu 4 nas duas tentativas, mesmo com o
+// erro dizendo que a conta dava 5. Com a classificação bem formada, o harness
+// põe o resultado no lugar e acerta o número que a justificativa disser. Forma
+// errada fica para a validação recusar.
+function aplicarIniciativa(av) {
+  const emp = av && av.empenho;
+  if (!emp || !Array.isArray(emp.respostas) || !Array.isArray(emp.sinais)) return av;
+  if (!emp.respostas.every((r) => r && NIVEIS_RESPOSTA.includes(r.nivel))) return av;
+  const conta = iniciativaDoEmpenho(emp);
+  if (!av.criterios || typeof av.criterios !== 'object') return av;
+  av.criterios.iniciativa = conta;
+  if (typeof av.justificativa === 'string') av.justificativa = av.justificativa.replace(/(iniciativa\s*(?:=|:)?\s*)[1-5]\b/gi, `$1${conta}`);
+  return av;
+}
 
 function mediana(xs) {
   const v = [...xs].sort((a, b) => a - b);
@@ -343,4 +379,4 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso };
 }
 
-module.exports = { avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
+module.exports = { iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };

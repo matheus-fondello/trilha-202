@@ -13,6 +13,7 @@ const { lerStdin } = require('../scripts/lib/util');
 async function main() {
   const entrada = await lerStdin();
   const e = estadoLib.carregar();
+  estadoLib.retomarSessao(e, entrada);
   const s = e.sessao_atual;
   if (!s) return;
   if (entrada.session_id && s.id && s.id !== entrada.session_id) return;

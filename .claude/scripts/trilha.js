@@ -1204,6 +1204,26 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     }
   }
   if (typeof av.resumo_qualitativo !== 'string' || av.resumo_qualitativo.length < 40 || av.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
+  // A iniciativa é uma conta sobre o `empenho` (lib/avaliador.js): cada resposta
+  // classificada e cada sinal próprio, com o trecho literal de uma fala dele.
+  const emp = av.empenho;
+  if (!emp || typeof emp !== 'object' || !Array.isArray(emp.respostas) || !Array.isArray(emp.sinais)) {
+    erros.push('falta "empenho": { "respostas": [{ "trecho", "nivel" }], "sinais": [{ "trecho", "tipo" }] }');
+  } else {
+    const falas = texto ? transcricao.falasDoAluno(texto) : null;
+    const literal = (t, onde) => {
+      if (typeof t !== 'string' || !t.trim() || t.length > 300) { erros.push(`${onde}: "trecho" é o começo literal de uma fala dele, até 300 caracteres`); return; }
+      if (falas !== null && !transcricao.evidenciaNaTranscricao(t, falas)) erros.push(`${onde}: o trecho "${t.slice(0, 60)}" não está em nenhuma fala do aluno; copie de uma única linha ALUNO`);
+    };
+    emp.respostas.forEach((r, i) => {
+      if (!r || !avaliador.NIVEIS_RESPOSTA.includes(r.nivel)) erros.push(`empenho.respostas[${i}].nivel é ${avaliador.NIVEIS_RESPOSTA.join(', ')}`);
+      literal(r && r.trecho, `empenho.respostas[${i}]`);
+    });
+    emp.sinais.forEach((x, i) => {
+      if (!x || !avaliador.TIPOS_SINAL.includes(x.tipo)) erros.push(`empenho.sinais[${i}].tipo é ${avaliador.TIPOS_SINAL.join(', ')}`);
+      literal(x && x.trecho, `empenho.sinais[${i}]`);
+    });
+  }
   // O destaque vai para a ficha do aluno: o momento notável ou a má vontade, numa frase.
   if (av.destaque !== null && av.destaque !== undefined) {
     const d = av.destaque;

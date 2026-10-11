@@ -6,6 +6,7 @@ const { existsSync } = require('fs');
 const fila = require('./fila');
 const acesso = require('./acesso');
 const { monoMs, bootMs } = require('./relogio');
+const turnos = require('./turnos');
 
 // Sem sinal de vida por mais que isso, a sessão morreu junto com o terminal.
 const MINUTOS_VIVA = 30;
@@ -208,4 +209,39 @@ function fecharSessao(e, fimIso, motivo) {
   return registro;
 }
 
-module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
+// Outra sessão nasceu na sala com o chat da aula aberto: o `claude` que o aluno
+// roda no terminal da própria sala para refazer o login do avaliador, ou o
+// `claude -p "oi"` de conferir. O início dela fechava o chat da aula como
+// recuperado, e os turnos seguintes dele eram descartados: a B1 inteira de um
+// aluno saiu com um minuto (11/10). Quem manda mensagem é o chat que está
+// acontecendo, então ele volta a ser a sessão atual e a outra fecha. Se ele já
+// tinha sido contado, retoma o registro dele (início, turnos, trabalho), sem
+// `sessao.inicio` de novo e sem duplicar o histórico que o avaliador lê.
+// Devolve se trocou.
+function retomarSessao(e, entrada) {
+  const id = entrada.session_id;
+  const s = e.sessao_atual;
+  if (!id || (s && (!s.id || s.id === id))) return false;
+  if (s) {
+    turnos.fechar(e, { interrompido: true, tarde: true });
+    fecharSessao(e, s.ultima_atividade || s.inicio, 'outra-sessao');
+  }
+  const i = (e.sessoes || []).map((x) => x.id).lastIndexOf(id);
+  const antiga = i >= 0 ? e.sessoes.splice(i, 1)[0] : null;
+  e.sessao_atual = {
+    id,
+    inicio: antiga ? antiga.inicio : agora(),
+    ultima_atividade: agora(),
+    aula: antiga ? antiga.aula : e.aula_atual,
+    turnos: antiga ? antiga.turnos || 0 : 0,
+    fonte: 'retomada',
+    contada: Boolean(antiga),
+    transcricao: entrada.transcript_path || (antiga && antiga.transcricao) || null,
+    turno_aberto: null,
+    ultimo_turno_fim: antiga ? antiga.fim : null,
+    trabalho_ms: antiga ? antiga.trabalho_ms || 0 : 0,
+  };
+  return true;
+}
+
+module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
