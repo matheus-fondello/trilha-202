@@ -162,7 +162,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
       }
     } else {
       if (a.fluencia) {
-        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : `ainda não passou (${reg.fluencia.tentativas} tentativa(s))`) : 'não feita'}.`);
+        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)` : `ainda não passou (1 tentativa); falta a segunda chance, com material ou enunciado novo`)) : 'não feita'}.`);
       } else {
         linhas.push('Fluência: esta aula não tem.');
       }

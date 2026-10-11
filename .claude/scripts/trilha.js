@@ -314,7 +314,12 @@ const comandos = {
       if (pend.length) problemas.push(`milestones pendentes: ${pend.map((x) => x.id).join(', ')}`);
     }
     if (a.fluencia && !reg.fluencia) problemas.push('fluência não registrada');
-    if (a.fluencia && reg.fluencia && !reg.fluencia.passou) problemas.push('fluência registrada como não passou; a aula só fecha com transferência');
+    // Fluência que não passou não segura a trilha (11/10): depois da segunda chance a aula fecha assim mesmo, e o
+    // resultado fica registrado (sobe à 202 e vira sinal no Acompanhamento). Antes da segunda, ainda não fecha.
+    if (a.fluencia && reg.fluencia && !reg.fluencia.passou) {
+      if (reg.fluencia.tentativas < 2) problemas.push('fluência não passou na primeira tentativa: dê a segunda chance, com material ou enunciado novo, e registre de novo');
+      else avisos.push('a fluência não passou: a aula fecha assim mesmo e o resultado fica registrado para a 202');
+    }
     if (a.tipo === 'pratica') {
       // Prática não tem avaliação: ela fecha com o artefato registrado, que é o que
       // as fluências das aulas seguintes vão usar.
