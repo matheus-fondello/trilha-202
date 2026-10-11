@@ -260,6 +260,7 @@ const comandos = {
       transcricao: t.texto,
       produto: anexo.texto,
       validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
+      sanear: (av, ultima) => sanearAvaliacao(av, t.texto, ultima),
     });
     if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
     if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso);
@@ -1025,6 +1026,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     conferencia,
     material: material.texto,
     validar: (c) => validarCorrecao(c, idPratica, conferido),
+    sanear: (c, ultima) => sanearCorrecao(c, conferido, ultima),
   });
   // No limite de uso a correção não falhou: espera a cota voltar, no mesmo chat
   // (o aluno manda "continue") ou num novo, que reabre a correção sozinho.
@@ -1122,14 +1124,24 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
       }, e);
       delete gravada.texto_pendente;
       delete gravada.avaliacao_tentada_sessao;
+      delete gravada.avaliacao_tentativas;
       estadoLib.salvar(e);
       console.log(`Avaliação separada da pergunta ${questao.n} registrada. A nota não passa pelo chat.`);
     } else {
-      fila.enfileirar(resultado.limite ? 'quiz.avaliacao.adiada' : 'quiz.avaliacao.falhou', {
-        aula: idQuiz, questao: questao.n, motivo: resultado.motivo,
+      // A resposta fica guardada e a avaliação é tentada de novo a cada chat, então o que sobe é "adiada". Só vira
+      // "falhou" quando a causa não passa sozinha (nem limite, nem API, nem login) e já se tentou em três chats.
+      gravada.avaliacao_tentativas = (gravada.avaliacao_tentativas || 0) + 1;
+      const passageira = Boolean(resultado.limite || resultado.login);
+      const desistiu = !passageira && gravada.avaliacao_tentativas >= 3;
+      estadoLib.salvar(e);
+      fila.enfileirar(desistiu ? 'quiz.avaliacao.falhou' : 'quiz.avaliacao.adiada', {
+        aula: idQuiz, questao: questao.n, motivo: resultado.motivo, vezes: gravada.avaliacao_tentativas,
+        ...(resultado.login ? { causa: 'login' } : {}),
         avaliador,
       }, e);
-      console.log(`A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
+      console.log(resultado.login
+        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. O Claude da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${PASSOS_LOGIN} A avaliação roda de novo no próximo chat.`
+        : `A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
   }
 }
@@ -1142,6 +1154,62 @@ function fimDoQuiz(banco, reg, idQuiz) {
     r.texto,
     'Isso não é nota e não se anuncia como placar: o aluno já viu cada correção. Diga, com as suas palavras, o que ficou para revisitar e por quê (a aula, e quando ela volta a ser necessária), e o que as abertas mostraram. Depois grave a memória do aluno — uma nota com a chave `revisitar-m' + mapa.aula(idQuiz).modulo + '`, dizendo o que revisitar e o que você vai fazer com isso na próxima aula em que aparecer — e feche com `concluir ' + idQuiz + '`. Sem `avaliar`: o quiz não tem.',
   ].join('\n');
+}
+
+// O que é mecânico se conserta, em vez de a avaliação inteira se perder (auditoria de 11/10). Em produção, a
+// correção de uma P1 se perdeu porque uma de cinco evidências não era literal; as outras quatro eram.
+//
+// Sempre: a evidência que não está em fala nenhuma do aluno sai da lista, se sobrar ao menos uma que está. Tirar um
+// trecho que ele não disse nunca piora a avaliação. Só na última tentativa (\`ultima\`), quando a alternativa é não
+// ter nota: texto longo demais é cortado no teto, o número de um critério na justificativa passa a ser o da nota
+// (a nota é o JSON; a frase é que errou o número), e o trecho de \`empenho\` que não é literal fica vazio, sem tirar
+// a classificação. Nada aqui inventa conteúdo nem muda nota.
+const cortarNoTeto = (t, max) => (typeof t === 'string' && t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t);
+
+function sanearAvaliacao(av, texto, ultima) {
+  if (!av || typeof av !== 'object') return av;
+  const falas = texto ? transcricao.falasDoAluno(texto) : null;
+  if (falas && Array.isArray(av.evidencias)) {
+    const boas = av.evidencias.filter((ev) => typeof ev === 'string' && ev.length <= 300 && transcricao.origemDaEvidencia(ev, falas));
+    if (boas.length && boas.length < av.evidencias.length) av.evidencias = boas;
+  }
+  if (Array.isArray(av.evidencias) && av.evidencias.length > 3) av.evidencias = av.evidencias.slice(0, 3);
+  if (!ultima) return av;
+  av.justificativa = cortarNoTeto(av.justificativa, 1500);
+  av.resumo_qualitativo = cortarNoTeto(av.resumo_qualitativo, 400);
+  if (av.fluencia && typeof av.fluencia === 'object') av.fluencia.evidencia = cortarNoTeto(av.fluencia.evidencia, 1000);
+  if (av.destaque && typeof av.destaque === 'object') av.destaque.texto = cortarNoTeto(av.destaque.texto, 200);
+  if (typeof av.justificativa === 'string' && av.criterios && typeof av.criterios === 'object') {
+    const nomes = { compreensao: 'compreens[aã]o', pensamento: 'pensamento', esforco: 'esfor[cç]o', autonomia: 'autonomia', dominio: 'dom[ií]nio' };
+    for (const [k, padrao] of Object.entries(nomes)) {
+      if (Number.isInteger(av.criterios[k])) av.justificativa = av.justificativa.replace(new RegExp(`(${padrao}\\s*(?:=|:)?\\s*)[1-5]\\b`, 'gi'), `$1${av.criterios[k]}`);
+    }
+  }
+  const emp = av.empenho;
+  if (falas && emp && typeof emp === 'object') {
+    for (const lista of [emp.respostas, emp.sinais]) {
+      if (!Array.isArray(lista)) continue;
+      for (const item of lista) {
+        if (item && typeof item === 'object' && !(typeof item.trecho === 'string' && item.trecho.trim() && item.trecho.length <= 300 && transcricao.evidenciaNaTranscricao(item.trecho, falas))) item.trecho = null;
+      }
+    }
+  }
+  return av;
+}
+
+function sanearCorrecao(c, material, ultima) {
+  if (!c || typeof c !== 'object') return c;
+  if (material && Array.isArray(c.evidencias)) {
+    const boas = c.evidencias.filter((ev) => typeof ev === 'string' && ev.length <= 300 && transcricao.evidenciaNaTranscricao(ev, material));
+    // A correção pede de duas a cinco: só se tira a que não bate quando ainda sobram duas.
+    if (boas.length >= 2 && boas.length < c.evidencias.length) c.evidencias = boas;
+  }
+  if (Array.isArray(c.evidencias) && c.evidencias.length > 5) c.evidencias = c.evidencias.slice(0, 5);
+  if (!ultima) return c;
+  c.justificativa = cortarNoTeto(c.justificativa, 2000);
+  c.feedback_aluno = cortarNoTeto(c.feedback_aluno, 3000);
+  c.resumo_qualitativo = cortarNoTeto(c.resumo_qualitativo, 400);
+  return c;
 }
 
 // `texto` é a transcrição que o avaliador leu. Sem ela (só em teste), a evidência
@@ -1212,6 +1280,8 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
   } else {
     const falas = texto ? transcricao.falasDoAluno(texto) : null;
     const literal = (t, onde) => {
+      // null é o trecho que o conserto da última tentativa esvaziou: a classificação fica, sem citação.
+      if (t === null) return;
       if (typeof t !== 'string' || !t.trim() || t.length > 300) { erros.push(`${onde}: "trecho" é o começo literal de uma fala dele, até 300 caracteres`); return; }
       if (falas !== null && !transcricao.evidenciaNaTranscricao(t, falas)) erros.push(`${onde}: o trecho "${t.slice(0, 60)}" não está em nenhuma fala do aluno; copie de uma única linha ALUNO`);
     };

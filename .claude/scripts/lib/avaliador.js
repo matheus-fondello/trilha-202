@@ -33,7 +33,9 @@ const TIMEOUT_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 4 * 60
 // o teto. `medium` é o nível em que a régua foi medida. Versão antiga do Claude Code, sem a opção, roda sem ela.
 const ESFORCO = 'medium';
 let aceitaEsforco = true;
-const TENTATIVAS = 2;
+// Três tentativas por leitura (eram duas): a segunda e a terceira levam os erros da validação, e a última conserta
+// o que é mecânico (ver `sanear` em trilha.js). A chamada extra só acontece quando a anterior não serviu.
+const TENTATIVAS = 3;
 // No Windows o Claude Code pode estar instalado como claude.exe (instalador
 // nativo) ou como claude.cmd (npm). O .exe roda sem shell, o que preserva o
 // argumento vazio de --setting-sources; o .cmd só roda via shell, que não põe
@@ -42,6 +44,48 @@ const CANDIDATOS = process.platform === 'win32'
   ? [{ bin: 'claude.exe', shell: false }, { bin: 'claude.cmd', shell: true }]
   : [{ bin: 'claude', shell: false }];
 const SEM_FERRAMENTAS = 'Bash,Edit,Write,MultiEdit,NotebookEdit,Read,Glob,Grep,Task,WebFetch,WebSearch';
+
+// Onde mais procurar o Claude Code quando ele não está no PATH do terminal do tutor. Três avaliações de cobaias se
+// perderam com "'claude.cmd' não é reconhecido como um comando interno": o aluno usa o aplicativo, e o comando não
+// estava visível para o shell. O primeiro lugar é o próprio executável que está rodando esta aula
+// (CLAUDE_CODE_EXECPATH, que o Claude Code põe no ambiente); depois, os lugares em que os instaladores o deixam.
+function candidatos() {
+  const lista = [...CANDIDATOS];
+  // A suíte de testes desliga a procura fora do PATH: senão ela acharia o Claude de verdade da máquina de quem testa.
+  if (process.env.TRILHA_202_CLAUDE_SO_PATH === '1') return lista;
+  const casa = os.homedir();
+  const extras = [process.env.CLAUDE_CODE_EXECPATH];
+  if (process.platform === 'win32') {
+    extras.push(path.join(casa, '.local', 'bin', 'claude.exe'));
+    if (process.env.APPDATA) extras.push(path.join(process.env.APPDATA, 'npm', 'claude.cmd'));
+    if (process.env.LOCALAPPDATA) extras.push(path.join(process.env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Links', 'claude.exe'));
+  } else {
+    extras.push(path.join(casa, '.local', 'bin', 'claude'), path.join(casa, '.claude', 'local', 'claude'),
+      '/usr/local/bin/claude', '/opt/homebrew/bin/claude', path.join(casa, '.npm-global', 'bin', 'claude'));
+  }
+  for (const p of extras) {
+    if (!p || lista.some((c) => c.bin === p)) continue;
+    let existe = false;
+    try { existe = fs.statSync(p).isFile(); } catch { /* não está aqui */ }
+    if (existe) lista.push({ bin: p, shell: /\.(cmd|bat)$/i.test(p) });
+  }
+  return lista;
+}
+// O shell do Windows não devolve ENOENT quando o comando não existe: roda, imprime isto e sai com erro.
+// (O console do Windows responde em outra codificação: os acentos chegam trocados, e por isso o padrão não os exige.)
+const NAO_ACHOU = /n.{1,3}o .{1,3} reconhecido como um comando|is not recognized as an internal or external command|command not found|No such file or directory/i;
+
+// O envelope JSON do \`claude -p\`. Normalmente a saída é só ele; às vezes vem uma linha de aviso antes (atualização
+// disponível, aviso de configuração), e aí o envelope é a última linha que parece um.
+function lerEnvelope(stdout) {
+  const texto = String(stdout || '');
+  try { const j = JSON.parse(texto); if (j && typeof j === 'object') return j; } catch { /* tenta por linha */ }
+  const linhas = texto.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.startsWith('{') && l.endsWith('}'));
+  for (let i = linhas.length - 1; i >= 0; i--) {
+    try { const j = JSON.parse(linhas[i]); if (j && typeof j === 'object' && ('result' in j || 'subtype' in j || 'is_error' in j)) return j; } catch { /* segue */ }
+  }
+  return null;
+}
 
 function regua() {
   return fs.readFileSync(REGUA, 'utf8');
@@ -81,10 +125,16 @@ function chamar(prompt) {
     cwd: os.tmpdir(),
   };
   let r;
-  for (const { bin, shell } of CANDIDATOS) {
-    r = spawnSync(bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
-    if (!(r.error && r.error.code === 'ENOENT')) break;
+  let achou = false;
+  for (const { bin, shell } of candidatos()) {
+    // Com shell, um caminho com espaço precisa de aspas, e o argumento vazio também.
+    r = spawnSync(shell && /\s/.test(bin) ? `"${bin}"` : bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
+    if (r.error && r.error.code === 'ENOENT') continue;
+    if (shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && NAO_ACHOU.test(String(r.stderr || ''))) continue;
+    achou = true;
+    break;
   }
+  if (!achou) return { ok: false, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
   if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
     aceitaEsforco = false;
@@ -101,8 +151,8 @@ function chamar(prompt) {
     return { ok: false, motivo };
   }
   if (estourou || r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido (API lenta ou fora do ar)` };
-  let envelope;
-  try { envelope = JSON.parse(r.stdout); } catch {
+  const envelope = lerEnvelope(r.stdout);
+  if (!envelope) {
     const cru = String(r.stderr || r.stdout || '');
     if (LIMITE.test(cru)) return { ok: false, limite: true, motivo: `limite de uso da conta (${cru.trim().slice(0, 120)})` };
     if (LOGIN.test(cru)) return { ok: false, login: true, motivo: `o Claude desta máquina está sem login válido (${cru.trim().slice(0, 120)})` };
@@ -185,13 +235,16 @@ Responda **apenas** com o objeto JSON, sem cerca de código, sem comentário ant
 // Duas tentativas: a segunda leva a lista de erros da validação. Forma errada é
 // o que mais acontece, e perder a avaliação de uma aula inteira por uma vírgula
 // seria pior que a chamada extra.
-function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTATIVAS) {
+function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite = TENTATIVAS) {
   let ultimo = 'o avaliador não produziu nada';
   let erros = null;
   let uso = null;
   for (let tentativa = 1; tentativa <= Math.min(TENTATIVAS, limite); tentativa++) {
     const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }));
-    if (!r.ok) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo, tentativas: tentativa, uso };
+    // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
+    // (adiar, pedir o login). Qualquer outra falha da chamada ganha as tentativas que restam.
+    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo, tentativas: tentativa, uso };
+    if (!r.ok) { ultimo = r.motivo; erros = null; continue; }
     if (!uso) uso = { ...r.uso };
     else {
       for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
@@ -200,6 +253,8 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o avaliador não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
     aplicarIniciativa(json);
+    // Na última tentativa, o que é mecânico se conserta em vez de perder a avaliação inteira.
+    if (sanear) sanear(json, tentativa === Math.min(TENTATIVAS, limite));
     erros = validar(json);
     if (!erros.length) return { ok: true, avaliacao: json, uso, tentativas: tentativa };
     ultimo = `a avaliação não passou na validação (${erros[0]})`;
@@ -382,16 +437,18 @@ Responda **apenas** com um objeto JSON nesta forma, sem cerca de código e sem c
 }`;
 }
 
-function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar }) {
+function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar, sanear }) {
   let ultimo = 'o corretor não produziu nada';
   let erros = null;
   let uso = null;
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }));
-    if (!r.ok) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    if (!r.ok) { ultimo = r.motivo.replace(/avaliador/g, 'corretor'); erros = null; continue; }
     uso = r.uso;
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o corretor não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    if (sanear) sanear(json, tentativa === TENTATIVAS);
     erros = validar(json);
     if (!erros.length) return { ok: true, correcao: json, uso, tentativas: tentativa };
     ultimo = `a correção não passou na validação (${erros[0]})`;
@@ -399,4 +456,4 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso };
 }
 
-module.exports = { iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
+module.exports = { candidatos, lerEnvelope, TENTATIVAS, iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };

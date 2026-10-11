@@ -1,7 +1,8 @@
 'use strict';
 // Le uma resposta aberta fora do chat, depois de ela estar gravada.
 const crypto = require('crypto');
-const { chamar, extrairJson } = require('./avaliador');
+const { chamar, extrairJson, TENTATIVAS } = require('./avaliador');
+const { evidenciaNaTranscricao } = require('./transcricao');
 
 const ESCALA_VERSAO = '2';
 const ESCALA = [
@@ -26,7 +27,9 @@ function validar(av, idQuiz, questao, resposta) {
   if (!Number.isInteger(av.nota) || av.nota < 1 || av.nota > 5) erros.push('nota deve ser um inteiro de 1 a 5');
   if (typeof av.justificativa !== 'string' || av.justificativa.trim().length < 40 || av.justificativa.length > 1500) erros.push('justificativa deve ter 40 a 1500 caracteres');
   if (typeof av.feedback !== 'string' || av.feedback.trim().length < 40 || av.feedback.length > 1500) erros.push('feedback deve ter 40 a 1500 caracteres');
-  if (typeof av.evidencia !== 'string' || !av.evidencia.trim() || av.evidencia.length > 250 || !resposta.includes(av.evidencia)) erros.push('evidencia deve ser trecho literal da resposta, de ate 250 caracteres');
+  // A comparacao ignora caixa, aspas, travessao e espaco, como na avaliacao de aula: o modelo troca aspas retas por
+  // tipograficas ao copiar, e a comparacao exata derrubava a avaliacao de uma resposta que ele leu direito.
+  if (typeof av.evidencia !== 'string' || !av.evidencia.trim() || av.evidencia.length > 250 || !evidenciaNaTranscricao(av.evidencia, String(resposta))) erros.push('evidencia deve ser trecho literal da resposta, de ate 250 caracteres');
   return erros;
 }
 
@@ -46,19 +49,38 @@ ${erros.length ? `A resposta anterior foi recusada: ${erros.join('; ')}. Corrija
 Responda somente JSON: {"quiz":"${idQuiz}","questao":${questao.n},"nota":3,"justificativa":"explique a nota pela regua, incluindo o ponto separador","evidencia":"trecho literal curto da resposta","feedback":"o que ja mostrou e o que falta, sem nota"}. Nao use ferramentas.`;
 }
 
+// Na ultima tentativa, o que e mecanico se conserta em vez de perder a avaliacao: texto longo demais e cortado, e uma
+// evidencia que nao esta na resposta da lugar ao comeco dela (que e literal, e diz de qual resposta se fala).
+function sanear(av, resposta) {
+  if (!av || typeof av !== 'object') return av;
+  const cortar = (t, max) => (typeof t === 'string' && t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t);
+  av.justificativa = cortar(av.justificativa, 1500);
+  av.feedback = cortar(av.feedback, 1500);
+  if (typeof av.evidencia !== 'string' || !av.evidencia.trim() || av.evidencia.length > 250 || !evidenciaNaTranscricao(av.evidencia, String(resposta))) {
+    av.evidencia = resposta.trim().slice(0, 200);
+  }
+  return av;
+}
+
 function avaliar(idQuiz, questao, resposta) {
   let erros = [];
   let uso = null;
+  let ultimo = 'o avaliador nao produziu nada';
   const rubrica_sha = rubricaSha(questao);
-  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+  const fora = (extra) => ({ ok: false, uso, rubrica_sha, escala_versao: ESCALA_VERSAO, ...extra });
+  for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(prompt(idQuiz, questao, resposta, erros));
-    if (!r.ok) return { ok: false, motivo: r.motivo, limite: Boolean(r.limite), uso, rubrica_sha, escala_versao: ESCALA_VERSAO };
+    // Limite, API fora do ar e login nao se resolvem tentando de novo agora; o resto ganha as tentativas que restam.
+    if (!r.ok && (r.limite || r.login)) return fora({ motivo: r.motivo, limite: Boolean(r.limite), login: Boolean(r.login) });
+    if (!r.ok) { ultimo = r.motivo; erros = []; continue; }
     uso = r.uso;
     const av = extrairJson(r.texto);
+    if (tentativa === TENTATIVAS) sanear(av, resposta);
     erros = validar(av, idQuiz, questao, resposta);
     if (!erros.length) return { ok: true, avaliacao: av, uso, rubrica_sha, escala_versao: ESCALA_VERSAO };
+    ultimo = `avaliacao fora do formato (${erros[0]})`;
   }
-  return { ok: false, motivo: `avaliacao fora do formato (${erros[0]})`, uso, rubrica_sha, escala_versao: ESCALA_VERSAO };
+  return fora({ motivo: ultimo });
 }
 
-module.exports = { avaliar, validar, prompt, rubricaSha, ESCALA_VERSAO };
+module.exports = { avaliar, validar, sanear, prompt, rubricaSha, ESCALA_VERSAO };
