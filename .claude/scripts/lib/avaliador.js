@@ -225,15 +225,18 @@ const CRITERIOS = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio
 // ela tirava nota de quem respondeu tudo bem e não perguntou nada a mais, mesmo com
 // a régua dizendo o contrário. O modelo classifica cada resposta e cada sinal
 // próprio (`empenho`), o que é bem mais estável, e a nota é esta conta: a média
-// das respostas (desenvolvida 5, conclusão 3, telegráfica 2), mais um por sinal
-// até dois, teto 5; má vontade é 1; sem resposta, base 3.
-const PESO_RESPOSTA = { desenvolvida: 5, conclusao: 3, telegrafica: 2 };
-const NIVEIS_RESPOSTA = [...Object.keys(PESO_RESPOSTA), 'ma_vontade'];
+// das respostas (desenvolvida 5, conclusão 3, telegráfica 2, má vontade 1), mais um
+// por sinal até dois, teto 5; sem resposta, base 3. Quando a má vontade é mais da
+// metade das respostas, a nota é 1 e não há bônus. Era "qualquer má vontade faz 1",
+// e uma classificação só derrubava a aula: uma cobaia com quatro respostas
+// desenvolvidas levou 1 por um "feito." lido como má vontade.
+const PESO_RESPOSTA = { desenvolvida: 5, conclusao: 3, telegrafica: 2, ma_vontade: 1 };
+const NIVEIS_RESPOSTA = Object.keys(PESO_RESPOSTA);
 const TIPOS_SINAL = ['pergunta', 'exemplo', 'ligacao', 'revisao'];
 function iniciativaDoEmpenho(empenho) {
   const respostas = (empenho && empenho.respostas) || [];
   const sinais = (empenho && empenho.sinais) || [];
-  if (respostas.some((r) => r.nivel === 'ma_vontade')) return 1;
+  if (respostas.length && respostas.filter((r) => r.nivel === 'ma_vontade').length * 2 > respostas.length) return 1;
   const base = respostas.length
     ? Math.floor(respostas.reduce((t, r) => t + PESO_RESPOSTA[r.nivel], 0) / respostas.length + 0.5)
     : 3;
