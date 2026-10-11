@@ -25,7 +25,14 @@ const transcricaoLib = require('./transcricao');
 
 const REGUA = path.join(paths.RAIZ, '.claude', 'avaliador', 'regua.md');
 const MODELO = 'sonnet';
-const TIMEOUT_MS = 4 * 60 * 1000;
+// O teto de uma chamada. A variável existe para o teste do estouro não esperar quatro minutos.
+const TIMEOUT_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 4 * 60 * 1000;
+// O esforço de raciocínio do avaliador é fixo. Sem isto ele herda o do Claude de cada máquina, e `--setting-sources ""`
+// não o neutraliza: medido em 11/10 com a 1.2 real, a mesma leitura leva 20 s em `medium` e passa de dez minutos em
+// `max`. Um aluno com o esforço alto teve leituras de 150 s (12 mil tokens de saída cada, contra 750) e a 1.2 estourou
+// o teto. `medium` é o nível em que a régua foi medida. Versão antiga do Claude Code, sem a opção, roda sem ela.
+const ESFORCO = 'medium';
+let aceitaEsforco = true;
 const TENTATIVAS = 2;
 // No Windows o Claude Code pode estar instalado como claude.exe (instalador
 // nativo) ou como claude.cmd (npm). O .exe roda sem shell, o que preserva o
@@ -63,8 +70,9 @@ const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(t
 const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b/i;
 
 function chamar(prompt) {
-  const args = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
+  const base = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
     '--setting-sources', '', '--disallowed-tools', SEM_FERRAMENTAS];
+  const args = aceitaEsforco ? [...base, '--effort', ESFORCO] : base;
   const opcoes = {
     input: prompt,
     encoding: 'utf8',
@@ -77,13 +85,22 @@ function chamar(prompt) {
     r = spawnSync(bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
     if (!(r.error && r.error.code === 'ENOENT')) break;
   }
-  if (r.error) {
+  // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
+  if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
+    aceitaEsforco = false;
+    return chamar(prompt);
+  }
+  // O teto estourou: o spawnSync devolve o erro ETIMEDOUT junto com o sinal. É API lenta, não defeito da aula, e
+  // tem de cair no caminho passageiro abaixo. Antes este teste vinha depois do `r.error` e nunca era alcançado: o
+  // estouro saía como "o avaliador não rodou" e virava falha.
+  const estourou = Boolean(r.error && r.error.code === 'ETIMEDOUT');
+  if (r.error && !estourou) {
     const motivo = r.error.code === 'ENOENT'
       ? 'não encontrei o comando `claude` nesta máquina'
       : `o avaliador não rodou (${r.error.message})`;
     return { ok: false, motivo };
   }
-  if (r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido (API lenta ou fora do ar)` };
+  if (estourou || r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido (API lenta ou fora do ar)` };
   let envelope;
   try { envelope = JSON.parse(r.stdout); } catch {
     const cru = String(r.stderr || r.stdout || '');
