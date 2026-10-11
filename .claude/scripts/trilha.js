@@ -280,7 +280,7 @@ const comandos = {
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, produto: anexo.resumo, ...revisao }, e);
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao }, e);
     reg.avaliada_em = agora();
     delete reg.avaliacao_falhou;
     delete reg.avaliacao_adiada;
@@ -1151,8 +1151,10 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
   if (!av || typeof av !== 'object') return ['não é um objeto JSON'];
   if (av.aula !== idAula) erros.push(`campo "aula" deve ser "${idAula}"`);
   // `dominio` é da versão 2 do contrato (05/10): o único critério que diz o que
-  // o aluno aprendeu, e não como ele conversou.
-  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio'];
+  // o aluno aprendeu, e não como ele conversou. `iniciativa` (11/10) conta o que
+  // ele traz sem ser pedido: pergunta própria, exemplo, ligação, ou a má vontade.
+  // Existe em toda aula, também na sem tarefa.
+  const criterios = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio', 'iniciativa'];
   if (!av.criterios || typeof av.criterios !== 'object') erros.push('falta "criterios"');
   else for (const c of criterios) {
     const v = av.criterios[c];
@@ -1171,7 +1173,7 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
   // contradizendo a si mesma. Quando a justificativa nomeia um critério com um
   // número, ele tem de ser a nota.
   if (typeof av.justificativa === 'string' && av.criterios && typeof av.criterios === 'object') {
-    const nomes = { compreensao: 'compreens[aã]o', pensamento: 'pensamento', esforco: 'esfor[cç]o', autonomia: 'autonomia', dominio: 'dom[ií]nio' };
+    const nomes = { compreensao: 'compreens[aã]o', pensamento: 'pensamento', esforco: 'esfor[cç]o', autonomia: 'autonomia', dominio: 'dom[ií]nio', iniciativa: 'iniciativa' };
     for (const [k, padrao] of Object.entries(nomes)) {
       const m = av.justificativa.match(new RegExp(`${padrao}\\s*(?:=|:)?\\s*([1-5])\\b`, 'i'));
       if (m && Number.isInteger(av.criterios[k]) && Number(m[1]) !== av.criterios[k]) {
@@ -1202,6 +1204,12 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     }
   }
   if (typeof av.resumo_qualitativo !== 'string' || av.resumo_qualitativo.length < 40 || av.resumo_qualitativo.length > 400) erros.push('"resumo_qualitativo" entre 40 e 400 caracteres');
+  // O destaque vai para a ficha do aluno: o momento notável ou a má vontade, numa frase.
+  if (av.destaque !== null && av.destaque !== undefined) {
+    const d = av.destaque;
+    if (typeof d !== 'object' || !['positivo', 'atencao'].includes(d.tipo)) erros.push('"destaque" é null ou { "tipo": "positivo" | "atencao", "texto": "..." }');
+    else if (typeof d.texto !== 'string' || d.texto.trim().length < 10 || d.texto.length > 200) erros.push('"destaque.texto" é uma frase de 10 a 200 caracteres');
+  }
   // A fluência tem de bater com a aula: o CRM guarda tentativas a partir de 1, e
   // uma fluência inventada numa aula que não tem fluência vira uma pílula na ficha.
   let temFluencia = true;

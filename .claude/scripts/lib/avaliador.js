@@ -193,49 +193,86 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
 // dispara duas leituras independentes da mesma aula, pelo mesmo validador.
 // Falha de uma confirmacao nao e voto a favor: sem dois votos positivos de tres,
 // o sinal fica nulo. A avaliacao e as notas continuam sendo as da primeira.
+// Estabilidade (11/10): a mesma aula lida duas vezes oscilava um ponto inteiro (a 1.1 de uma cobaia saiu 3 numa
+// leitura e 4 na outra). Agora ela é lida duas vezes; se as notas divergem, uma terceira desempata. Vale a leitura
+// mais central, a mais próxima da mediana de cada critério, inteira: nota, justificativa e evidências continuam
+// saindo de uma mesma leitura e dizendo a mesma coisa. Uma releitura que falha (limite, API, login) não derruba a
+// avaliação: fica a que deu certo.
+//
+// A suspeita usa as mesmas leituras: ela só vale quando duas leituras independentes apontam a mesma fala do aluno.
+// Se alguma leitura suspeitou e só houve duas, uma terceira é feita para confirmar ou descartar.
+const CRITERIOS = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio', 'iniciativa'];
+
+function mediana(xs) {
+  const v = [...xs].sort((a, b) => a - b);
+  return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
+}
+
+function maisCentral(avaliacoes) {
+  const centro = {};
+  for (const k of CRITERIOS) {
+    const notas = avaliacoes.map((a) => (a.criterios || {})[k]).filter(Number.isInteger);
+    if (notas.length) centro[k] = mediana(notas);
+  }
+  const distancia = (a) => Object.entries(centro).reduce((d, [k, m]) => d + (Number.isInteger((a.criterios || {})[k]) ? Math.abs(a.criterios[k] - m) : 0), 0);
+  let melhor = 0;
+  for (let n = 1; n < avaliacoes.length; n++) if (distancia(avaliacoes[n]) < distancia(avaliacoes[melhor])) melhor = n;
+  return melhor;
+}
+
+const mesmasNotas = (a, b) => CRITERIOS.every((k) => (a.criterios || {})[k] === (b.criterios || {})[k]);
+
 function avaliar(entrada) {
-  // A medicao pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
+  // A medição pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
   const maxLeituras = Number.isInteger(entrada.maxLeituras) && entrada.maxLeituras > 0 ? entrada.maxLeituras : Infinity;
   const primeira = avaliarUma(entrada, maxLeituras);
-  if (!primeira.ok || !primeira.avaliacao.suspeita) return { ...primeira, leituras: primeira.tentativas };
+  if (!primeira.ok) return { ...primeira, leituras: primeira.tentativas };
 
-  const suspeitas = [primeira.avaliacao.suspeita];
-  let positivas = 1;
-  let falhas = 0;
-  let confirmacoes = 0;
+  const boas = [primeira];
   let leituras = primeira.tentativas;
+  let falhas = 0;
   const uso = { ...primeira.uso };
-  for (let i = 0; i < 2; i++) {
-    if (leituras >= maxLeituras) break;
-    const outra = avaliarUma(entrada, maxLeituras - leituras);
-    confirmacoes++;
-    leituras += outra.tentativas;
-    if (!outra.ok) falhas++;
-    else if (outra.avaliacao.suspeita) {
-      positivas++;
-      suspeitas.push(outra.avaliacao.suspeita);
-    }
-    if (outra.uso) {
-      for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (outra.uso[k] || 0);
-      uso.custo_usd = (uso.custo_usd || 0) + (outra.uso.custo_usd || 0);
-    }
-  }
+  const somar = (r) => {
+    leituras += r.tentativas;
+    if (!r.uso) return;
+    for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
+    uso.custo_usd = (uso.custo_usd || 0) + (r.uso.custo_usd || 0);
+  };
+  const reler = () => {
+    if (leituras >= maxLeituras) return false;
+    const r = avaliarUma(entrada, maxLeituras - leituras);
+    somar(r);
+    if (r.ok) boas.push(r); else falhas++;
+    return r.ok;
+  };
+
+  reler();
+  const divergem = boas.length === 2 && !mesmasNotas(boas[0].avaliacao, boas[1].avaliacao);
+  const suspeitou = boas.some((r) => r.avaliacao.suspeita);
+  if (divergem || (suspeitou && boas.length < 3)) reler();
+  // Uma releitura que falhou deixa a suspeita sem confirmação: tenta mais uma, até três boas.
+  if (boas.some((r) => r.avaliacao.suspeita) && boas.length < 3 && falhas) reler();
+
+  const escolhida = boas[maisCentral(boas.map((r) => r.avaliacao))];
+
+  const suspeitas = boas.map((r) => r.avaliacao.suspeita).filter(Boolean);
   const falas = transcricaoLib.falasDoAluno(entrada.transcricao);
   let confirmada = null;
-  for (let i = 0; i < suspeitas.length; i++) {
-    for (let j = i + 1; j < suspeitas.length; j++) {
+  for (let a = 0; a < suspeitas.length; a++) {
+    for (let b = a + 1; b < suspeitas.length; b++) {
       const mesmaFala = falas.some((fala) =>
-        transcricaoLib.evidenciaNaTranscricao(suspeitas[i].evidencia, [fala]) &&
-        transcricaoLib.evidenciaNaTranscricao(suspeitas[j].evidencia, [fala]));
-      if (mesmaFala) confirmada = suspeitas[i];
+        transcricaoLib.evidenciaNaTranscricao(suspeitas[a].evidencia, [fala]) &&
+        transcricaoLib.evidenciaNaTranscricao(suspeitas[b].evidencia, [fala]));
+      if (mesmaFala) confirmada = suspeitas[a];
     }
   }
   return {
-    ...primeira,
-    avaliacao: { ...primeira.avaliacao, suspeita: confirmada },
+    ...escolhida,
+    avaliacao: { ...escolhida.avaliacao, suspeita: confirmada },
     uso,
     leituras,
-    confirmacao_suspeita: { positivas, total: 1 + confirmacoes, falhas, confirmada: Boolean(confirmada) },
+    estabilidade: { leituras_validas: boas.length, notas: boas.map((r) => r.avaliacao.criterios) },
+    ...(suspeitas.length ? { confirmacao_suspeita: { positivas: suspeitas.length, total: boas.length + falhas, falhas, confirmada: Boolean(confirmada) } } : {}),
   };
 }
 
