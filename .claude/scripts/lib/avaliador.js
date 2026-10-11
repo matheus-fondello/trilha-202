@@ -333,9 +333,16 @@ function maisCentral(avaliacoes) {
 
 const mesmasNotas = (a, b) => CRITERIOS.every((k) => (a.criterios || {})[k] === (b.criterios || {})[k]);
 
+// O teto do tempo da avaliação inteira. O limite de quatro minutos é por chamada, e a aula é lida de duas a três
+// vezes, cada uma com até três tentativas: numa máquina lenta a soma podia passar de meia hora. A primeira leitura
+// roda sempre, porque sem ela não há nota; as releituras, que só refinam a nota, rodam enquanto couberem neste teto.
+// Com o esforço fixo a avaliação inteira leva uns 30 segundos, e o teto não é alcançado.
+const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 3 * 60 * 1000;
+
 function avaliar(entrada) {
   // A medição pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
   const maxLeituras = Number.isInteger(entrada.maxLeituras) && entrada.maxLeituras > 0 ? entrada.maxLeituras : Infinity;
+  const inicio = Date.now();
   const primeira = avaliarUma(entrada, maxLeituras);
   if (!primeira.ok) return { ...primeira, leituras: primeira.tentativas };
 
@@ -349,8 +356,10 @@ function avaliar(entrada) {
     for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
     uso.custo_usd = (uso.custo_usd || 0) + (r.uso.custo_usd || 0);
   };
+  let semTempo = false;
   const reler = () => {
     if (leituras >= maxLeituras) return false;
+    if (Date.now() - inicio >= ORCAMENTO_MS) { semTempo = true; return false; }
     const r = avaliarUma(entrada, maxLeituras - leituras);
     somar(r);
     if (r.ok) boas.push(r); else falhas++;
@@ -382,7 +391,7 @@ function avaliar(entrada) {
     avaliacao: { ...escolhida.avaliacao, suspeita: confirmada },
     uso,
     leituras,
-    estabilidade: { leituras_validas: boas.length, notas: boas.map((r) => r.avaliacao.criterios) },
+    estabilidade: { leituras_validas: boas.length, notas: boas.map((r) => r.avaliacao.criterios), ...(semTempo ? { sem_tempo: true } : {}) },
     ...(suspeitas.length ? { confirmacao_suspeita: { positivas: suspeitas.length, total: boas.length + falhas, falhas, confirmada: Boolean(confirmada) } } : {}),
   };
 }
