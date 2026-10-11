@@ -6,6 +6,7 @@ const notas = require('./notas');
 const acesso = require('./acesso');
 const quiz = require('./quiz');
 const { relativo } = require('./util');
+const { avaliacaoRodando } = require('./estado');
 
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
 // e nada da aula aparece: o tutor não tem o que começar antes do `conectar`.
@@ -60,9 +61,12 @@ function portaFechada(e, a, linhas) {
 function pendencias(e, linhas) {
   const adiadas = Object.entries(e.aulas || {})
     .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
-      && (r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 2)))
+      // A avaliação que foi disparada e cujo processo sumiu sem deixar nota (máquina desligada) também volta aqui.
+      // Enquanto o processo vive, ela não é pendência: está rodando, e rodar de novo daria duas avaliações.
+      && !avaliacaoRodando(r)
+      && (r.avaliacao_em_andamento || r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 2)))
     .map(([id]) => id);
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (limite de uso, API fora do ar ou outro erro). No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando falhar de novo, faça o que ele disser; se ele não pedir nada ao aluno, siga a aula normalmente.`);
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (limite de uso, API fora do ar ou outro erro). No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. O comando volta na hora: a avaliação roda fora do chat. Não espere por ela e não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);

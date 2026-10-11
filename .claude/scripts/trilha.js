@@ -26,6 +26,7 @@
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
+const { spawn } = require('child_process');
 const crypto = require('crypto');
 const path = require('path');
 const paths = require('./lib/paths');
@@ -239,8 +240,14 @@ const comandos = {
   // lê a transcrição da sessão e chama um segundo Claude, que não deu a aula, para
   // avaliá-la (lib/avaliador.js). O tutor dispara e recebe "registrada" — ele não
   // tem a nota, então não tem como deixá-la escapar no raciocínio ou numa
-  // ferramenta. Demora de meio minuto a um minuto, e é o último passo da aula.
-  avaliar([idAula]) {
+  // ferramenta.
+  //
+  // Desde 11/10 a avaliação não roda dentro deste comando: ele dispara um processo à parte (o mesmo comando, com
+  // `--agora`) e volta na hora. Rodando aqui dentro, a aula ficava dois minutos presa na frente do aluno; o botão
+  // de parar matava a avaliação e o fechamento junto; e um chat novo aberto no meio rodava uma segunda avaliação
+  // da mesma aula. O processo à parte não depende do chat: termina, grava a nota e sobe sozinho. Se ele morrer
+  // (máquina desligada), o registro fica com um pid que não existe mais, e o chat seguinte refaz.
+  avaliar([idAula, ...resto]) {
     exigirAcesso();
     if (!idAula) falhar('Uso: avaliar <aula>');
     const aulaAv = mapa.aula(idAula);
@@ -248,46 +255,35 @@ const comandos = {
     // avaliação de conversa de combinado é ruído para a 202.
     if (aulaAv.tipo === 'quiz') falhar(`o ${idAula} não tem avaliação de fim de aula: o que sobe é a resposta de cada pergunta. Feche com a memória do aluno e \`concluir ${idAula}\`.`);
     if (aulaAv.avaliacao === false) falhar(`a aula ${idAula} não tem avaliação: ela é combinado, não matéria. Feche com o que ficou de pé e a próxima aula.`);
-    const e = estadoLib.carregar();
-    const reg = estadoLib.registroAula(e, idAula);
+    let e = estadoLib.carregar();
+    let reg = estadoLib.registroAula(e, idAula);
 
-    const t = transcricao.ler(e, idAula);
-    if (!t.ok) return desistir(e, reg, idAula, t.motivo);
+    const agoraMesmo = resto.includes('--agora') || process.env.TRILHA_202_AVALIAR_SINCRONO === '1';
+    if (!agoraMesmo) {
+      if (estadoLib.avaliacaoRodando(reg)) {
+        console.log(`A avaliação da aula ${idAula} já está rodando fora do chat, desde ${reg.avaliacao_em_andamento.em}. Não rode de novo e não espere por ela: feche a aula com \`concluir ${idAula}\`, se ainda não fechou, e siga.`);
+        return;
+      }
+      // Um processo anterior que sumiu sem deixar nota conta como tentativa: na quarta, vira falha registrada.
+      const vezes = ((reg.avaliacao_em_andamento || {}).vezes || 0) + 1;
+      if (vezes > 3) { delete reg.avaliacao_em_andamento; return desistir(e, reg, idAula, 'o avaliador foi interrompido três vezes antes de terminar'); }
+      const filho = spawn(process.execPath, [__filename, 'avaliar', idAula, '--agora'], { cwd: process.cwd(), env: process.env, detached: true, stdio: 'ignore', windowsHide: true });
+      filho.unref();
+      reg.avaliacao_em_andamento = { em: agora(), pid: filho.pid, vezes };
+      estadoLib.salvar(e);
+      console.log(`A avaliação da aula ${idAula} está rodando fora do chat (leva de meio minuto a dois minutos) e sobe sozinha quando terminar. Não espere por ela e não comente com o aluno: feche a aula agora com \`concluir ${idAula}\`. Se ela não terminar, o próximo chat a refaz.`);
+      return;
+    }
 
-    const anexo = produto.coletar(e, reg);
-    const r = avaliador.avaliar({
-      contexto: contextoDaAula(e, aulaAv, reg),
-      transcricao: t.texto,
-      produto: anexo.texto,
-      validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
-      sanear: (av, ultima) => sanearAvaliacao(av, t.texto, ultima),
-    });
-    if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
-    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso);
-    if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
-
-    // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
-    // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
-    // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
-    // de ela ficar perdida numa frase da justificativa.
-    const payload = {
-      ...r.avaliacao,
-      versao: 3,
-      rubrica_sha: crypto.createHash('sha256').update(avaliador.regua(), 'utf8').digest('hex').slice(0, 12),
-      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}) } : null,
-    };
-    // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
-    const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
-    // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
-    // fechamento). Vale a última; o servidor precisa saber que esta substitui.
-    const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao }, e);
-    reg.avaliada_em = agora();
-    delete reg.avaliacao_falhou;
-    delete reg.avaliacao_adiada;
-    delete reg.avaliacao_login;
-    estadoLib.salvar(e);
-    console.log(`Avaliação da aula ${idAula} registrada e enfileirada.`);
+    // Daqui para baixo é o processo à parte. Ele leva minutos, e nesse tempo o chat já gravou a `nota` e o
+    // `concluir`: o estado é relido antes de qualquer escrita, senão esta gravação apagaria as do chat.
+    const reler = () => { e = estadoLib.carregar(); reg = estadoLib.registroAula(e, idAula); delete reg.avaliacao_em_andamento; };
+    try {
+      return avaliarAgora(idAula, aulaAv, () => { reler(); return { e, reg }; }, e, reg);
+    } catch (err) {
+      reler();
+      return desistir(e, reg, idAula, `erro interno do avaliador (${String(err && err.message).slice(0, 160)})`);
+    }
   },
 
   concluir([idAula]) {
@@ -348,7 +344,9 @@ const comandos = {
       // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
       // Avaliação que o `avaliar` tentou e não conseguiu não segura a aula: o aluno
       // fez o trabalho dele, a falha é do harness, e ela já virou evento para a 202.
-      if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
+      // A avaliação que está rodando fora do chat não segura a aula: ela sobe sozinha quando terminar.
+      if (reg.avaliacao_em_andamento) { /* rodando: nada a avisar */ }
+      else if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
       else if (reg.avaliacao_login) avisos.push('a avaliação desta aula ficou pendente (o Claude desta máquina está sem login) e roda no começo do próximo chat');
       else if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
       else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
@@ -803,6 +801,49 @@ const comandos = {
 // Avaliação que não sai não trava a aula: essa é a regra da casa. Fica o registro
 // do motivo, o `concluir` passa com aviso, e a 202 sabe que aquela aula não tem
 // nota e por quê. O tutor lê um recado que não o convida a contornar nada.
+// A avaliação em si, no processo à parte. Lê a transcrição e o produto com o estado de quando começou; `reler`
+// devolve o estado de agora, que é onde se grava.
+function avaliarAgora(idAula, aulaAv, reler, e, reg) {
+  const t = transcricao.ler(e, idAula);
+  if (!t.ok) { ({ e, reg } = reler()); return desistir(e, reg, idAula, t.motivo); }
+
+    const anexo = produto.coletar(e, reg);
+    const r = avaliador.avaliar({
+      contexto: contextoDaAula(e, aulaAv, reg),
+      transcricao: t.texto,
+      produto: anexo.texto,
+      validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
+      sanear: (av, ultima) => sanearAvaliacao(av, t.texto, ultima),
+    });
+    ({ e, reg } = reler());
+    if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
+    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso);
+    if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
+
+    // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
+    // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
+    // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
+    // de ela ficar perdida numa frase da justificativa.
+    const payload = {
+      ...r.avaliacao,
+      versao: 3,
+      rubrica_sha: crypto.createHash('sha256').update(avaliador.regua(), 'utf8').digest('hex').slice(0, 12),
+      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}) } : null,
+    };
+    // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
+    const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
+    // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
+    // fechamento). Vale a última; o servidor precisa saber que esta substitui.
+    const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao }, e);
+    reg.avaliada_em = agora();
+    delete reg.avaliacao_falhou;
+    delete reg.avaliacao_adiada;
+    delete reg.avaliacao_login;
+    estadoLib.salvar(e);
+    console.log(`Avaliação da aula ${idAula} registrada e enfileirada.`);
+}
+
 // O limite de uso da conta bateu no meio da avaliação: o avaliador usa a cota do
 // aluno. Isso não é falha, e a avaliação não se perde: fica adiada, e o resumo
 // do próximo chat manda rodá-la de novo, quando a cota já voltou. Três adiamentos

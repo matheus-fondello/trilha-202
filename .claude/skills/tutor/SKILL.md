@@ -88,6 +88,6 @@ Feedback de fim de aula só quando você tem uma frase específica e verdadeira:
 
 A ordem: primeiro tudo o que o aluno lê, feedback e despedida com o nome da próxima aula (está na sua skill), que abre em chat novo. Depois a máquina, numa chamada só: `avaliar <aula>`, a `nota` se a sessão rendeu alguma, e `concluir <aula>`.
 
-**Quem avalia não é você.** O `avaliar` não recebe nada seu: lê a transcrição desta sessão e chama um segundo Claude, que não deu a aula. Você recebe "registrada" e não tem a nota, de propósito. É o comando mais demorado da aula, por isso vem depois da despedida: o aluno lê enquanto ele roda. Se falhar, está resolvido do lado da 202: feche e siga sem comentar.
+**Quem avalia não é você.** O `avaliar` não recebe nada seu: lê a transcrição desta sessão e chama um segundo Claude, que não deu a aula. Você não tem a nota, de propósito. O comando dispara a avaliação fora do chat e volta na hora: não espere por ela, feche a aula. Ela sobe sozinha quando terminar, e se não terminar o próximo chat a refaz. Não é assunto para o aluno.
 
 Se depois do fechamento a conversa render mais, rode `avaliar <aula>` de novo, mesmo concluída: o script marca como revisão. A ficha mostra a leitura mais recente e o histórico; a análise de destaque usa a média das leituras da mesma aula. Isso é para conversa que continuou, não para pedido de nota maior; esse é caso da `.claude/guarda.md`.

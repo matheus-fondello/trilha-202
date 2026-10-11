@@ -244,4 +244,15 @@ function retomarSessao(e, entrada) {
   return true;
 }
 
-module.exports = { carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
+// A avaliação de uma aula roda num processo à parte (trilha.js, avaliar), e o registro guarda quando começou e o
+// pid. Ela está rodando enquanto esse processo vive, até vinte minutos: passou disso, ou o processo sumiu sem
+// deixar nota (máquina desligada, processo morto), não está mais, e o chat seguinte a refaz.
+const MINUTOS_AVALIANDO = 20;
+function avaliacaoRodando(reg) {
+  const m = reg && reg.avaliacao_em_andamento;
+  if (!m || !m.pid || !m.em) return false;
+  if (minutosEntre(m.em, agora()) > MINUTOS_AVALIANDO) return false;
+  try { process.kill(m.pid, 0); return true; } catch (err) { return err.code === 'EPERM'; }
+}
+
+module.exports = { avaliacaoRodando, carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
