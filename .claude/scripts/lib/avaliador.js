@@ -50,12 +50,17 @@ function extrairJson(texto) {
   try { return JSON.parse(limpo.slice(i, j + 1)); } catch { return null; }
 }
 
-const LIMITE = /hit your (session |usage |weekly )?limit|usage limit|rate[ _]limit|429/i;
+const LIMITE = /hit your (session |usage |weekly )?limit|usage limit|rate[ _]limit|\b429\b/i;
 // A API fora do ar ou sobrecarregada também passa sozinha, como o limite: a avaliação não falhou, ela espera e roda
 // de novo no próximo chat (mesmo caminho e mesmo teto de adiamentos do limite). O que não passa sozinho (o `claude`
 // ausente, resposta fora do formato) continua falha.
 const PASSAGEIRO = /overloaded|internal server error|service unavailable|bad gateway|gateway timeout|api error: (5\d\d|529)|\b(500|502|503|504|529)\b|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|fetch failed|network|connection (error|refused|reset)|socket hang up/i;
 const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(texto);
+// O `claude` da linha de comando sem login válido nesta máquina ("Failed to authenticate: OAuth session expired and
+// could not be refreshed"). A conversa no aplicativo segue funcionando, porque o aplicativo tem login próprio; o que
+// resolve é o aluno sair e entrar de novo nesse `claude` (trilha.js, pedirLogin). Não passa sozinho, nem é falha
+// do aluno.
+const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b/i;
 
 function chamar(prompt) {
   const args = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
@@ -83,6 +88,7 @@ function chamar(prompt) {
   try { envelope = JSON.parse(r.stdout); } catch {
     const cru = String(r.stderr || r.stdout || '');
     if (LIMITE.test(cru)) return { ok: false, limite: true, motivo: `limite de uso da conta (${cru.trim().slice(0, 120)})` };
+    if (LOGIN.test(cru)) return { ok: false, login: true, motivo: `o Claude desta máquina está sem login válido (${cru.trim().slice(0, 120)})` };
     if (passageiro(null, cru)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${cru.trim().slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador respondeu fora do formato esperado (${String(r.stderr || r.stdout || '').trim().slice(0, 200) || 'sem saída'})` };
   }
@@ -91,6 +97,7 @@ function chamar(prompt) {
     // O avaliador usa a cota do aluno. No limite ("You've hit your session limit
     // · resets 10:20pm"), a avaliação não falhou: ela espera a cota voltar.
     if (envelope.api_error_status === 429 || LIMITE.test(texto)) return { ok: false, limite: true, motivo: `limite de uso da conta (${texto.slice(0, 120)})` };
+    if (envelope.api_error_status === 401 || LOGIN.test(texto)) return { ok: false, login: true, motivo: `o Claude desta máquina está sem login válido (${texto.slice(0, 120)})` };
     if (passageiro(envelope.api_error_status, texto)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${texto.slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador falhou: ${texto.slice(0, 200)}` };
   }
@@ -167,7 +174,7 @@ function avaliarUma({ contexto, transcricao, produto, validar }, limite = TENTAT
   let uso = null;
   for (let tentativa = 1; tentativa <= Math.min(TENTATIVAS, limite); tentativa++) {
     const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }));
-    if (!r.ok) return { ok: false, limite: Boolean(r.limite), motivo: r.motivo, tentativas: tentativa, uso };
+    if (!r.ok) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo, tentativas: tentativa, uso };
     if (!uso) uso = { ...r.uso };
     else {
       for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
@@ -288,7 +295,7 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   let uso = null;
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }));
-    if (!r.ok) return { ok: false, limite: Boolean(r.limite), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    if (!r.ok) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
     uso = r.uso;
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o corretor não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }

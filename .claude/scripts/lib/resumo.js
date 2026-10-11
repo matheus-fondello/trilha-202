@@ -55,15 +55,29 @@ function portaFechada(e, a, linhas) {
 // Avaliação de aula que o limite de uso adiou (trilha.js, adiar): roda no começo
 // do chat seguinte, quando a cota voltou. A aula da vez fica de fora enquanto não
 // fecha, porque o fechamento dela já roda o `avaliar`.
+// Desde 11/10 também a que falhou por outro motivo ganha uma segunda chance, e a que falhou uma vez por falta de
+// login no `claude` da máquina; a que já falhou duas por login fica com o bloco de login (avaliacoesSemLogin).
 function pendencias(e, linhas) {
   const adiadas = Object.entries(e.aulas || {})
-    .filter(([id, r]) => r.avaliacao_adiada && !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual))
+    .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
+      && (r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 2)))
     .map(([id]) => id);
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou porque o limite de uso da conta bateu ou a API do Claude estava fora do ar. No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando disser que o limite bateu de novo, siga a aula normalmente.`);
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (limite de uso, API fora do ar ou outro erro). No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}; leva cerca de um minuto cada. Ao aluno, no máximo uma linha dizendo que está fechando o registro de uma aula anterior. Se o comando falhar de novo, faça o que ele disser; se ele não pedir nada ao aluno, siga a aula normalmente.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);
   if (quizzes.length) linhas.push(`Pendência do harness: a IA ainda não concluiu a avaliação de resposta aberta em ${quizzes.join(', ')}. Antes da matéria, rode ${quizzes.map((id) => `\`node .claude/scripts/trilha.js quiz ${id}\``).join(' e ')}; o comando tenta de novo sem alterar a resposta do aluno. Não anuncie nota.`);
+}
+
+// Aulas cuja avaliação falhou duas vezes porque o `claude` da máquina está sem login (trilha.js, pedirLogin). Vem
+// antes de tudo, até da escolha de frente: o aluno refaz o login, o tutor reavalia, e só depois a aula do dia.
+function semLogin(e, linhas) {
+  const ids = Object.entries(e.aulas || {})
+    .filter(([, r]) => !r.avaliada_em && r.avaliacao_login && r.avaliacao_login.vezes >= 2)
+    .map(([id]) => id);
+  if (!ids.length) return;
+  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} falhou porque o Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login válido (a conversa aqui funciona porque o aplicativo tem login próprio). Só ele resolve. No seu primeiro turno, cumprimente e diga isso em duas linhas, sem jargão e sem culpa, e passe o passo a passo: (1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar \`claude\` e Enter; (3) lá dentro, digitar \`/logout\` e Enter, depois \`/login\` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar \`/exit\`; (5) para conferir, rodar \`claude -p "oi"\`, que tem de responder sem erro. Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')} e só então siga com o que vem abaixo. Se ele não puder agora, siga normalmente: o próximo chat volta a pedir.`);
+  linhas.push('');
 }
 
 // Duas frentes abertas e o chat ainda sem escolha: o resumo inteiro vira a
@@ -115,6 +129,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
 
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
+  semLogin(e, linhas);
   if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas);
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
