@@ -117,8 +117,7 @@ async function enviar({ timeoutMs = 3000, estado = null, token = null, url = nul
         return { ok: false, status: 413, enviados: 0, pendentes: todos.length, motivo: 'um evento grande demais foi trocado pelo registro de que existiu' };
       }
       if (resp.status === 401 && !token && e.acesso) {
-        e.acesso.recusado_em = agora();
-        estadoLib.salvar(e);
+        anotar(e, (x) => { if (x.acesso) x.acesso.recusado_em = agora(); });
       } else if (!token) {
         marcarFalha(e);
       }
@@ -127,20 +126,16 @@ async function enviar({ timeoutMs = 3000, estado = null, token = null, url = nul
     let resposta = {};
     try { resposta = await resp.json(); } catch { /* corpo vazio é aceito */ }
     fila.remover(eventos.map((x) => x.id));
-    let mudou = false;
-    if (resposta.aluno_id && resposta.aluno_id !== e.aluno.id) {
-      e.aluno.id = resposta.aluno_id;
-      mudou = true;
+    const novoId = resposta.aluno_id && resposta.aluno_id !== e.aluno.id ? resposta.aluno_id : null;
+    const conferiu = !token && e.acesso && !e.acesso.verificado_em;
+    if (novoId || conferiu || e.envio_falhou_em) {
+      const quando = agora();
+      anotar(e, (x) => {
+        if (novoId) x.aluno.id = novoId;
+        if (conferiu && x.acesso && !x.acesso.verificado_em) x.acesso.verificado_em = quando;
+        delete x.envio_falhou_em;
+      });
     }
-    if (!token && e.acesso && !e.acesso.verificado_em) {
-      e.acesso.verificado_em = agora();
-      mudou = true;
-    }
-    if (e.envio_falhou_em) {
-      delete e.envio_falhou_em;
-      mudou = true;
-    }
-    if (mudou) estadoLib.salvar(e);
     const restam = todos.length - eventos.length;
     return {
       ok: true,
@@ -165,7 +160,17 @@ async function enviar({ timeoutMs = 3000, estado = null, token = null, url = nul
 const ESPERA_APOS_FALHA_MS = 2 * 60 * 1000;
 
 function marcarFalha(e) {
-  try { e.envio_falhou_em = agora(); estadoLib.salvar(e); } catch { /* segue */ }
+  const quando = agora();
+  anotar(e, (x) => { x.envio_falhou_em = quando; });
+}
+
+// O que o envio anota no estado. O `e` que chegou aqui foi lido antes da rede, segundos atrás, e nesse tempo outro
+// processo pode ter gravado: um hook de turno, um comando do tutor, a avaliação que roda fora do chat. Gravar o `e`
+// inteiro apagava o que eles escreveram (a nota recém-registrada voltava a "em andamento", um marco sumia). Então a
+// mudança vai para a cópia de quem chamou e para o estado relido agora, e é este que se grava.
+function anotar(e, muda) {
+  try { muda(e); } catch { /* segue */ }
+  try { const atual = estadoLib.carregar(); muda(atual); estadoLib.salvar(atual); } catch { /* segue */ }
 }
 
 // O envio que não depende de hook. Todo comando do CLI que registra progresso
@@ -200,4 +205,28 @@ async function enviarAgora({ timeoutMs = PRAZO_PADRAO_MS } = {}) {
   }
 }
 
-module.exports = { enviar, enviarAgora, prazoDeEnvio, ESPERA_APOS_FALHA_MS };
+// O envio de quem não tem ninguém esperando: o processo à parte da avaliação (trilha.js, `avaliar --agora`). A nota
+// que ele acabou de enfileirar é o evento que mais importa, e o `enviarAgora` desistia fácil demais dela: uma
+// tentativa, e nenhuma se outro envio tinha falhado nos dois minutos anteriores (o CRM frio estoura os dois segundos
+// do envio de um marco). Com o aluno fechando o aplicativo logo depois da aula, a nota ficava no disco até o chat
+// seguinte. Aqui são várias tentativas, com prazo longo e espera crescente, uns quatro minutos ao todo; se nenhuma
+// passar, a fila continua no disco e sobe no próximo hook, como sempre.
+const ESPERAS_MS = String(process.env.TRILHA_202_ENVIO_ESPERAS_MS || '0,5000,20000,60000,120000').split(',').map(Number).filter((n) => n >= 0);
+
+async function enviarInsistindo({ timeoutMs = 20000 } = {}) {
+  for (const espera of ESPERAS_MS) {
+    try {
+      if (espera) await new Promise((ok) => setTimeout(ok, espera));
+      if (!fila.ler().length) return true;
+      const e = estadoLib.carregar();
+      if (!acesso.conectado(e)) return false;
+      const r = await enviar({ timeoutMs, estado: e });
+      if (r.ok && !r.pendentes) return true;
+      // Token recusado não se resolve insistindo; e com página ainda por sair, a próxima volta não precisa esperar.
+      if (r.status === 401 || /recusado|sem token|não configurado/.test(r.motivo || '')) return false;
+    } catch { /* tenta de novo */ }
+  }
+  return false;
+}
+
+module.exports = { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio, ESPERA_APOS_FALHA_MS };

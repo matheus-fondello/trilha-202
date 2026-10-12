@@ -123,6 +123,9 @@ function chamar(prompt) {
     timeout: TIMEOUT_MS,
     maxBuffer: 64 * 1024 * 1024,
     cwd: os.tmpdir(),
+    // Sem janela de console: no Windows, o `claude.cmd` passa pelo shell, e uma janela que pisca é uma janela que o
+    // aluno fecha.
+    windowsHide: true,
   };
   let r;
   let achou = false;

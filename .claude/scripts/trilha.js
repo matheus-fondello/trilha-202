@@ -33,7 +33,7 @@ const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
-const { enviar, enviarAgora, prazoDeEnvio } = require('./lib/enviar');
+const { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio } = require('./lib/enviar');
 const { resumo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
@@ -348,6 +348,7 @@ const comandos = {
       if (reg.avaliacao_em_andamento) { /* rodando: nada a avisar */ }
       else if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
       else if (reg.avaliacao_login) avisos.push('a avaliação desta aula ficou pendente (o Claude desta máquina está sem login) e roda no começo do próximo chat');
+      else if (reg.avaliacao_falhou && !falhaDefinitiva(reg)) avisos.push('a avaliação desta aula ficou pendente (erro do avaliador) e roda no começo do próximo chat');
       else if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
       else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
     }
@@ -836,6 +837,9 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg) {
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
     fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao }, e);
+    // Enfileirar consulta o git e leva décimos de segundo. O estado é relido de novo aqui, logo antes de gravar: o chat
+    // (um hook de turno, um marco da aula seguinte) pode ter gravado nesse intervalo, e esta gravação o apagaria.
+    ({ e, reg } = reler());
     reg.avaliada_em = agora();
     delete reg.avaliacao_falhou;
     delete reg.avaliacao_adiada;
@@ -858,17 +862,26 @@ function adiar(e, reg, idAula, motivo, uso) {
   console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
 }
 
-// Qualquer outra falha também ganha uma segunda chance (11/10): o resumo do chat seguinte manda rodar o `avaliar`
-// de novo, uma vez. Falhou de novo, fica a falha.
+// A falha que não é limite nem login (resposta fora do formato nas três tentativas, transcrição que não abriu, o
+// Claude Code que não foi achado, o processo interrompido). Ela é tentada de novo no começo de cada chat seguinte, e
+// enquanto houver tentativa pela frente o que sobe é `avaliacao.adiada`: a ficha da 202 mostra "pendente", que é a
+// verdade. Antes subia `avaliacao.falhou` já na primeira vez, com a nova tentativa marcada, e a ficha dizia "avaliação
+// falhou" de uma aula que ia ser avaliada no chat seguinte. `avaliacao.falhou` é só a desistência, na terceira.
+const MAX_FALHAS = 3;
+const falhaDefinitiva = (reg) => Boolean(reg.avaliacao_falhou && (reg.avaliacao_falhou.vezes || 1) >= MAX_FALHAS);
 function desistir(e, reg, idAula, motivo, uso) {
   delete reg.avaliacao_adiada;
   delete reg.avaliacao_login;
   const vezes = ((reg.avaliacao_falhou || {}).vezes || 0) + 1;
   reg.avaliacao_falhou = { em: agora(), motivo, vezes };
   estadoLib.salvar(e);
+  if (vezes < MAX_FALHAS) {
+    fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'erro', avaliador: uso || null }, e);
+    console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+    return;
+  }
   fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, vezes, avaliador: uso || null }, e);
-  const depois = vezes < 2 ? ' Ela roda de novo, sozinha, no começo do próximo chat.' : '';
-  console.log(`Não consegui avaliar a aula ${idAula}: ${motivo}. Isso já foi registrado e a 202 foi avisada.${depois} Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+  console.log(`Não consegui avaliar a aula ${idAula}, em ${vezes} chats: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
 // O `claude` da linha de comando desta máquina está sem login (lib/avaliador.js, LOGIN), e a conversa segue
@@ -889,8 +902,9 @@ function pedirLogin(e, reg, idAula, motivo, uso) {
     console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno agora.`);
     return;
   }
-  fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, vezes, causa: 'login', avaliador: uso || null }, e);
-  console.log(`A avaliação da aula ${idAula} falhou de novo: ${motivo}. A 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que refaça o login, com o passo a passo: ${PASSOS_LOGIN} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
+  // Continua pendente, e não falha: ela roda assim que o aluno refizer o login, e a ficha da 202 diz por que espera.
+  fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa refazer o login do Claude da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
+  console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que refaça o login, com o passo a passo: ${PASSOS_LOGIN} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
 }
 const PASSOS_LOGIN = '(1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar `claude` e Enter; (3) lá dentro, digitar `/logout` e Enter, depois `/login` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar `/exit`; (5) para conferir, rodar `claude -p "oi"`, que tem de responder sem erro.';
 
@@ -1369,7 +1383,10 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     await comandos[comando](args);
     // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
-    if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
+    // O processo à parte da avaliação não tem ninguém esperando por ele, e o que ele enfileirou é a nota: insiste no
+    // envio em vez de tentar uma vez só (lib/enviar.js).
+    if (comando === 'avaliar' && args.includes('--agora')) await enviarInsistindo();
+    else if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
   } catch (err) {
     falhar(err.message);
   }

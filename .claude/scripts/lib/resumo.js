@@ -56,7 +56,7 @@ function portaFechada(e, a, linhas) {
 // Avaliação de aula que o limite de uso adiou (trilha.js, adiar): roda no começo
 // do chat seguinte, quando a cota voltou. A aula da vez fica de fora enquanto não
 // fecha, porque o fechamento dela já roda o `avaliar`.
-// Desde 11/10 também a que falhou por outro motivo ganha uma segunda chance, e a que falhou uma vez por falta de
+// Desde 11/10 também a que falhou por outro motivo é tentada de novo, até a terceira (trilha.js, MAX_FALHAS), e a que falhou uma vez por falta de
 // login no `claude` da máquina; a que já falhou duas por login fica com o bloco de login (avaliacoesSemLogin).
 function pendencias(e, linhas) {
   const adiadas = Object.entries(e.aulas || {})
@@ -64,7 +64,7 @@ function pendencias(e, linhas) {
       // A avaliação que foi disparada e cujo processo sumiu sem deixar nota (máquina desligada) também volta aqui.
       // Enquanto o processo vive, ela não é pendência: está rodando, e rodar de novo daria duas avaliações.
       && !avaliacaoRodando(r)
-      && (r.avaliacao_em_andamento || r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 2)))
+      && (r.avaliacao_em_andamento || r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 3)))
     .map(([id]) => id);
   if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (limite de uso, API fora do ar ou outro erro). No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. O comando volta na hora: a avaliação roda fora do chat. Não espere por ela e não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
   const quizzes = Object.entries(e.aulas || {})
