@@ -27,6 +27,14 @@ const REGUA = path.join(paths.RAIZ, '.claude', 'avaliador', 'regua.md');
 const MODELO = 'sonnet';
 // O teto de uma chamada. A variável existe para o teste do estouro não esperar quatro minutos.
 const TIMEOUT_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 4 * 60 * 1000;
+// A avaliação de aula roda dentro do comando do chat, com o aluno ali, e o Claude Code corta um comando aos dois
+// minutos: cortada, ela não registraria nem que tentou. Então cada chamada tem um teto menor, e a avaliação inteira
+// (as tentativas que a validação pedir) cabe em ORCAMENTO_MS; o que não couber vira pendência e roda no chat seguinte.
+// Com o esforço fixo, uma leitura leva de dez a trinta segundos.
+const TIMEOUT_AULA_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 75 * 1000;
+const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 105 * 1000;
+// Com menos que isto pela frente, não vale começar outra chamada.
+const MINIMO_PARA_TENTAR_MS = Math.min(15 * 1000, ORCAMENTO_MS / 4);
 // O esforço de raciocínio do avaliador é fixo. Sem isto ele herda o do Claude de cada máquina, e `--setting-sources ""`
 // não o neutraliza: medido em 11/10 com a 1.2 real, a mesma leitura leva 20 s em `medium` e passa de dez minutos em
 // `max`. Um aluno com o esforço alto teve leituras de 150 s (12 mil tokens de saída cada, contra 750) e a 1.2 estourou
@@ -113,14 +121,14 @@ const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(t
 // do aluno.
 const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b/i;
 
-function chamar(prompt) {
+function chamar(prompt, timeoutMs = TIMEOUT_MS) {
   const base = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
     '--setting-sources', '', '--disallowed-tools', SEM_FERRAMENTAS];
   const args = aceitaEsforco ? [...base, '--effort', ESFORCO] : base;
   const opcoes = {
     input: prompt,
     encoding: 'utf8',
-    timeout: TIMEOUT_MS,
+    timeout: timeoutMs,
     maxBuffer: 64 * 1024 * 1024,
     cwd: os.tmpdir(),
     // Sem janela de console: no Windows, o `claude.cmd` passa pelo shell, e uma janela que pisca é uma janela que o
@@ -141,7 +149,7 @@ function chamar(prompt) {
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
   if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
     aceitaEsforco = false;
-    return chamar(prompt);
+    return chamar(prompt, timeoutMs);
   }
   // O teto estourou: o spawnSync devolve o erro ETIMEDOUT junto com o sinal. É API lenta, não defeito da aula, e
   // tem de cair no caminho passageiro abaixo. Antes este teste vinha depois do `r.error` e nunca era alcançado: o
@@ -153,7 +161,7 @@ function chamar(prompt) {
       : `o avaliador não rodou (${r.error.message})`;
     return { ok: false, motivo };
   }
-  if (estourou || r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(TIMEOUT_MS / 60000)} minutos e foi interrompido (API lenta ou fora do ar)` };
+  if (estourou || r.signal) return { ok: false, limite: true, motivo: `o avaliador passou de ${Math.round(timeoutMs / 1000)} segundos e foi interrompido (API lenta ou fora do ar)` };
   const envelope = lerEnvelope(r.stdout);
   if (!envelope) {
     const cru = String(r.stderr || r.stdout || '');
@@ -235,15 +243,21 @@ ${correcao}
 Responda **apenas** com o objeto JSON, sem cerca de código, sem comentário antes ou depois. Não use ferramentas.`;
 }
 
-// Duas tentativas: a segunda leva a lista de erros da validação. Forma errada é
-// o que mais acontece, e perder a avaliação de uma aula inteira por uma vírgula
-// seria pior que a chamada extra.
-function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite = TENTATIVAS) {
+// Até três tentativas: a segunda e a terceira levam a lista de erros da validação. Forma errada é o que mais
+// acontece, e perder a avaliação de uma aula inteira por uma vírgula seria pior que a chamada extra. `prazo` é o
+// instante em que a avaliação inteira tem de ter acabado: uma tentativa só começa se couber.
+function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite = TENTATIVAS, prazo = Date.now() + ORCAMENTO_MS) {
   let ultimo = 'o avaliador não produziu nada';
   let erros = null;
   let uso = null;
-  for (let tentativa = 1; tentativa <= Math.min(TENTATIVAS, limite); tentativa++) {
-    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }));
+  const maximo = Math.min(TENTATIVAS, limite);
+  for (let tentativa = 1; tentativa <= maximo; tentativa++) {
+    const resta = prazo - Date.now();
+    // Sem tempo para outra chamada: não é falha da aula, é pendência, e o chat seguinte tenta de novo.
+    if (tentativa > 1 && resta < MINIMO_PARA_TENTAR_MS) {
+      return { ok: false, limite: true, motivo: `o avaliador não terminou a tempo (${ultimo})`, tentativas: tentativa - 1, uso };
+    }
+    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(TIMEOUT_AULA_MS, resta)));
     // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
     // (adiar, pedir o login). Qualquer outra falha da chamada ganha as tentativas que restam.
     if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo, tentativas: tentativa, uso };
@@ -256,28 +270,16 @@ function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite 
     const json = extrairJson(r.texto);
     if (!json) { ultimo = 'o avaliador não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
     aplicarIniciativa(json);
-    // Na última tentativa, o que é mecânico se conserta em vez de perder a avaliação inteira.
-    if (sanear) sanear(json, tentativa === Math.min(TENTATIVAS, limite));
+    // Na última tentativa, o que é mecânico se conserta em vez de perder a avaliação inteira. "Última" é também a
+    // que não vai ter outra por falta de tempo.
+    const ultima = tentativa === maximo || prazo - Date.now() < MINIMO_PARA_TENTAR_MS;
+    if (sanear) sanear(json, ultima);
     erros = validar(json);
     if (!erros.length) return { ok: true, avaliacao: json, uso, tentativas: tentativa };
     ultimo = `a avaliação não passou na validação (${erros[0]})`;
   }
-  return { ok: false, motivo: ultimo, tentativas: Math.min(TENTATIVAS, limite), uso };
+  return { ok: false, motivo: ultimo, tentativas: maximo, uso };
 }
-
-// Uma suspeita isolada nao sai para o CRM. A primeira leitura que a levantou
-// dispara duas leituras independentes da mesma aula, pelo mesmo validador.
-// Falha de uma confirmacao nao e voto a favor: sem dois votos positivos de tres,
-// o sinal fica nulo. A avaliacao e as notas continuam sendo as da primeira.
-// Estabilidade (11/10): a mesma aula lida duas vezes oscilava um ponto inteiro (a 1.1 de uma cobaia saiu 3 numa
-// leitura e 4 na outra). Agora ela é lida duas vezes; se as notas divergem, uma terceira desempata. Vale a leitura
-// mais central, a mais próxima da mediana de cada critério, inteira: nota, justificativa e evidências continuam
-// saindo de uma mesma leitura e dizendo a mesma coisa. Uma releitura que falha (limite, API, login) não derruba a
-// avaliação: fica a que deu certo.
-//
-// A suspeita usa as mesmas leituras: ela só vale quando duas leituras independentes apontam a mesma fala do aluno.
-// Se alguma leitura suspeitou e só houve duas, uma terceira é feita para confirmar ou descartar.
-const CRITERIOS = ['compreensao', 'pensamento', 'esforco', 'autonomia', 'dominio', 'iniciativa'];
 
 // A iniciativa sai de uma conta, não da impressão do modelo (11/10). Pedida direto,
 // ela tirava nota de quem respondeu tudo bem e não perguntou nada a mais, mesmo com
@@ -317,85 +319,52 @@ function aplicarIniciativa(av) {
   return av;
 }
 
-function mediana(xs) {
-  const v = [...xs].sort((a, b) => a - b);
-  return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
-}
-
-function maisCentral(avaliacoes) {
-  const centro = {};
-  for (const k of CRITERIOS) {
-    const notas = avaliacoes.map((a) => (a.criterios || {})[k]).filter(Number.isInteger);
-    if (notas.length) centro[k] = mediana(notas);
-  }
-  const distancia = (a) => Object.entries(centro).reduce((d, [k, m]) => d + (Number.isInteger((a.criterios || {})[k]) ? Math.abs(a.criterios[k] - m) : 0), 0);
-  let melhor = 0;
-  for (let n = 1; n < avaliacoes.length; n++) if (distancia(avaliacoes[n]) < distancia(avaliacoes[melhor])) melhor = n;
-  return melhor;
-}
-
-const mesmasNotas = (a, b) => CRITERIOS.every((k) => (a.criterios || {})[k] === (b.criterios || {})[k]);
-
-// O teto do tempo da avaliação inteira. O limite de quatro minutos é por chamada, e a aula é lida de duas a três
-// vezes, cada uma com até três tentativas: numa máquina lenta a soma podia passar de meia hora. A primeira leitura
-// roda sempre, porque sem ela não há nota; as releituras, que só refinam a nota, rodam enquanto couberem neste teto.
-// Com o esforço fixo a avaliação inteira leva uns 30 segundos, e o teto não é alcançado.
-const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 3 * 60 * 1000;
-
+// Uma leitura só (11/10, noite). De manhã a aula passou a ser lida duas vezes, e uma terceira quando as notas
+// divergiam, para a nota oscilar menos; isso triplicava o tempo, e o Pedro preferiu uma avaliação rápida, dentro do
+// chat. A exceção é a suspeita: uma leitura isolada que acusa o aluno não sobe para a 202 sem que outra leitura,
+// independente, aponte a mesma fala. É raro, e só nesse caso há a segunda chamada; se ela não couber no tempo ou não
+// confirmar, a suspeita sai nula e a avaliação segue sendo a da primeira leitura.
 function avaliar(entrada) {
   // A medição pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
   const maxLeituras = Number.isInteger(entrada.maxLeituras) && entrada.maxLeituras > 0 ? entrada.maxLeituras : Infinity;
-  const inicio = Date.now();
-  const primeira = avaliarUma(entrada, maxLeituras);
+  const prazo = Date.now() + ORCAMENTO_MS;
+  const primeira = avaliarUma(entrada, maxLeituras, prazo);
   if (!primeira.ok) return { ...primeira, leituras: primeira.tentativas };
 
-  const boas = [primeira];
   let leituras = primeira.tentativas;
-  let falhas = 0;
   const uso = { ...primeira.uso };
-  const somar = (r) => {
-    leituras += r.tentativas;
-    if (!r.uso) return;
-    for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
-    uso.custo_usd = (uso.custo_usd || 0) + (r.uso.custo_usd || 0);
-  };
-  let semTempo = false;
-  const reler = () => {
-    if (leituras >= maxLeituras) return false;
-    if (Date.now() - inicio >= ORCAMENTO_MS) { semTempo = true; return false; }
-    const r = avaliarUma(entrada, maxLeituras - leituras);
-    somar(r);
-    if (r.ok) boas.push(r); else falhas++;
-    return r.ok;
-  };
-
-  reler();
-  const divergem = boas.length === 2 && !mesmasNotas(boas[0].avaliacao, boas[1].avaliacao);
-  const suspeitou = boas.some((r) => r.avaliacao.suspeita);
-  if (divergem || (suspeitou && boas.length < 3)) reler();
-  // Uma releitura que falhou deixa a suspeita sem confirmação: tenta mais uma, até três boas.
-  if (boas.some((r) => r.avaliacao.suspeita) && boas.length < 3 && falhas) reler();
-
-  const escolhida = boas[maisCentral(boas.map((r) => r.avaliacao))];
-
-  const suspeitas = boas.map((r) => r.avaliacao.suspeita).filter(Boolean);
-  const falas = transcricaoLib.falasDoAluno(entrada.transcricao);
+  const suspeita = primeira.avaliacao.suspeita || null;
   let confirmada = null;
-  for (let a = 0; a < suspeitas.length; a++) {
-    for (let b = a + 1; b < suspeitas.length; b++) {
-      const mesmaFala = falas.some((fala) =>
-        transcricaoLib.evidenciaNaTranscricao(suspeitas[a].evidencia, [fala]) &&
-        transcricaoLib.evidenciaNaTranscricao(suspeitas[b].evidencia, [fala]));
-      if (mesmaFala) confirmada = suspeitas[a];
+  let confirmacao = null;
+  if (suspeita) {
+    confirmacao = { positivas: 1, total: 1, falhas: 0, confirmada: false };
+    if (leituras < maxLeituras && prazo - Date.now() >= MINIMO_PARA_TENTAR_MS) {
+      const r = avaliarUma(entrada, maxLeituras - leituras, prazo);
+      leituras += r.tentativas;
+      if (r.uso) {
+        for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
+        uso.custo_usd = (uso.custo_usd || 0) + (r.uso.custo_usd || 0);
+      }
+      confirmacao.total = 2;
+      if (!r.ok) confirmacao.falhas = 1;
+      else if (r.avaliacao.suspeita) {
+        confirmacao.positivas = 2;
+        const falas = transcricaoLib.falasDoAluno(entrada.transcricao);
+        const mesmaFala = falas.some((fala) =>
+          transcricaoLib.evidenciaNaTranscricao(suspeita.evidencia, [fala]) &&
+          transcricaoLib.evidenciaNaTranscricao(r.avaliacao.suspeita.evidencia, [fala]));
+        if (mesmaFala) confirmada = suspeita;
+      }
     }
+    confirmacao.confirmada = Boolean(confirmada);
   }
   return {
-    ...escolhida,
-    avaliacao: { ...escolhida.avaliacao, suspeita: confirmada },
+    ...primeira,
+    avaliacao: { ...primeira.avaliacao, suspeita: confirmada },
     uso,
     leituras,
-    estabilidade: { leituras_validas: boas.length, notas: boas.map((r) => r.avaliacao.criterios), ...(semTempo ? { sem_tempo: true } : {}) },
-    ...(suspeitas.length ? { confirmacao_suspeita: { positivas: suspeitas.length, total: boas.length + falhas, falhas, confirmada: Boolean(confirmada) } } : {}),
+    estabilidade: { leituras_validas: 1, notas: [primeira.avaliacao.criterios] },
+    ...(confirmacao ? { confirmacao_suspeita: confirmacao } : {}),
   };
 }
 

@@ -205,16 +205,17 @@ async function enviarAgora({ timeoutMs = PRAZO_PADRAO_MS } = {}) {
   }
 }
 
-// O envio de quem não tem ninguém esperando: o processo à parte da avaliação (trilha.js, `avaliar --agora`). A nota
-// que ele acabou de enfileirar é o evento que mais importa, e o `enviarAgora` desistia fácil demais dela: uma
-// tentativa, e nenhuma se outro envio tinha falhado nos dois minutos anteriores (o CRM frio estoura os dois segundos
-// do envio de um marco). Com o aluno fechando o aplicativo logo depois da aula, a nota ficava no disco até o chat
-// seguinte. Aqui são várias tentativas, com prazo longo e espera crescente, uns quatro minutos ao todo; se nenhuma
-// passar, a fila continua no disco e sobe no próximo hook, como sempre.
-const ESPERAS_MS = String(process.env.TRILHA_202_ENVIO_ESPERAS_MS || '0,5000,20000,60000,120000').split(',').map(Number).filter((n) => n >= 0);
+// O envio que insiste, para a nota de uma avaliação (trilha.js, `avaliar`). O `enviarAgora` desistia fácil demais
+// dela: uma tentativa, e nenhuma se outro envio tinha falhado nos dois minutos anteriores (o CRM frio estoura os dois
+// segundos do envio de um marco). Com o aluno fechando o aplicativo logo depois da aula, a nota ficava no disco até
+// o chat seguinte. Quem chama diz as esperas entre as tentativas; se nenhuma passar, a fila continua no disco e
+// sobe no próximo hook, como sempre.
+const ESPERAS_MS = process.env.TRILHA_202_ENVIO_ESPERAS_MS
+  ? process.env.TRILHA_202_ENVIO_ESPERAS_MS.split(',').map(Number).filter((n) => n >= 0)
+  : null;
 
-async function enviarInsistindo({ timeoutMs = 20000 } = {}) {
-  for (const espera of ESPERAS_MS) {
+async function enviarInsistindo({ timeoutMs = 20000, esperas = [0, 5000, 20000] } = {}) {
+  for (const espera of ESPERAS_MS || esperas) {
     try {
       if (espera) await new Promise((ok) => setTimeout(ok, espera));
       if (!fila.ler().length) return true;

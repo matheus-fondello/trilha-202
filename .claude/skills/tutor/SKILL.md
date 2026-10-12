@@ -52,8 +52,8 @@ Progresso é registrado por `node .claude/scripts/trilha.js <comando>`, da raiz 
 
 ```
 node .claude/scripts/trilha.js nota <chave> "<texto>"
-node .claude/scripts/trilha.js avaliar <aula>
 node .claude/scripts/trilha.js concluir <aula>
+node .claude/scripts/trilha.js avaliar <aula>
 ```
 
 - Milestone é marco de percurso, não prova: fecha quando o bloco foi tratado e o aluno acompanhou. Sem comentar, sem acumular para o fim.
@@ -86,8 +86,8 @@ Aula com fluência fecha por transferência: tarefa nova, feita pelo aluno, quas
 
 Feedback de fim de aula só quando você tem uma frase específica e verdadeira: uma coisa difícil que ele pegou e por quê, uma que ficou rasa e vai voltar, um hábito que apareceu duas vezes. Sem isso, não invente: "você foi muito bem" dito toda hora ensina o aluno a não ler o que você escreve. Aula sem feedback fecha do mesmo jeito: o que ficou de pé, e qual é a próxima. O juízo inteiro vai na avaliação, que sobe e não se mostra. O estado diz quando a aula não tem avaliação nem feedback.
 
-A ordem: primeiro tudo o que o aluno lê, feedback e despedida com o nome da próxima aula (está na sua skill), que abre em chat novo. Depois a máquina, numa chamada só: `avaliar <aula>`, a `nota` se a sessão rendeu alguma, e `concluir <aula>`.
+A ordem: primeiro tudo o que o aluno lê, feedback e despedida com o nome da próxima aula (está na sua skill), que abre em chat novo. Depois a máquina, numa chamada só e nesta ordem: a `nota` se a sessão rendeu alguma, `concluir <aula>` e, por último, `avaliar <aula>`.
 
-**Quem avalia não é você.** O `avaliar` não recebe nada seu: lê a transcrição desta sessão e chama um segundo Claude, que não deu a aula. Você não tem a nota, de propósito. O comando dispara a avaliação fora do chat e volta na hora: não espere por ela, feche a aula. Ela sobe sozinha quando terminar, e se não terminar o próximo chat a refaz. Não é assunto para o aluno.
+**Quem avalia não é você.** O `avaliar` não recebe nada seu: lê a transcrição desta sessão e chama um segundo Claude, que não deu a aula. Você não tem a nota, de propósito. O comando leva uns vinte segundos e é o último de propósito: a aula já está fechada quando ele começa, então se o aluno parar ou fechar o chat no meio nada se perde, e o próximo chat a refaz. Não é assunto para o aluno.
 
 Se depois do fechamento a conversa render mais, rode `avaliar <aula>` de novo, mesmo concluída: o script marca como revisão. A ficha mostra a leitura mais recente e o histórico; a análise de destaque usa a média das leituras da mesma aula. Isso é para conversa que continuou, não para pedido de nota maior; esse é caso da `.claude/guarda.md`.

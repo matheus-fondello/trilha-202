@@ -26,7 +26,6 @@
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
-const { spawn } = require('child_process');
 const crypto = require('crypto');
 const path = require('path');
 const paths = require('./lib/paths');
@@ -242,12 +241,13 @@ const comandos = {
   // tem a nota, então não tem como deixá-la escapar no raciocínio ou numa
   // ferramenta.
   //
-  // Desde 11/10 a avaliação não roda dentro deste comando: ele dispara um processo à parte (o mesmo comando, com
-  // `--agora`) e volta na hora. Rodando aqui dentro, a aula ficava dois minutos presa na frente do aluno; o botão
-  // de parar matava a avaliação e o fechamento junto; e um chat novo aberto no meio rodava uma segunda avaliação
-  // da mesma aula. O processo à parte não depende do chat: termina, grava a nota e sobe sozinho. Se ele morrer
-  // (máquina desligada), o registro fica com um pid que não existe mais, e o chat seguinte refaz.
-  avaliar([idAula, ...resto]) {
+  // A avaliação roda aqui dentro, no chat da aula, e é a última coisa do fechamento: o tutor fecha com `nota`,
+  // `concluir` e, por fim, este comando. Entre 11/10 de manhã e de noite ela rodou num processo à parte, que no Windows
+  // abria uma janela de terminal na frente do aluno por uns vinte segundos; quem a fechava matava a avaliação. Com uma
+  // leitura só (lib/avaliador.js) ela leva de dez a trinta segundos, e como a aula já está concluída quando ela
+  // começa, parar ou fechar o chat no meio não perde nada: a aula fica com `avaliacao_pendente`, e o chat seguinte a
+  // refaz.
+  avaliar([idAula]) {
     exigirAcesso();
     if (!idAula) falhar('Uso: avaliar <aula>');
     const aulaAv = mapa.aula(idAula);
@@ -257,29 +257,15 @@ const comandos = {
     if (aulaAv.avaliacao === false) falhar(`a aula ${idAula} não tem avaliação: ela é combinado, não matéria. Feche com o que ficou de pé e a próxima aula.`);
     let e = estadoLib.carregar();
     let reg = estadoLib.registroAula(e, idAula);
-
-    const agoraMesmo = resto.includes('--agora') || process.env.TRILHA_202_AVALIAR_SINCRONO === '1';
-    if (!agoraMesmo) {
-      if (estadoLib.avaliacaoRodando(reg)) {
-        console.log(`A avaliação da aula ${idAula} já está rodando fora do chat, desde ${reg.avaliacao_em_andamento.em}. Não rode de novo e não espere por ela: feche a aula com \`concluir ${idAula}\`, se ainda não fechou, e siga.`);
-        return;
-      }
-      // Um processo anterior que sumiu sem deixar nota conta como tentativa: na quarta, vira falha registrada.
-      const vezes = ((reg.avaliacao_em_andamento || {}).vezes || 0) + 1;
-      if (vezes > 3) { delete reg.avaliacao_em_andamento; return desistir(e, reg, idAula, 'o avaliador foi interrompido três vezes antes de terminar'); }
-      const filho = spawn(process.execPath, [__filename, 'avaliar', idAula, '--agora'], { cwd: process.cwd(), env: process.env, detached: true, stdio: 'ignore', windowsHide: true });
-      filho.unref();
-      reg.avaliacao_em_andamento = { em: agora(), pid: filho.pid, vezes };
-      estadoLib.salvar(e);
-      console.log(`A avaliação da aula ${idAula} está rodando fora do chat (leva de meio minuto a dois minutos) e sobe sozinha quando terminar. Não espere por ela e não comente com o aluno: feche a aula agora com \`concluir ${idAula}\`. Se ela não terminar, o próximo chat a refaz.`);
+    // Um processo à parte da versão anterior ainda vivo: deixa terminar, para não subirem duas avaliações.
+    if (estadoLib.avaliacaoRodando(reg)) {
+      console.log(`A avaliação da aula ${idAula} já está rodando, desde ${reg.avaliacao_em_andamento.em}. Não rode de novo: siga.`);
       return;
     }
-
-    // Daqui para baixo é o processo à parte. Ele leva minutos, e nesse tempo o chat já gravou a `nota` e o
-    // `concluir`: o estado é relido antes de qualquer escrita, senão esta gravação apagaria as do chat.
-    const reler = () => { e = estadoLib.carregar(); reg = estadoLib.registroAula(e, idAula); delete reg.avaliacao_em_andamento; };
+    // A leitura leva segundos, e nesse tempo um hook pode ter gravado: o estado é relido antes de qualquer escrita.
+    const reler = () => { e = estadoLib.carregar(); reg = estadoLib.registroAula(e, idAula); delete reg.avaliacao_em_andamento; return { e, reg }; };
     try {
-      return avaliarAgora(idAula, aulaAv, () => { reler(); return { e, reg }; }, e, reg);
+      return avaliarAgora(idAula, aulaAv, reler, e, reg);
     } catch (err) {
       reler();
       return desistir(e, reg, idAula, `erro interno do avaliador (${String(err && err.message).slice(0, 160)})`);
@@ -295,6 +281,7 @@ const comandos = {
     if (reg.status === 'concluida') falhar(`aula ${idAula} já concluída em ${reg.concluida_em}.`);
     const problemas = [];
     const avisos = [];
+    let falta = '';
     if (a.tipo === 'quiz') {
       // O quiz não tem milestones: fecha com todas as perguntas respondidas.
       let banco = null;
@@ -344,13 +331,14 @@ const comandos = {
       // combinado): não há o que avaliar, e uma avaliação de nada é ruído para a 202.
       // Avaliação que o `avaliar` tentou e não conseguiu não segura a aula: o aluno
       // fez o trabalho dele, a falha é do harness, e ela já virou evento para a 202.
-      // A avaliação que está rodando fora do chat não segura a aula: ela sobe sozinha quando terminar.
-      if (reg.avaliacao_em_andamento) { /* rodando: nada a avisar */ }
-      else if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
+      // A avaliação vem depois do `concluir`, por último (ver `avaliar`): a aula fecha sem ela e fica marcada como
+      // pendente. Se o `avaliar` não rodar ou for interrompido, é essa marca que faz o chat seguinte avaliá-la.
+      if (!falhaDefinitiva(reg)) reg.avaliacao_pendente = true;
+      if (reg.avaliacao_adiada) avisos.push('a avaliação desta aula ficou pendente (limite de uso ou API fora do ar) e roda no começo do próximo chat');
       else if (reg.avaliacao_login) avisos.push('a avaliação desta aula ficou pendente (o Claude desta máquina está sem login) e roda no começo do próximo chat');
       else if (reg.avaliacao_falhou && !falhaDefinitiva(reg)) avisos.push('a avaliação desta aula ficou pendente (erro do avaliador) e roda no começo do próximo chat');
       else if (reg.avaliacao_falhou) avisos.push(`esta aula fecha sem avaliação (${reg.avaliacao_falhou.motivo}); a 202 já foi avisada`);
-      else problemas.push(`avaliação de fim de aula não registrada (rode \`avaliar ${idAula}\`)`);
+      else falta = ` Falta a avaliação: rode agora \`avaliar ${idAula}\`, se ele já não vem na mesma chamada.`;
     }
     if (problemas.length) falhar(`não dá para concluir a aula ${idAula}:\n  - ${problemas.join('\n  - ')}`);
 
@@ -367,6 +355,7 @@ const comandos = {
       ? ` Há outra frente aberta (${outras.map((x) => `${x.id} ${x.titulo}`).join('; ')}): no próximo chat ele escolhe por qual seguir.`
       : '';
     console.log(`${a.tipo === 'pratica' ? 'Prática' : a.tipo === 'quiz' ? 'Quiz' : 'Aula'} ${idAula} ${a.tipo === 'quiz' ? 'concluído' : 'concluída'}.` + (prox ? ` Próxima${frentes ? ' nesta frente' : ''}: ${prox.id} ${prox.titulo}. Ela abre em um chat novo.${frentes}` : ' Era a última do mapa.')
+      + falta
       + (avisos.length ? `\n(${avisos.join('; ')}. Não comente com o aluno.)` : ''));
   },
 
@@ -844,6 +833,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg) {
     delete reg.avaliacao_falhou;
     delete reg.avaliacao_adiada;
     delete reg.avaliacao_login;
+    delete reg.avaliacao_pendente;
     estadoLib.salvar(e);
     console.log(`Avaliação da aula ${idAula} registrada e enfileirada.`);
 }
@@ -874,6 +864,7 @@ function desistir(e, reg, idAula, motivo, uso) {
   delete reg.avaliacao_login;
   const vezes = ((reg.avaliacao_falhou || {}).vezes || 0) + 1;
   reg.avaliacao_falhou = { em: agora(), motivo, vezes };
+  if (vezes >= MAX_FALHAS) delete reg.avaliacao_pendente;
   estadoLib.salvar(e);
   if (vezes < MAX_FALHAS) {
     fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'erro', avaliador: uso || null }, e);
@@ -1383,9 +1374,9 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     await comandos[comando](args);
     // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
-    // O processo à parte da avaliação não tem ninguém esperando por ele, e o que ele enfileirou é a nota: insiste no
-    // envio em vez de tentar uma vez só (lib/enviar.js).
-    if (comando === 'avaliar' && args.includes('--agora')) await enviarInsistindo();
+    // O que o `avaliar` enfileirou é a nota, e ele é o último comando da aula: tenta duas vezes, e sem a espera de dois
+    // minutos que um envio falho de pouco antes imporia ao envio comum (lib/enviar.js).
+    if (comando === 'avaliar') await enviarInsistindo({ timeoutMs: prazoDeEnvio(comando), esperas: [0, 2000] });
     else if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
   } catch (err) {
     falhar(err.message);

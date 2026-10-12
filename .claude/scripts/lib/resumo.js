@@ -61,12 +61,16 @@ function portaFechada(e, a, linhas) {
 function pendencias(e, linhas) {
   const adiadas = Object.entries(e.aulas || {})
     .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
-      // A avaliação que foi disparada e cujo processo sumiu sem deixar nota (máquina desligada) também volta aqui.
-      // Enquanto o processo vive, ela não é pendência: está rodando, e rodar de novo daria duas avaliações.
+      // Um processo à parte da versão anterior ainda vivo não é pendência: rodar de novo daria duas avaliações.
       && !avaliacaoRodando(r)
-      && (r.avaliacao_em_andamento || r.avaliacao_adiada || (r.avaliacao_login && r.avaliacao_login.vezes < 2) || (r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) < 3)))
+      // A que já falhou duas vezes por login fica com o bloco de login (semLogin); a que falhou três vezes, acabou.
+      && !(r.avaliacao_login && r.avaliacao_login.vezes >= 2)
+      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3)
+      // `avaliacao_pendente` é a aula que fechou e cuja avaliação não rodou ou foi interrompida (o aluno parou o
+      // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
+      && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
     .map(([id]) => id);
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (limite de uso, API fora do ar ou outro erro). No seu primeiro turno, antes da matéria, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. O comando volta na hora: a avaliação roda fora do chat. Não espere por ela e não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. O comando leva uns vinte segundos. Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);
@@ -281,7 +285,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
     } else if (reg.status === 'em_andamento' && a.tipo === 'aula' && Array.isArray(a.milestones) && a.milestones.every((m) => reg.milestones[m.id]) && (!a.fluencia || (reg.fluencia && reg.fluencia.passou))) {
       // Tudo registrado e a aula aberta: o chat anterior parou no fechamento (o
       // limite de uso bateu, a janela fechou). Não se refaz a aula: só se fecha.
-      linhas.push('Retomada no fechamento: os marcos' + (a.fluencia ? ' e a fluência' : '') + ' já estão registrados, e o chat anterior parou antes de fechar a aula. Cumprimente em uma linha, diga que falta só fechar a aula e feche como a `tutor` manda, sem reabrir a matéria' + (a.avaliacao === false || reg.avaliada_em ? '' : ': o `avaliar` lê também o chat anterior') + '.');
+      linhas.push('Retomada no fechamento: os marcos' + (a.fluencia ? ' e a fluência' : '') + ' já estão registrados, e o chat anterior parou antes de fechar a aula. Cumprimente em uma linha, diga que falta só fechar a aula e feche como a `tutor` manda, sem reabrir a matéria' + (a.avaliacao === false ? '' : reg.avaliada_em ? ' (a avaliação já está registrada: não rode o `avaliar` de novo)' : ': o `avaliar` lê também o chat anterior') + '.');
     } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
     }
