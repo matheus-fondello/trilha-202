@@ -71,6 +71,7 @@ function candidatos() {
     extras.push(path.join(casa, '.local', 'bin', 'claude'), path.join(casa, '.claude', 'local', 'claude'),
       '/usr/local/bin/claude', '/opt/homebrew/bin/claude', path.join(casa, '.npm-global', 'bin', 'claude'));
   }
+  extras.push(...doAplicativo());
   for (const p of extras) {
     if (!p || lista.some((c) => c.bin === p)) continue;
     let existe = false;
@@ -78,6 +79,40 @@ function candidatos() {
     if (existe) lista.push({ bin: p, shell: /\.(cmd|bat)$/i.test(p) });
   }
   return lista;
+}
+// O Claude Code que o aplicativo de desktop traz embutido (12/10). Quem só tem o aplicativo não tem `claude` no PATH,
+// e no Windows da loja o CLAUDE_CODE_EXECPATH não serve: o aplicativo roda o Claude Code de AppData\Roaming\Claude,
+// caminho que só existe dentro do pacote dele, e os comandos da aula rodam fora do pacote. O arquivo de verdade fica
+// em AppData\Local\Packages\Claude_*\LocalCache\Roaming\Claude\claude-code\<versão>\<código>\claude.exe.
+// Devolve os executáveis achados, da versão mais nova para a mais velha.
+function doAplicativo() {
+  const casa = os.homedir();
+  const bases = [];
+  const nomes = process.platform === 'win32' ? ['claude.exe', 'claude.cmd'] : ['claude'];
+  const listar = (d) => { try { return fs.readdirSync(d, { withFileTypes: true }); } catch { return []; } };
+  if (process.platform === 'win32') {
+    const local = process.env.LOCALAPPDATA;
+    if (local) {
+      for (const d of listar(path.join(local, 'Packages'))) {
+        if (d.isDirectory() && /^(Anthropic)?\.?Claude/i.test(d.name)) bases.push(path.join(local, 'Packages', d.name, 'LocalCache', 'Roaming', 'Claude', 'claude-code'));
+      }
+    }
+    if (process.env.APPDATA) bases.push(path.join(process.env.APPDATA, 'Claude', 'claude-code'));
+  } else {
+    bases.push(path.join(casa, 'Library', 'Application Support', 'Claude', 'claude-code'), path.join(casa, '.config', 'Claude', 'claude-code'));
+  }
+  const versao = (v) => v.split(/[.-]/).map((n) => Number(n) || 0);
+  const maisNova = (a, b) => { const x = versao(a), y = versao(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (y[i] || 0) - (x[i] || 0); } return 0; };
+  const achados = [];
+  for (const base of bases) {
+    const versoes = listar(base).filter((d) => d.isDirectory() && /^\d/.test(d.name)).map((d) => d.name).sort(maisNova);
+    for (const v of versoes) {
+      // O executável fica na pasta da versão ou uma abaixo (a do código da build).
+      const pastas = [path.join(base, v), ...listar(path.join(base, v)).filter((d) => d.isDirectory()).map((d) => path.join(base, v, d.name))];
+      for (const pasta of pastas) for (const n of nomes) achados.push({ v, p: path.join(pasta, n) });
+    }
+  }
+  return achados.sort((a, b) => maisNova(a.v, b.v)).map((x) => x.p);
 }
 // O shell do Windows não devolve ENOENT quando o comando não existe: roda, imprime isto e sai com erro.
 // (O console do Windows responde em outra codificação: os acentos chegam trocados, e por isso o padrão não os exige.)
@@ -137,15 +172,18 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
   };
   let r;
   let achou = false;
+  // Caminho completo quando o Claude Code achado não está no PATH: é o que o aluno precisa para refazer o login.
+  let executavel = null;
   for (const { bin, shell } of candidatos()) {
     // Com shell, um caminho com espaço precisa de aspas, e o argumento vazio também.
     r = spawnSync(shell && /\s/.test(bin) ? `"${bin}"` : bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
     if (r.error && r.error.code === 'ENOENT') continue;
     if (shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && NAO_ACHOU.test(String(r.stderr || ''))) continue;
     achou = true;
+    executavel = path.isAbsolute(bin) ? bin : null;
     break;
   }
-  if (!achou) return { ok: false, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
+  if (!achou) return { ok: false, ausente: true, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
   if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
     aceitaEsforco = false;
@@ -166,7 +204,7 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
   if (!envelope) {
     const cru = String(r.stderr || r.stdout || '');
     if (LIMITE.test(cru)) return { ok: false, limite: true, motivo: `limite de uso da conta (${cru.trim().slice(0, 120)})` };
-    if (LOGIN.test(cru)) return { ok: false, login: true, motivo: `o Claude desta máquina está sem login válido (${cru.trim().slice(0, 120)})` };
+    if (LOGIN.test(cru)) return { ok: false, login: true, executavel, motivo: `o Claude desta máquina está sem login válido (${cru.trim().slice(0, 120)})` };
     if (passageiro(null, cru)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${cru.trim().slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador respondeu fora do formato esperado (${String(r.stderr || r.stdout || '').trim().slice(0, 200) || 'sem saída'})` };
   }
@@ -175,7 +213,7 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
     // O avaliador usa a cota do aluno. No limite ("You've hit your session limit
     // · resets 10:20pm"), a avaliação não falhou: ela espera a cota voltar.
     if (envelope.api_error_status === 429 || LIMITE.test(texto)) return { ok: false, limite: true, motivo: `limite de uso da conta (${texto.slice(0, 120)})` };
-    if (envelope.api_error_status === 401 || LOGIN.test(texto)) return { ok: false, login: true, motivo: `o Claude desta máquina está sem login válido (${texto.slice(0, 120)})` };
+    if (envelope.api_error_status === 401 || LOGIN.test(texto)) return { ok: false, login: true, executavel, motivo: `o Claude desta máquina está sem login válido (${texto.slice(0, 120)})` };
     if (passageiro(envelope.api_error_status, texto)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${texto.slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador falhou: ${texto.slice(0, 200)}` };
   }
@@ -259,8 +297,8 @@ function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite 
     }
     const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(TIMEOUT_AULA_MS, resta)));
     // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
-    // (adiar, pedir o login). Qualquer outra falha da chamada ganha as tentativas que restam.
-    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo, tentativas: tentativa, uso };
+    // (adiar, pedir o login); o Claude Code que não foi achado também não aparece na tentativa seguinte. Qualquer outra falha da chamada ganha as tentativas que restam.
+    if (!r.ok && (r.limite || r.login || r.ausente)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo, tentativas: tentativa, uso };
     if (!r.ok) { ultimo = r.motivo; erros = null; continue; }
     if (!uso) uso = { ...r.uso };
     else {
@@ -424,7 +462,7 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   let uso = null;
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }));
-    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
     if (!r.ok) { ultimo = r.motivo.replace(/avaliador/g, 'corretor'); erros = null; continue; }
     uso = r.uso;
     const json = extrairJson(r.texto);

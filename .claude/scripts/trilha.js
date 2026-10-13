@@ -33,7 +33,7 @@ const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
 const { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio } = require('./lib/enviar');
-const { resumo } = require('./lib/resumo');
+const { resumo, passosLogin } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
@@ -807,7 +807,8 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg) {
     });
     ({ e, reg } = reler());
     if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
-    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso);
+    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso, r.executavel);
+    if (!r.ok && r.ausente) return semClaude(e, reg, idAula, r.motivo);
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
     // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
@@ -852,13 +853,27 @@ function adiar(e, reg, idAula, motivo, uso) {
   console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
 }
 
+// O Claude Code não foi achado nesta máquina (12/10: quem só tem o aplicativo de desktop, cujo Claude Code embutido o
+// avaliador não sabia procurar). Não é falha da avaliação nem passa tentando de novo: é a máquina, e o conserto chega
+// pela atualização da sala. Por isso não conta para a desistência: fica pendente quantos chats forem, e a falha
+// antiga pelo mesmo motivo, gravada quando isto contava, sai do registro.
+const SEM_CLAUDE = /não encontrei o (Claude Code|comando `claude`)/;
+function semClaude(e, reg, idAula, motivo) {
+  delete reg.avaliacao_falhou;
+  reg.avaliacao_adiada = { em: agora(), motivo, vezes: 1 };
+  reg.avaliacao_pendente = true;
+  estadoLib.salvar(e);
+  fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: 1, causa: 'sem-claude', avaliador: null }, e);
+  console.log(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+}
+
 // A falha que não é limite nem login (resposta fora do formato nas três tentativas, transcrição que não abriu, o
-// Claude Code que não foi achado, o processo interrompido). Ela é tentada de novo no começo de cada chat seguinte, e
+// processo interrompido). Ela é tentada de novo no começo de cada chat seguinte, e
 // enquanto houver tentativa pela frente o que sobe é `avaliacao.adiada`: a ficha da 202 mostra "pendente", que é a
 // verdade. Antes subia `avaliacao.falhou` já na primeira vez, com a nova tentativa marcada, e a ficha dizia "avaliação
 // falhou" de uma aula que ia ser avaliada no chat seguinte. `avaliacao.falhou` é só a desistência, na terceira.
 const MAX_FALHAS = 3;
-const falhaDefinitiva = (reg) => Boolean(reg.avaliacao_falhou && (reg.avaliacao_falhou.vezes || 1) >= MAX_FALHAS);
+const falhaDefinitiva = (reg) => Boolean(reg.avaliacao_falhou && (reg.avaliacao_falhou.vezes || 1) >= MAX_FALHAS && !SEM_CLAUDE.test(reg.avaliacao_falhou.motivo || ''));
 function desistir(e, reg, idAula, motivo, uso) {
   delete reg.avaliacao_adiada;
   delete reg.avaliacao_login;
@@ -880,13 +895,15 @@ function desistir(e, reg, idAula, motivo, uso) {
 // fica pendente e roda de novo no começo do próximo chat, como no limite: às vezes o login se renova sozinho. Na
 // segunda, a 202 é avisada e o próximo chat abre, antes de tudo, pedindo ao aluno que refaça o login; o resumo
 // manda rodar o `avaliar` de novo quando ele terminar.
-function pedirLogin(e, reg, idAula, motivo, uso) {
+function pedirLogin(e, reg, idAula, motivo, uso, executavel) {
   // Uma falha anterior pelo mesmo motivo, gravada antes de existir esta categoria, conta como a primeira vez.
   const antes = (reg.avaliacao_login || {}).vezes || (/authenticate|oauth|\blogin\b/i.test((reg.avaliacao_falhou || {}).motivo || '') ? 1 : 0);
-  const vezes = antes + 1;
+  // Com `executavel`, o Claude Code achado é o do aplicativo de desktop, que nunca teve login próprio (12/10): esperar
+  // o chat seguinte não renova nada, então o pedido ao aluno sai já na primeira vez.
+  const vezes = executavel ? Math.max(antes + 1, 2) : antes + 1;
   delete reg.avaliacao_adiada;
   delete reg.avaliacao_falhou;
-  reg.avaliacao_login = { em: agora(), motivo, vezes };
+  reg.avaliacao_login = { em: agora(), motivo, vezes, ...(executavel ? { executavel } : {}) };
   estadoLib.salvar(e);
   if (vezes < 2) {
     fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'login', avaliador: uso || null }, e);
@@ -895,9 +912,8 @@ function pedirLogin(e, reg, idAula, motivo, uso) {
   }
   // Continua pendente, e não falha: ela roda assim que o aluno refizer o login, e a ficha da 202 diz por que espera.
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa refazer o login do Claude da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
-  console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que refaça o login, com o passo a passo: ${PASSOS_LOGIN} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
+  console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que ${executavel ? 'faça' : 'refaça'} o login, com o passo a passo: ${passosLogin(executavel)} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
 }
-const PASSOS_LOGIN = '(1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar `claude` e Enter; (3) lá dentro, digitar `/logout` e Enter, depois `/login` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar `/exit`; (5) para conferir, rodar `claude -p "oi"`, que tem de responder sem erro.';
 
 // O instante da entrega, gravado uma vez só: quando o registro e os marcos da
 // prática passam a abrir a correção pela primeira vez. `registrada_em` anda a
@@ -1088,7 +1104,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     p.correcao_adiada = { em: agora(), motivo: r.motivo, causa: 'login' };
     estadoLib.salvar(e);
     fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, causa: 'login', corretor: r.uso || null }, e);
-    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. O Claude da linha de comando desta máquina, que é quem corrige, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${PASSOS_LOGIN} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. O Claude da linha de comando desta máquina, que é quem corrige, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${passosLogin(r.executavel)} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
     return;
   }
   if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
@@ -1186,7 +1202,7 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
         avaliador,
       }, e);
       console.log(resultado.login
-        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. O Claude da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${PASSOS_LOGIN} A avaliação roda de novo no próximo chat.`
+        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. O Claude da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${passosLogin(resultado.executavel)} A avaliação roda de novo no próximo chat.`
         : `A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
   }

@@ -65,7 +65,8 @@ function pendencias(e, linhas) {
       && !avaliacaoRodando(r)
       // A que já falhou duas vezes por login fica com o bloco de login (semLogin); a que falhou três vezes, acabou.
       && !(r.avaliacao_login && r.avaliacao_login.vezes >= 2)
-      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3)
+      // (Menos a que desistiu por não achar o Claude Code: era defeito da procura, e ela volta a tentar.)
+      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3 && !/não encontrei o (Claude Code|comando `claude`)/.test(r.avaliacao_falhou.motivo || ''))
       // `avaliacao_pendente` é a aula que fechou e cuja avaliação não rodou ou foi interrompida (o aluno parou o
       // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
       && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
@@ -77,6 +78,16 @@ function pendencias(e, linhas) {
   if (quizzes.length) linhas.push(`Pendência do harness: a IA ainda não concluiu a avaliação de resposta aberta em ${quizzes.join(', ')}. Antes da matéria, rode ${quizzes.map((id) => `\`node .claude/scripts/trilha.js quiz ${id}\``).join(' e ')}; o comando tenta de novo sem alterar a resposta do aluno. Não anuncie nota.`);
 }
 
+// O passo a passo do login do Claude que avalia. Com `executavel`, o aluno não tem `claude` no terminal (só o
+// aplicativo de desktop): o comando é o caminho completo do Claude Code do aplicativo, que o avaliador achou, e não há
+// login antigo para sair dele.
+function passosLogin(executavel) {
+  if (!executavel) return '(1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar `claude` e Enter; (3) lá dentro, digitar `/logout` e Enter, depois `/login` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar `/exit`; (5) para conferir, rodar `claude -p "oi"`, que tem de responder sem erro.';
+  const chamada = process.platform === 'win32' ? `& "${executavel}"` : `"${executavel}"`;
+  const onde = process.platform === 'win32' ? 'abrir o PowerShell do Windows (menu Iniciar, digitar PowerShell)' : 'abrir um terminal, pode ser o do próprio aplicativo';
+  return `(1) ${onde}; (2) colar esta linha inteira, com as aspas, e dar Enter: \`${chamada}\` (entregue a linha num bloco de código, para ele copiar sem erro; é o Claude Code que veio com o aplicativo dele); (3) se aparecerem perguntas de primeira vez (tema, confiar na pasta), aceitar o padrão com Enter; lá dentro, digitar \`/login\` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar \`/exit\`; (5) para conferir, colar \`${chamada} -p "oi"\`, que tem de responder sem erro. É uma vez só: o login fica guardado nesta máquina.`;
+}
+
 // Aulas cuja avaliação falhou duas vezes porque o `claude` da máquina está sem login (trilha.js, pedirLogin). Vem
 // antes de tudo, até da escolha de frente: o aluno refaz o login, o tutor reavalia, e só depois a aula do dia.
 function semLogin(e, linhas) {
@@ -84,7 +95,7 @@ function semLogin(e, linhas) {
     .filter(([, r]) => !r.avaliada_em && r.avaliacao_login && r.avaliacao_login.vezes >= 2)
     .map(([id]) => id);
   if (!ids.length) return;
-  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} falhou porque o Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login válido (a conversa aqui funciona porque o aplicativo tem login próprio). Só ele resolve. No seu primeiro turno, cumprimente e diga isso em duas linhas, sem jargão e sem culpa, e passe o passo a passo: (1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar \`claude\` e Enter; (3) lá dentro, digitar \`/logout\` e Enter, depois \`/login\` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar \`/exit\`; (5) para conferir, rodar \`claude -p "oi"\`, que tem de responder sem erro. Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')} e só então siga com o que vem abaixo. Se ele não puder agora, siga normalmente: o próximo chat volta a pedir.`);
+  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} falhou porque o Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login válido (a conversa aqui funciona porque o aplicativo tem login próprio). Só ele resolve. No seu primeiro turno, cumprimente e diga isso em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosLogin(ids.map((id) => (e.aulas[id].avaliacao_login || {}).executavel).find(Boolean))} Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')} e só então siga com o que vem abaixo. Se ele não puder agora, siga normalmente: o próximo chat volta a pedir.`);
   linhas.push('');
 }
 
@@ -296,4 +307,4 @@ function resumo(e, { fonte = 'startup' } = {}) {
   return linhas.join('\n');
 }
 
-module.exports = { resumo };
+module.exports = { resumo, passosLogin };
