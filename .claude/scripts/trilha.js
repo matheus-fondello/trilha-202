@@ -27,6 +27,7 @@
 
 const fs = require('fs');
 const crypto = require('crypto');
+const os = require('os');
 const path = require('path');
 const paths = require('./lib/paths');
 const estadoLib = require('./lib/estado');
@@ -60,11 +61,71 @@ function falhar(msg) {
   process.exit(1);
 }
 
+// A aula só acontece num chat aberto na sala (12/10). Várias alunas da Turma de Outubro fecharam a 0.1 com 0 minuto:
+// pediram a um chat qualquer do Claude Code para clonar o repositório e instalar o que faltava, e a aula seguiu ali
+// mesmo. Esse chat não tem a sala como pasta de trabalho, então os hooks da sala não rodam nele: nenhum turno é
+// gravado, a guarda não vale, as skills não carregam e o avaliador não tem transcrição para ler. O mesmo vale para o
+// chat aberto na sala antes de o Node.js existir, porque os hooks são comandos `node`.
+//
+// O Claude Code põe o identificador da sessão no ambiente de todo comando (CLAUDE_CODE_SESSION_ID), e é o mesmo que
+// os hooks registram. Chat que os hooks viram é da sala; se outra sessão tomou o lugar dele no meio do turno, ele
+// volta a ser a atual. Sem o identificador (Claude Code antigo) não há como saber, e nada é recusado.
+//
+// Nunca travar a trilha: a recusa tem teto. O chat aberto em outra pasta é recusado duas vezes (dois chats
+// diferentes); o chat em que os hooks não rodaram sem que se saiba por quê, uma. Dali em diante o comando deixa
+// passar e avisa a 202 (`harness.sem_hooks`), porque numa máquina em que os hooks nunca rodam a alternativa seria o
+// aluno nunca mais ter aula.
+const RECUSAS = { fora: 2, 'sem-hooks': 1 };
+// Em que pasta este chat foi aberto: o Claude Code guarda a transcrição em <config>/projects/<pasta codificada>/.
+function pastaDoChat(id) {
+  const projetos = path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'projects');
+  try {
+    for (const d of fs.readdirSync(projetos)) if (fs.existsSync(path.join(projetos, d, `${id}.jsonl`))) return d;
+  } catch { /* sem a pasta, não se sabe */ }
+  return null;
+}
+// Devolve null quando o chat é da sala (ou quando a recusa já passou do teto), e senão o porquê: 'fora' ou 'sem-hooks'.
+function chatDaSala(e) {
+  const id = process.env.CLAUDE_CODE_SESSION_ID;
+  if (!id) return null;
+  const s = e.sessao_atual;
+  if (s && (!s.id || s.id === id)) return null;
+  if ((e.sessoes || []).some((x) => x.id === id)) {
+    estadoLib.retomarSessao(e, { session_id: id });
+    estadoLib.salvar(e);
+    return null;
+  }
+  const pasta = pastaDoChat(id);
+  const daSala = paths.RAIZ.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  const causa = pasta && pasta.toLowerCase() !== daSala ? 'fora' : 'sem-hooks';
+  const reg = e.chats_sem_hooks || (e.chats_sem_hooks = { chats: [], liberados: [] });
+  if (reg.liberados.includes(id)) return null;
+  if (!reg.chats.includes(id)) reg.chats.push(id);
+  if (reg.chats.length > RECUSAS[causa]) {
+    reg.liberados.push(id);
+    estadoLib.salvar(e);
+    fila.enfileirar('harness.sem_hooks', { causa, chats: reg.chats.length }, e);
+    return null;
+  }
+  estadoLib.salvar(e);
+  return causa;
+}
+function foraDaSala(e, causa) {
+  const porque = causa === 'fora'
+    ? 'este chat foi aberto em outra pasta, e não na pasta da sala'
+    : 'os registros da sala não rodaram neste chat (o mais comum: o aplicativo abriu antes de o Node.js estar instalado)';
+  const passos = `${causa === 'fora' ? '' : 'fechar o aplicativo do Claude e abrir de novo; '}criar um chat novo escolhendo como pasta de trabalho ${paths.RAIZ}; e mandar "oi" lá`;
+  return `${porque}. Sem eles não há tempo de aula, proteção nem avaliação, e por isso a aula não acontece aqui. Não dê aula e não registre nada neste chat. Diga ao aluno, em duas ou três linhas e sem jargão, que a instalação está pronta e falta um passo só: ${passos}. O que já foi registrado continua valendo${acesso.conectado(e) ? ', inclusive o acesso: ele não vai colar o token de novo' : ''}.`;
+}
+
 // Sem acesso à 202 nada se registra: é o que faz "sem token não há aula" valer
 // mesmo quando a conversa escorrega. Ficam de fora o que não é progresso:
 // status, conectar, identificar, registrar, enviar e dev.
 function exigirAcesso() {
-  if (acesso.conectado(estadoLib.carregar())) return;
+  const e = estadoLib.carregar();
+  const causa = chatDaSala(e);
+  if (causa) falhar(foraDaSala(e, causa));
+  if (acesso.conectado(e)) return;
   falhar('esta sala não está conectada à 202, e nada se registra antes disso. Peça ao aluno o primeiro nome e o token que a 202 mandou, e rode: conectar nome="<nome>" token=<token>');
 }
 
@@ -80,6 +141,8 @@ function parChaveValor(lista) {
 const comandos = {
   status() {
     const e = estadoLib.carregar();
+    const causa = chatDaSala(e);
+    if (causa) { console.log('Atenção: ' + foraDaSala(e, causa)); return; }
     if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
     console.log(resumo(e));
     const pend = fila.ler().length;
@@ -143,6 +206,9 @@ const comandos = {
     console.log(r.ok
       ? `Conectado à 202 como ${nome}. Token conferido pelo servidor.`
       : `Conectado como ${nome}, mas a 202 não respondeu agora (${r.motivo}). A sala abre mesmo assim: o token é conferido no próximo envio, e se a 202 recusar, a sessão seguinte pede outro. Não comente a falha com o aluno.`);
+    // Conectou de um chat que não é da sala: o acesso fica guardado, e a aula começa no chat certo.
+    const causa = chatDaSala(e2);
+    if (causa) { console.log('\nAtenção: ' + foraDaSala(e2, causa)); return; }
     console.log('\n' + resumo(e2));
   },
 
