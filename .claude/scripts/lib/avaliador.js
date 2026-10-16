@@ -28,11 +28,15 @@ const MODELO = 'sonnet';
 // O teto de uma chamada. A variável existe para o teste do estouro não esperar quatro minutos.
 const TIMEOUT_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 4 * 60 * 1000;
 // A avaliação de aula roda dentro do comando do chat, com o aluno ali, e o Claude Code corta um comando aos dois
-// minutos: cortada, ela não registraria nem que tentou. Então cada chamada tem um teto menor, e a avaliação inteira
-// (as tentativas que a validação pedir) cabe em ORCAMENTO_MS; o que não couber vira pendência e roda no chat seguinte.
-// Com o esforço fixo, uma leitura leva de dez a trinta segundos.
-const TIMEOUT_AULA_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || 75 * 1000;
-const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 105 * 1000;
+// minutos: cortada, ela não registraria nem que tentou. Então a avaliação inteira (as tentativas que a validação
+// pedir) cabe em ORCAMENTO_MS; o que não couber vira pendência e roda no chat seguinte. Com o esforço fixo, uma
+// leitura leva de dez a trinta segundos. O orçamento deixa uns 25 s para o que roda fora dele no mesmo comando: ler a
+// transcrição e o produto, a `nota` e o `concluir` antes, e o envio da nota depois (até 18 s com a nova tentativa).
+const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 95 * 1000;
+// A primeira chamada pode usar o orçamento inteiro (16/10). Era cortada aos 75 s, e uma chamada cortada não ganha
+// segunda tentativa (o estouro sai como `limite`): uma máquina lenta (um aluno com leituras de 42 a 49 s e quatro mil
+// tokens de saída) perdia a 1.2 por isso, com a leitura que terminaria cortada no meio.
+const TIMEOUT_AULA_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || ORCAMENTO_MS;
 // Com menos que isto pela frente, não vale começar outra chamada.
 const MINIMO_PARA_TENTAR_MS = Math.min(15 * 1000, ORCAMENTO_MS / 4);
 // O esforço de raciocínio do avaliador é fixo. Sem isto ele herda o do Claude de cada máquina, e `--setting-sources ""`

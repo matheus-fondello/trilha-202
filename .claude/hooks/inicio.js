@@ -15,9 +15,12 @@ async function main() {
 
   // A sala se atualiza sozinha em todo chat novo (startup e clear). Retomar ou
   // compactar é meio de aula, e trocar skill e mapa debaixo de uma aula andando
-  // deixa o tutor com metade das instruções em cada versão. O resto do harness
-  // só é carregado depois daqui, para este mesmo hook já rodar o código novo.
-  const atualizacao = fonte === 'startup' || fonte === 'clear' ? atualizar() : { atualizada: false, motivo: 'meio-de-aula' };
+  // deixa o tutor com metade das instruções em cada versão; ao retomar, entra só
+  // a publicação que é inteira de código (lib/atualizar.js, soCodigo). O resto do
+  // harness só é carregado depois daqui, para este mesmo hook já rodar o código novo.
+  const atualizacao = fonte === 'startup' || fonte === 'clear' ? atualizar()
+    : fonte === 'resume' ? atualizar({ soCodigo: true })
+    : { atualizada: false, motivo: 'meio-de-aula' };
   if (atualizacao.atualizada) {
     const lib = path.resolve(__dirname, '..', 'scripts', 'lib') + path.sep;
     for (const k of Object.keys(require.cache)) if (k.startsWith(lib)) delete require.cache[k];
@@ -66,7 +69,7 @@ async function main() {
   // Sobe com o commit de antes e o de depois; o `commit` de todo evento seguinte
   // já sai com o novo, e é por ele que a 202 vê quem está atrás.
   if (atualizacao.atualizada) {
-    try { fila.enfileirar('harness.atualizado', { de: atualizacao.de, para: atualizacao.para, commits: atualizacao.commits }, e); } catch { /* segue */ }
+    try { fila.enfileirar('harness.atualizado', { de: atualizacao.de, para: atualizacao.para, commits: atualizacao.commits, ...(atualizacao.soCodigo ? { ao_retomar: true } : {}) }, e); } catch { /* segue */ }
   }
 
   // Rede de segurança da guarda: harness diferente do commit vira evento (uma
@@ -83,8 +86,11 @@ async function main() {
 
   // O CLAUDE.md e o settings.json da sala podem ter sido lidos antes do pull;
   // skills, mapa e comandos já são os novos.
-  const avisoAtualizacao = atualizacao.atualizada ? `
-(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova; o CLAUDE.md e as regras da sala valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.)` : '';
+  const avisoAtualizacao = !atualizacao.atualizada ? ''
+    : atualizacao.soCodigo ? `
+(Os comandos da sala acabaram de receber correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.)`
+    : `
+(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova; o CLAUDE.md e as regras da sala valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.)`;
 
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: texto + aviso + avisoHarness + avisoAtualizacao },

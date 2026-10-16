@@ -33,8 +33,18 @@ function git(args, timeout = 3000) {
   }).trim();
 }
 
+// Código que se troca no meio de uma aula sem mudar a aula: cada comando e cada
+// hook lê o arquivo de novo quando roda, e a régua do avaliador é lida pelo
+// subprocesso a cada avaliação, nunca pelo tutor. Skill, mapa, CLAUDE.md e
+// settings ficam de fora: trocá-los com a aula andando deixa o tutor com metade
+// das instruções em cada versão.
+const SO_CODIGO = /^\.claude\/(scripts|hooks|avaliador)\//;
+
 // Devolve { atualizada: true, de, para, commits } ou { atualizada: false, motivo }.
-function atualizar() {
+// Com `soCodigo` (chat retomado, 16/10), só avança se tudo o que chega é código:
+// quem retoma um chat antigo ficava no código velho até abrir outro, e uma
+// correção da avaliação publicada no meio do dia não chegava a ele.
+function atualizar({ soCodigo = false } = {}) {
   if (process.env.TRILHA_202_ATUALIZAR === '0' || fs.existsSync(DESLIGA)) return { atualizada: false, motivo: 'desligada' };
   let de;
   try { de = git(['rev-parse', 'HEAD']); } catch { return { atualizada: false, motivo: 'sem-git' }; }
@@ -53,9 +63,15 @@ function atualizar() {
     // Cópia local à frente ou divergente (quem desenvolve, com commit sem push):
     // não é atualização, e o fast-forward recusaria de qualquer jeito.
     try { git(['merge-base', '--is-ancestor', 'HEAD', 'FETCH_HEAD']); } catch { return { atualizada: false, motivo: 'divergente' }; }
+    if (soCodigo) {
+      // Sem detectar renomeação: senão um arquivo movido de skills/ para scripts/
+      // apareceria só pelo nome novo e passaria no filtro, apagando o original.
+      const chegam = git(['diff', '--name-only', '--no-renames', 'HEAD', 'FETCH_HEAD']).split(/\r?\n/).filter(Boolean);
+      if (!chegam.length || !chegam.every((f) => SO_CODIGO.test(f))) return { atualizada: false, motivo: 'meio-de-aula' };
+    }
     const commits = Number(git(['rev-list', '--count', 'HEAD..FETCH_HEAD'])) || null;
     git(['merge', '--ff-only', '--quiet', 'FETCH_HEAD'], 8000);
-    return { atualizada: true, de, para, commits };
+    return { atualizada: true, de, para, commits, ...(soCodigo ? { soCodigo: true } : {}) };
   } catch {
     return { atualizada: false, motivo: 'falhou' };
   }

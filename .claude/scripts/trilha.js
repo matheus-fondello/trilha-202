@@ -943,7 +943,7 @@ function semClaude(e, reg, idAula, motivo) {
 // A falha que vinha de defeito do harness (o Claude Code não achado; o EOF do cmd.exe, ver lib/avaliador.js) não é
 // desistência: ela volta a tentar no chat seguinte (resumo.js, pendencias, usa a mesma regra).
 const MAX_FALHAS = 3;
-const VOLTA_A_TENTAR = /não encontrei o (Claude Code|comando `claude`)|cmd\.exe EOF/;
+const VOLTA_A_TENTAR = /não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)/;
 const falhaDefinitiva = (reg) => Boolean(reg.avaliacao_falhou && (reg.avaliacao_falhou.vezes || 1) >= MAX_FALHAS && !VOLTA_A_TENTAR.test(reg.avaliacao_falhou.motivo || ''));
 function desistir(e, reg, idAula, motivo, uso) {
   delete reg.avaliacao_adiada;
