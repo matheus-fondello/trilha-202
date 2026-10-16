@@ -179,6 +179,10 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
     r = spawnSync(shell && /\s/.test(bin) ? `"${bin}"` : bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
     if (r.error && r.error.code === 'ENOENT') continue;
     if (shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && NAO_ACHOU.test(String(r.stderr || ''))) continue;
+    // O mesmo "não é reconhecido", com o prompt grande (16/10): o cmd.exe sai antes de o Node acabar de escrever a
+    // entrada, e o spawnSync devolve o erro EOF (ou EPIPE) em vez do status. Com prompt pequeno, o pipe engolia tudo e
+    // caía no teste de cima; com o produto da oficina anexado, a avaliação parava aqui sem tentar o Claude do aplicativo.
+    if (shell && r.error && /^(EOF|EPIPE)$/.test(r.error.code || '') && NAO_ACHOU.test(String(r.stderr || ''))) continue;
     achou = true;
     executavel = path.isAbsolute(bin) ? bin : null;
     break;

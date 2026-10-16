@@ -65,8 +65,9 @@ function pendencias(e, linhas) {
       && !avaliacaoRodando(r)
       // A que já falhou duas vezes por login fica com o bloco de login (semLogin); a que falhou três vezes, acabou.
       && !(r.avaliacao_login && r.avaliacao_login.vezes >= 2)
-      // (Menos a que desistiu por não achar o Claude Code: era defeito da procura, e ela volta a tentar.)
-      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3 && !/não encontrei o (Claude Code|comando `claude`)/.test(r.avaliacao_falhou.motivo || ''))
+      // (Menos a que desistiu por não achar o Claude Code, ou pelo EOF do cmd.exe: era defeito da procura, e ela volta
+      // a tentar. A mesma regra está em trilha.js, VOLTA_A_TENTAR.)
+      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3 && !/não encontrei o (Claude Code|comando `claude`)|cmd\.exe EOF/.test(r.avaliacao_falhou.motivo || ''))
       // `avaliacao_pendente` é a aula que fechou e cuja avaliação não rodou ou foi interrompida (o aluno parou o
       // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
       && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
