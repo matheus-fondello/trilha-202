@@ -10,7 +10,7 @@ const { RAIZ } = require('./paths');
 
 // O que faz parte do harness. Estado, fila, memória e tmp estão no .gitignore
 // e não entram.
-const CAMINHOS = ['.claude', 'CLAUDE.md', 'REFERENCIAS.md', 'README.md', 'TESTE.md', '.gitignore', 'trilha/mapa.json', 'trilha/config.json'];
+const CAMINHOS = ['.claude', 'CLAUDE.md', 'REFERENCIAS.md', 'README.md', '.gitignore', 'trilha/mapa.json', 'trilha/config.json'];
 
 function git(args) {
   return execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] });

@@ -29,4 +29,4 @@ Em construção. Escritos do módulo 0 ao módulo 6: as aulas, as práticas P0 a
 
 O módulo 3 constrói uma feature que chama um modelo por API, com uma chave sua, e o provedor é escolha sua: o Gemini (Google AI Studio, com a conta Google, sem cartão) e o Groq têm plano gratuito; o Claude Haiku, pela API da Anthropic, é pago com créditos comprados antes, e barato por mensagem (o plano Pro do Claude não inclui a API). Todo provedor tem limite de requisições e de tokens por minuto, o gratuito mais apertado, e lidar com ele faz parte da matéria. Seja qual for, o sistema registra os tokens de cada chamada, e é dali que sai a conta de quanto ele custa.
 
-Os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem para o CRM da 202 com o seu token; sem rede, esperam e sobem de uma vez quando ela volta. Ver `TESTE.md` para o protocolo de validação.
+Os eventos ficam na fila local (`trilha/fila.jsonl`) e sobem para o CRM da 202 com o seu token; sem rede, esperam e sobem de uma vez quando ela volta.

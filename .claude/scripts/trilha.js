@@ -777,7 +777,7 @@ const comandos = {
     if (sub === 'reset') {
       // Zerar com aula acontecendo apaga o trabalho de alguém no meio. Só com --forcar.
       // Sessão sem sinal de vida há mais de MINUTOS_VIVA está morta, não aberta: quem
-      // fecha o terminal na marra (o TESTE.md manda fazer isso) deixa uma pendurada, e
+      // fecha o terminal na marra (o teste de retomada faz isso) deixa uma pendurada, e
       // uma trava que dispara sempre vira --forcar por hábito, que é não ter trava.
       // Sessão sem turno nenhum é janela aberta, não aula: não segura o reset.
       const s = e.sessao_atual && e.sessao_atual.contada !== false ? e.sessao_atual : null;
