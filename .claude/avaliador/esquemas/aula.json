@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["aula", "criterios", "justificativa", "evidencias", "fluencia", "suspeita", "destaque", "empenho", "resumo_qualitativo"],
+  "properties": {
+    "aula": { "type": "string" },
+    "criterios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compreensao", "pensamento", "esforco", "autonomia", "dominio", "iniciativa"],
+      "properties": {
+        "compreensao": { "type": "integer" },
+        "pensamento": { "type": "integer" },
+        "esforco": { "type": ["integer", "null"] },
+        "autonomia": { "type": ["integer", "null"] },
+        "dominio": { "type": "integer" },
+        "iniciativa": { "type": "integer" }
+      }
+    },
+    "justificativa": { "type": "string" },
+    "evidencias": { "type": "array", "items": { "type": "string" } },
+    "fluencia": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["passou", "tentativas", "evidencia"],
+      "properties": {
+        "passou": { "type": "boolean" },
+        "tentativas": { "type": "integer" },
+        "evidencia": { "type": "string" }
+      }
+    },
+    "suspeita": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["descricao", "evidencia"],
+      "properties": {
+        "descricao": { "type": "string" },
+        "evidencia": { "type": "string" }
+      }
+    },
+    "destaque": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["tipo", "texto"],
+      "properties": {
+        "tipo": { "type": "string", "enum": ["positivo", "atencao"] },
+        "texto": { "type": "string" }
+      }
+    },
+    "empenho": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["respostas", "sinais"],
+      "properties": {
+        "respostas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trecho", "nivel"],
+            "properties": {
+              "trecho": { "type": ["string", "null"] },
+              "nivel": { "type": "string", "enum": ["desenvolvida", "conclusao", "telegrafica", "ma_vontade"] }
+            }
+          }
+        },
+        "sinais": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trecho", "tipo"],
+            "properties": {
+              "trecho": { "type": ["string", "null"] },
+              "tipo": { "type": "string", "enum": ["pergunta", "exemplo", "ligacao", "revisao"] }
+            }
+          }
+        }
+      }
+    },
+    "resumo_qualitativo": { "type": "string" }
+  }
+}

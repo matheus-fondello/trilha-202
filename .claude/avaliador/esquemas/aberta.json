@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["quiz", "questao", "nota", "justificativa", "evidencia", "feedback"],
+  "properties": {
+    "quiz": { "type": "string" },
+    "questao": { "type": "integer" },
+    "nota": { "type": "integer" },
+    "justificativa": { "type": "string" },
+    "evidencia": { "type": "string" },
+    "feedback": { "type": "string" }
+  }
+}

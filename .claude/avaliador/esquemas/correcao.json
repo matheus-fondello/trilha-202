@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pratica", "criterios", "justificativa", "evidencias", "feedback_aluno", "suspeita", "resumo_qualitativo"],
+  "properties": {
+    "pratica": { "type": "string" },
+    "criterios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {}
+    },
+    "justificativa": { "type": "string" },
+    "evidencias": { "type": "array", "items": { "type": "string" } },
+    "feedback_aluno": { "type": "string" },
+    "suspeita": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["descricao", "evidencia"],
+      "properties": {
+        "descricao": { "type": "string" },
+        "evidencia": { "type": "string" }
+      }
+    },
+    "resumo_qualitativo": { "type": "string" }
+  }
+}

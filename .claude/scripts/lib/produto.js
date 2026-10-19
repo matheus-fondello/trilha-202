@@ -21,6 +21,11 @@
 const fs = require('fs');
 const path = require('path');
 const paths = require('./paths');
+const leitura = require('./codex/leitura');
+
+// A leitura que o sandbox do Codex bloqueou nesta coleta (branch codex): o produto da oficina não some calado da
+// avaliação, e quem chama deixa a avaliação pendente.
+let bloqueio = false;
 
 const POR_ARQUIVO = 20000;
 const TOTAL = 60000;
@@ -73,7 +78,7 @@ function modificadosEntre(pasta, desde, ate) {
   while (fila.length && visitas < MAX_VISITAS) {
     const dir = fila.shift();
     let entradas;
-    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
+    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch (err) { if (leitura.bloqueada(err)) bloqueio = true; continue; }
     for (const ent of entradas) {
       if (++visitas > MAX_VISITAS) break;
       const p = path.join(dir, ent.name);
@@ -106,7 +111,7 @@ function resolverNomeado(nome, pastas) {
 
 function ler(arquivo) {
   let bruto;
-  try { bruto = fs.readFileSync(arquivo); } catch { return null; }
+  try { bruto = fs.readFileSync(arquivo); } catch (err) { if (leitura.bloqueada(err)) bloqueio = true; return null; }
   if (bruto.includes(0)) return null; // binário com extensão de texto
   const texto = bruto.toString('utf8');
   return texto.length > POR_ARQUIVO
@@ -118,6 +123,7 @@ function ler(arquivo) {
 // anexar, e `resumo` é o que sobe para a 202 (sem conteúdo e sem caminho, que
 // carrega o nome de usuário).
 function coletar(e, reg) {
+  bloqueio = false;
   const pastas = pastasDeTrabalho(e);
   const nomeados = (reg.fluencia && Array.isArray(reg.fluencia.arquivos)) ? reg.fluencia.arquivos : [];
   let fonte = null;
@@ -154,13 +160,15 @@ function coletar(e, reg) {
   }
 
   const url = reg.fluencia && reg.fluencia.url ? reg.fluencia.url : null;
-  if (!blocos.length && !url) return { texto: null, resumo: { arquivos: 0, caracteres: 0, fonte: null } };
+  const sandbox = bloqueio ? { sandbox: 'leitura', motivo: leitura.motivo('os arquivos da oficina') } : {};
+  if (!blocos.length && !url) return { texto: null, resumo: { arquivos: 0, caracteres: 0, fonte: null }, ...sandbox };
   const partes = [];
   if (url) partes.push(`O tutor registrou este endereço como o produto da fluência: ${url} (você não abre links; ele está aqui para você saber que existe).`);
   if (blocos.length) partes.push(`Arquivos ${fonte}:\n\n${blocos.join('\n\n')}`);
   return {
     texto: partes.join('\n\n'),
     resumo: { arquivos: blocos.length, caracteres: total, fonte: blocos.length ? fonte : null, url: Boolean(url) },
+    ...sandbox,
   };
 }
 

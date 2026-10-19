@@ -12,6 +12,11 @@
 const fs = require('fs');
 const path = require('path');
 const transcricao = require('./transcricao');
+const leitura = require('./codex/leitura');
+
+// A leitura que o sandbox do Codex bloqueou nesta coleta (branch codex): sem ela o documento sairia vazio e não seria
+// reenviado. Quem chama não grava a entrega enquanto o documento não for lido.
+let bloqueio = false;
 
 const EXTENSOES = new Set(['.md', '.csv', '.txt']);
 const IGNORAR = new Set(['node_modules', '.git', '.next', 'dist', 'build', '.vercel', '.claude']);
@@ -34,7 +39,7 @@ function listar(pasta) {
   const achados = [];
   const visitar = (dir, nivel) => {
     let entradas;
-    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch (err) { if (leitura.bloqueada(err)) bloqueio = true; return; }
     for (const ent of entradas) {
       if (ent.name.startsWith('.')) continue;
       const p = path.join(dir, ent.name);
@@ -51,6 +56,7 @@ function listar(pasta) {
 
 // `e` é o estado do aluno: é dele que sai a lista de nomes a tirar.
 function coletar(pasta, e) {
+  bloqueio = false;
   const tirar = transcricao.tiradorDeNomes(e);
   const arquivos = [];
   const omitidos = [];
@@ -58,7 +64,7 @@ function coletar(pasta, e) {
   for (const rel of listar(pasta)) {
     if (arquivos.length >= MAX_ARQUIVOS) { omitidos.push(rel); continue; }
     let texto;
-    try { texto = fs.readFileSync(path.join(pasta, rel), 'utf8'); } catch { continue; }
+    try { texto = fs.readFileSync(path.join(pasta, rel), 'utf8'); } catch (err) { if (leitura.bloqueada(err)) bloqueio = true; continue; }
     if (texto.includes('\u0000')) continue;
     const caracteres = texto.length;
     texto = tirar(texto);
@@ -67,7 +73,7 @@ function coletar(pasta, e) {
     arquivos.push({ nome: rel, caracteres, texto });
     total += texto.length;
   }
-  return { arquivos, omitidos, total };
+  return { arquivos, omitidos, total, ...(bloqueio ? { sandbox: 'leitura', motivo: leitura.motivo('o documento da prática') } : {}) };
 }
 
 module.exports = { coletar, listar, EXTENSOES, POR_ARQUIVO, TOTAL, MAX_ARQUIVOS };

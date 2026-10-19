@@ -19,6 +19,11 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { legivel } = require('./produto');
+const leitura = require('./codex/leitura');
+
+// A leitura que o sandbox do Codex bloqueou, na coleta deste comando (branch codex). O corretor nunca é chamado com a
+// pasta faltando: quem chama vê `sandbox` no resultado e deixa a correção pendente.
+let bloqueio = null;
 
 const POR_ARQUIVO = 15000;
 // O que a régua manda ler primeiro (a spec, o README, o plano da P5) cabe inteiro:
@@ -56,7 +61,7 @@ function listar(pasta) {
   while (fila.length && visitas < MAX_VISITAS) {
     const dir = fila.shift();
     let entradas;
-    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch { continue; }
+    try { entradas = fs.readdirSync(dir, { withFileTypes: true }); } catch (err) { if (leitura.bloqueada(err)) bloqueio = 'leitura'; continue; }
     for (const ent of entradas) {
       if (++visitas > MAX_VISITAS) break;
       const p = path.join(dir, ent.name);
@@ -76,7 +81,7 @@ function arquivos(pasta) {
   for (const rel of lista) {
     if (blocos.length >= MAX_ARQUIVOS) { omitidos.push(rel); continue; }
     let bruto;
-    try { bruto = fs.readFileSync(path.join(pasta, rel)); } catch { continue; }
+    try { bruto = fs.readFileSync(path.join(pasta, rel)); } catch (err) { if (leitura.bloqueada(err)) bloqueio = 'leitura'; continue; }
     if (bruto.includes(0)) continue;
     let texto = bruto.toString('utf8');
     // Só o plano, a spec, o CLAUDE.md e o README: testes ficam no teto comum.
@@ -93,9 +98,24 @@ function arquivos(pasta) {
 
 function historico(pasta) {
   if (!fs.existsSync(path.join(pasta, '.git'))) return null;
+  if (require('./agente').atual() === 'codex') return historicoCodex(pasta);
   const r = spawnSync('git', ['-C', pasta, 'log', '--date=iso-strict', '--pretty=format:%h %ad %s', '-n', '80'], { encoding: 'utf8', timeout: 10000 });
   if (r.status !== 0) return null;
   return r.stdout.trim() || null;
+}
+// No sandbox do Codex o `git -C` dá "Permission denied" no `mxc`, e no `elevated` o git sai com "dubious ownership"
+// (código 128), porque a pasta é de outro usuário para ele (T0, codex/MODOS-SANDBOX.md). Com `cwd` na pasta e
+// `safe.directory`, ele roda nos dois. Se ainda assim não rodar, com `.git` presente o histórico existe: é o sandbox,
+// e a correção espera, em vez de o corretor ler "a pasta não é um repositório".
+function historicoCodex(pasta) {
+  const r = spawnSync('git', ['-c', 'safe.directory=*', 'log', '--date=iso-strict', '--pretty=format:%h %ad %s', '-n', '80'], { cwd: pasta, encoding: 'utf8', timeout: 10000, windowsHide: true });
+  if (r.status === 0) return r.stdout.trim() || null;
+  // Duas saídas que não são o sandbox: o git que não existe nesta máquina, e o repositório ainda sem commit nenhum.
+  // Tomadas por sandbox, deixariam a correção pendente para sempre.
+  if (r.error && r.error.code === 'ENOENT') return null;
+  if (/does not have any commits|n[aã]o tem nenhum commit|bad default revision/i.test(String(r.stderr || ''))) return null;
+  bloqueio = bloqueio || 'processo';
+  return null;
 }
 
 async function buscar(url, limite) {
@@ -124,6 +144,7 @@ async function buscar(url, limite) {
 // O material inteiro, como texto para o prompt, e o resumo que sobe para a 202
 // (contagens, sem conteúdo e sem caminho).
 async function coletar(p) {
+  bloqueio = null;
   const partes = [];
   const resumo = { arquivos: 0, caracteres: 0, historico: false, pagina: null, repositorio: null };
 
@@ -156,7 +177,7 @@ async function coletar(p) {
     partes.push(`### Repositório (${p.repo})\n\n${r.ok ? 'Respondeu publicamente.' : `Não respondeu publicamente daqui (${r.status ? 'HTTP ' + r.status : r.motivo}): ou é privado, ou o endereço está errado, ou a rede falhou.`}`);
   }
 
-  return { texto: partes.join('\n\n'), resumo };
+  return { texto: partes.join('\n\n'), resumo, ...(bloqueio ? { sandbox: bloqueio } : {}) };
 }
 
 module.exports = { coletar, listar, arquivos, historico, POR_ARQUIVO, TOTAL, MAX_ARQUIVOS };

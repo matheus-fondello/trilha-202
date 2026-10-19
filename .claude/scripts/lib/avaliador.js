@@ -22,6 +22,9 @@ const os = require('os');
 const path = require('path');
 const paths = require('./paths');
 const transcricaoLib = require('./transcricao');
+const agente = require('./agente');
+const sondas = require('./codex/sondas');
+const motor = require('./codex/motor');
 
 const REGUA = path.join(paths.RAIZ, '.claude', 'avaliador', 'regua.md');
 const MODELO = 'sonnet';
@@ -165,7 +168,7 @@ const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(t
 // do aluno.
 const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b/i;
 
-function chamar(prompt, timeoutMs = TIMEOUT_MS) {
+function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
   const base = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
     '--setting-sources', '', '--disallowed-tools', SEM_FERRAMENTAS];
   const args = aceitaEsforco ? [...base, '--effort', ESFORCO] : base;
@@ -200,7 +203,7 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
   if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
     aceitaEsforco = false;
-    return chamar(prompt, timeoutMs);
+    return chamarClaude(prompt, timeoutMs);
   }
   // O teto estourou: o spawnSync devolve o erro ETIMEDOUT junto com o sinal. É API lenta, não defeito da aula, e
   // tem de cair no caminho passageiro abaixo. Antes este teste vinha depois do `r.error` e nunca era alcançado: o
@@ -245,6 +248,69 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS) {
     },
   };
 }
+
+// O avaliador no modo Codex (branch codex, T6). Vale só com `agente.atual() === 'codex'`, e nunca pela presença de
+// CODEX_THREAD_ID ou de marca de sandbox: um Claude aberto de um terminal do Codex herda as duas coisas e continua
+// avaliado pelo Claude, pelo caminho de hoje.
+//
+// No modo Codex, primeiro as sondas (lib/codex/sondas.js): com o sandbox fechado, nenhum avaliador é chamado, e a
+// avaliação fica pendente com a causa certa. Depois o Claude, se o aluno o tiver (mesma régua, mesma calibragem), e
+// só com ele ausente ou sem login, o Codex. A falha de um avaliador que chegou a nascer também pode ser o sandbox: o
+// bloqueio de processo, e o erro de conexão de um perfil que libera o CRM e não a API. O resto do que é passageiro
+// (sobrecarga, 5xx, tempo) continua `limite`, com o teto de adiamentos de hoje.
+const BLOQUEIO = /\b(EPERM|EACCES)\b|operation not permitted/i;
+const CONEXAO = /\b(ENOTFOUND|ECONNREFUSED)\b|connect EACCES|fetch failed|127\.0\.0\.1:9\b|connection refused/i;
+function doSandbox(r) {
+  if (r.ok || r.ausente || r.sandbox || r.semRede) return r;
+  const motivo = String(r.motivo || '');
+  if (CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
+  if (BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
+  return r;
+}
+function comMotor(r, motor) {
+  return r.uso ? { ...r, motor, uso: { ...r.uso, motor } } : { ...r, motor };
+}
+function chamar(prompt, timeoutMs = TIMEOUT_MS, { esquema, criterios } = {}) {
+  if (agente.atual() !== 'codex') return chamarClaude(prompt, timeoutMs);
+  const s = sondas.verificar();
+  if (!s.ok) return s.semRede ? { ok: false, semRede: true, motivo: s.motivo } : { ok: false, sandbox: s.sandbox, motivo: s.motivo };
+  // A credencial que o sandbox não deixou ler: sem ela não há como recusar a resposta do Codex que traz o token.
+  const bloqueio = require('./acesso').leituraBloqueada();
+  if (bloqueio) return { ok: false, sandbox: 'leitura', motivo: bloqueio.motivo };
+  const peloClaude = doSandbox(comMotor(chamarClaude(prompt, timeoutMs), 'claude'));
+  if (peloClaude.ok || !(peloClaude.ausente || peloClaude.login)) return peloClaude;
+  const peloCodex = doSandbox(motor.chamar(prompt, timeoutMs, { esquema, criterios }));
+  if (peloCodex.ok) return peloCodex;
+  if (peloCodex.ausente) {
+    // Nenhum dos dois: o mesmo `semClaude` de hoje, pendente sem limite, dizendo que nenhum foi achado. O começo do
+    // motivo é o de hoje, que o `desistir` reconhece como defeito da procura (trilha.js, VOLTA_A_TENTAR).
+    return peloClaude.ausente
+      ? { ...peloClaude, motivo: 'não encontrei o Claude Code nem o Codex da linha de comando nesta máquina (nem no PATH, nem onde os instaladores os deixam)' }
+      : peloClaude;
+  }
+  return peloCodex;
+}
+
+// O orçamento da avaliação, por agente. No Claude, o curto (95 s) cabe no corte de dois minutos que o Claude Code
+// aplica a um comando, e o longo (8 min) no tempo máximo do terminal. No Codex, a T0.9 mediu que o comando não é
+// cortado (150 s e 9 min terminaram): os mesmos dois degraus. Se o aplicativo passar a cortar, só os tetos mudam.
+const TETO_COMANDO_CODEX_MS = Infinity;
+const TETO_MAXIMO_CODEX_MS = Infinity;
+function orcamento(longo) {
+  if (agente.atual() !== 'codex') return longo ? ORCAMENTO_LONGO_MS : ORCAMENTO_MS;
+  if (longo) return Math.min(ORCAMENTO_LONGO_MS, TETO_MAXIMO_CODEX_MS - 25 * 1000);
+  return TETO_COMANDO_CODEX_MS >= 2 * 60 * 1000 ? ORCAMENTO_MS : TETO_COMANDO_CODEX_MS - 25 * 1000;
+}
+const timeoutAula = () => (agente.atual() === 'codex' ? Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || orcamento(false) : TIMEOUT_AULA_MS);
+
+// A resposta do motor do Codex passa pela forma do Claude antes da validação, e pela recusa do token do aluno; a do
+// Claude não passa por nada disto.
+function doMotor(r, json, chamador) {
+  if (r.motor !== 'codex') return { json, erros: [] };
+  return { json: motor.formaDoClaude(json, chamador), erros: motor.vazaToken(json) };
+}
+// O que a falha leva de volta a quem chamou, além do de hoje: só no modo Codex.
+const doCodex = (r) => ({ ...(r.sandbox ? { sandbox: r.sandbox } : {}), ...(r.semRede ? { semRede: true } : {}), ...(r.motor ? { motor: r.motor } : {}) });
 
 // O produto da oficina (lib/produto.js), quando há. Vem antes da transcrição e
 // é dado como ela: foi construído com o agente da oficina, então mostra se o que
@@ -297,10 +363,12 @@ Responda **apenas** com o objeto JSON, sem cerca de código, sem comentário ant
 // Até três tentativas: a segunda e a terceira levam a lista de erros da validação. Forma errada é o que mais
 // acontece, e perder a avaliação de uma aula inteira por uma vírgula seria pior que a chamada extra. `prazo` é o
 // instante em que a avaliação inteira tem de ter acabado: uma tentativa só começa se couber.
-function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = false }, limite = TENTATIVAS, prazo = Date.now() + ORCAMENTO_MS) {
+function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = false }, limite = TENTATIVAS, prazo = Date.now() + orcamento(false)) {
   let ultimo = 'o avaliador não produziu nada';
   let erros = null;
   let uso = null;
+  // O motor que respondeu por último, só no modo Codex.
+  let quem = {};
   const maximo = Math.min(TENTATIVAS, limite);
   for (let tentativa = 1; tentativa <= maximo; tentativa++) {
     const resta = prazo - Date.now();
@@ -308,28 +376,30 @@ function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = f
     if (tentativa > 1 && resta < MINIMO_PARA_TENTAR_MS) {
       return { ok: false, limite: true, motivo: `o avaliador não terminou a tempo (${ultimo})`, tentativas: tentativa - 1, uso };
     }
-    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(longo ? ORCAMENTO_LONGO_MS : TIMEOUT_AULA_MS, resta)));
+    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(longo ? orcamento(true) : timeoutAula(), resta)), { esquema: 'aula' });
+    if (r.motor) quem = { motor: r.motor };
     // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
     // (adiar, pedir o login); o Claude Code que não foi achado também não aparece na tentativa seguinte. Qualquer outra falha da chamada ganha as tentativas que restam.
-    if (!r.ok && (r.limite || r.login || r.ausente)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo, tentativas: tentativa, uso };
+    if (!r.ok && (r.limite || r.login || r.ausente || r.sandbox || r.semRede)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo, tentativas: tentativa, uso, ...doCodex(r) };
     if (!r.ok) { ultimo = r.motivo; erros = null; continue; }
     if (!uso) uso = { ...r.uso };
     else {
       for (const k of ['entrada', 'cache_leitura', 'cache_escrita', 'saida', 'ms']) uso[k] = (uso[k] || 0) + (r.uso[k] || 0);
       uso.custo_usd = (uso.custo_usd || 0) + (r.uso.custo_usd || 0);
     }
-    const json = extrairJson(r.texto);
-    if (!json) { ultimo = 'o avaliador não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    const extraido = extrairJson(r.texto);
+    if (!extraido) { ultimo = 'o avaliador não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    const { json, erros: doToken } = doMotor(r, extraido, 'aula');
     aplicarIniciativa(json);
     // Na última tentativa, o que é mecânico se conserta em vez de perder a avaliação inteira. "Última" é também a
     // que não vai ter outra por falta de tempo.
     const ultima = tentativa === maximo || prazo - Date.now() < MINIMO_PARA_TENTAR_MS;
     if (sanear) sanear(json, ultima);
-    erros = validar(json);
-    if (!erros.length) return { ok: true, avaliacao: json, uso, tentativas: tentativa };
+    erros = [...validar(json), ...doToken];
+    if (!erros.length) return { ok: true, avaliacao: json, uso, tentativas: tentativa, ...quem };
     ultimo = `a avaliação não passou na validação (${erros[0]})`;
   }
-  return { ok: false, motivo: ultimo, tentativas: maximo, uso };
+  return { ok: false, motivo: ultimo, tentativas: maximo, uso, ...quem };
 }
 
 // A iniciativa sai de uma conta, não da impressão do modelo (11/10). Pedida direto,
@@ -378,7 +448,7 @@ function aplicarIniciativa(av) {
 function avaliar(entrada) {
   // A medição pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
   const maxLeituras = Number.isInteger(entrada.maxLeituras) && entrada.maxLeituras > 0 ? entrada.maxLeituras : Infinity;
-  const prazo = Date.now() + (entrada.longo ? ORCAMENTO_LONGO_MS : ORCAMENTO_MS);
+  const prazo = Date.now() + orcamento(Boolean(entrada.longo));
   const primeira = avaliarUma(entrada, maxLeituras, prazo);
   if (!primeira.ok) return { ...primeira, leituras: primeira.tentativas };
 
@@ -469,23 +539,26 @@ Responda **apenas** com um objeto JSON nesta forma, sem cerca de código e sem c
 }`;
 }
 
-function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar, sanear }) {
+function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar, sanear, criterios }) {
   let ultimo = 'o corretor não produziu nada';
   let erros = null;
   let uso = null;
+  let quem = {};
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
-    const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }));
-    if (!r.ok && (r.limite || r.login)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso };
+    const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }), undefined, { esquema: 'correcao', criterios });
+    if (r.motor) quem = { motor: r.motor };
+    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso, ...doCodex(r) };
     if (!r.ok) { ultimo = r.motivo.replace(/avaliador/g, 'corretor'); erros = null; continue; }
     uso = r.uso;
-    const json = extrairJson(r.texto);
-    if (!json) { ultimo = 'o corretor não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    const extraido = extrairJson(r.texto);
+    if (!extraido) { ultimo = 'o corretor não devolveu JSON'; erros = ['a resposta não continha um objeto JSON']; continue; }
+    const { json, erros: doToken } = doMotor(r, extraido, 'correcao');
     if (sanear) sanear(json, tentativa === TENTATIVAS);
-    erros = validar(json);
-    if (!erros.length) return { ok: true, correcao: json, uso, tentativas: tentativa };
+    erros = [...validar(json), ...doToken];
+    if (!erros.length) return { ok: true, correcao: json, uso, tentativas: tentativa, ...quem };
     ultimo = `a correção não passou na validação (${erros[0]})`;
   }
-  return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso };
+  return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso, ...quem };
 }
 
-module.exports = { candidatos, lerEnvelope, TENTATIVAS, iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
+module.exports = { candidatos, lerEnvelope, TENTATIVAS, chamarClaude, orcamento, doMotor, iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };

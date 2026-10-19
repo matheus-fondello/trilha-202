@@ -948,6 +948,17 @@ const comandos = {
 // A avaliação em si, no processo à parte. Lê a transcrição e o produto com o estado de quando começou; `reler`
 // devolve o estado de agora, que é onde se grava.
 function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
+  // No modo Codex (branch codex), as sondas do sandbox vêm antes de tudo, inclusive da contagem do `--longo` abaixo:
+  // senão cada `--longo` bloqueado somaria um adiamento até a desistência, e a reexecução aprovada fora do sandbox
+  // usaria o orçamento curto e estouraria de novo. A credencial que o sandbox não deixou ler também espera: sem ela
+  // não há como conferir que a resposta do avaliador não traz o token do aluno.
+  if (agente.atual() === 'codex') {
+    if (longo) emSegundoPlano = true;
+    const s = require('./lib/codex/sondas').verificar();
+    if (!s.ok) return s.semRede ? semRede(e, reg, idAula, s.motivo, { longo }) : noSandbox(e, reg, idAula, s.motivo, { longo });
+    const b = acesso.leituraBloqueada();
+    if (b) return noSandbox(e, reg, idAula, b.motivo, { longo });
+  }
   // A tentativa longa conta antes de começar (19/10): cortada no meio (o terminal sem o tempo máximo, o aluno parou o
   // comando, o aplicativo fechou), ela não chegaria ao `adiar`, e o chat seguinte mandaria a mesma tentativa sem fim.
   if (longo) {
@@ -961,9 +972,12 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     estadoLib.salvar(e);
   }
   const t = transcricao.ler(e, idAula, { fechamento: true });
-  if (!t.ok) { ({ e, reg } = reler()); return desistir(e, reg, idAula, t.motivo); }
+  if (!t.ok) { ({ e, reg } = reler()); return t.sandbox ? noSandbox(e, reg, idAula, t.motivo, { longo }) : desistir(e, reg, idAula, t.motivo); }
 
     const anexo = produto.coletar(e, reg);
+    // O produto da oficina que o sandbox do Codex não deixou ler: sem ele, a nota de domínio e a fluência sairiam sobre
+    // um produto que parece não existir.
+    if (anexo.sandbox) { ({ e, reg } = reler()); return noSandbox(e, reg, idAula, anexo.motivo, { longo }); }
     const r = avaliador.avaliar({
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
@@ -973,8 +987,11 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
       longo,
     });
     ({ e, reg } = reler());
+    // `sandbox` e `semRede` só vêm do modo Codex (lib/avaliador.js, chamar).
+    if (!r.ok && r.sandbox) return noSandbox(e, reg, idAula, r.motivo, { longo });
+    if (!r.ok && r.semRede) return semRede(e, reg, idAula, r.motivo, { longo });
     if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
-    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso, r.executavel);
+    if (!r.ok && r.login) return pedirLogin(e, reg, idAula, r.motivo, r.uso, r.executavel, r.motor);
     if (!r.ok && r.ausente) return semClaude(e, reg, idAula, r.motivo);
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
@@ -993,7 +1010,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     // Reavaliar depois do concluir é legítimo (o aluno volta a discutir depois do
     // fechamento). Vale a última; o servidor precisa saber que esta substitui.
     const revisao = reg.avaliada_em ? { revisao: true, substitui_de: reg.avaliada_em } : {};
-    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao }, e);
+    fila.enfileirar('avaliacao', { aula: idAula, codificado: 'base64', payload: b64, avaliador: r.uso, estabilidade: r.estabilidade || null, produto: anexo.resumo, ...revisao, ...doAgente() }, e);
     // Enfileirar consulta o git e leva décimos de segundo. O estado é relido de novo aqui, logo antes de gravar: o chat
     // (um hook de turno, um marco da aula seguinte) pode ter gravado nesse intervalo, e esta gravação o apagaria.
     ({ e, reg } = reler());
@@ -1039,6 +1056,37 @@ function semClaude(e, reg, idAula, motivo) {
   recado(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
+// O sandbox do Codex não deixou a avaliação rodar (branch codex, lib/codex/sondas.js): não abrir programa, não gravar
+// na pasta pessoal, não falar com a internet, ou não ler a conversa, o produto ou a credencial. É como o `semClaude`:
+// pendência sem limite, que não conta para a desistência, porque não é a aula nem o avaliador, é a permissão do
+// comando. A diferença é que o aluno resolve na hora, aprovando o comando fora do sandbox; se ele não aprovar, ela roda
+// num chat seguinte.
+//
+// No `--longo`, nada muda na contagem dele (as sondas rodam antes dela; uma contagem já feita volta) e o motivo da
+// lentidão fica, que é a marca pela qual o resumo põe o `--longo` (resumo.js, pendencias). O comando repetido leva o
+// `--longo`, senão a reexecução aprovada usaria o orçamento curto e estouraria de novo.
+function pendenteDoCodex(e, reg, idAula, motivo, causa, longo) {
+  const antes = reg.avaliacao_adiada || {};
+  const lenta = /passou de \d+ segundos|não terminou a tempo/.test(antes.motivo || '');
+  const vezes = Math.max(0, (antes.vezes || 0) - (antes.contada ? 1 : 0));
+  delete reg.avaliacao_falhou;
+  reg.avaliacao_adiada = { em: agora(), motivo: lenta ? antes.motivo : motivo, vezes, causa };
+  reg.avaliacao_pendente = true;
+  estadoLib.salvar(e);
+  fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: Math.max(1, vezes), causa, avaliador: null }, e);
+  return `\`avaliar ${idAula}${longo ? ' --longo' : ''}\``;
+}
+// O agente que avaliou, nos eventos de nota (especificação, seção 7): só no modo Codex, e o evento do Claude não muda.
+const doAgente = () => (agente.atual() === 'codex' ? { agente: 'codex' } : {});
+function noSandbox(e, reg, idAula, motivo, { longo = false } = {}) {
+  const cmd = pendenteDoCodex(e, reg, idAula, motivo, 'sandbox', longo);
+  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Ela não se perdeu: fica pendente. Feche a aula normalmente com \`concluir ${idAula}\`; rode ${cmd} de novo pedindo para executar fora do sandbox, com o timeout que o AGENTS.md diz. Se o aluno não aprovar, siga: a avaliação fica pendente e roda num chat seguinte. Não comente a avaliação com o aluno; o pedido de aprovação é a única coisa que ele vê.`);
+}
+function semRede(e, reg, idAula, motivo, { longo = false } = {}) {
+  pendenteDoCodex(e, reg, idAula, motivo, 'sem-rede', longo);
+  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Sem internet agora; a avaliação fica pendente e roda num chat seguinte. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+}
+
 // A falha que não é limite nem login (resposta fora do formato nas três tentativas, transcrição que não abriu, o
 // processo interrompido). Ela é tentada de novo no começo de cada chat seguinte, e
 // enquanto houver tentativa pela frente o que sobe é `avaliacao.adiada`: a ficha da 202 mostra "pendente", que é a
@@ -1075,15 +1123,18 @@ function desistir(e, reg, idAula, motivo, uso) {
 // fica pendente e roda de novo no começo do próximo chat, como no limite: às vezes o login se renova sozinho. Na
 // segunda, a 202 é avisada e o próximo chat abre, antes de tudo, pedindo ao aluno que refaça o login; o resumo
 // manda rodar o `avaliar` de novo quando ele terminar.
-function pedirLogin(e, reg, idAula, motivo, uso, executavel) {
+function pedirLogin(e, reg, idAula, motivo, uso, executavel, motor) {
   // Uma falha anterior pelo mesmo motivo, gravada antes de existir esta categoria, conta como a primeira vez.
   const antes = (reg.avaliacao_login || {}).vezes || (/authenticate|oauth|\blogin\b/i.test((reg.avaliacao_falhou || {}).motivo || '') ? 1 : 0);
   // Com `executavel`, o Claude Code achado é o do aplicativo de desktop, que nunca teve login próprio (12/10): esperar
   // o chat seguinte não renova nada, então o pedido ao aluno sai já na primeira vez.
-  const vezes = executavel ? Math.max(antes + 1, 2) : antes + 1;
+  // O Codex sem login (branch codex) também não se renova sozinho: o `codex login status` disse que não há login, ou a
+  // chamada voltou recusada. O pedido sai já na primeira vez, com o passo a passo do Codex.
+  const peloCodex = motor === 'codex';
+  const vezes = executavel || peloCodex ? Math.max(antes + 1, 2) : antes + 1;
   delete reg.avaliacao_adiada;
   delete reg.avaliacao_falhou;
-  reg.avaliacao_login = { em: agora(), motivo, vezes, ...(executavel ? { executavel } : {}) };
+  reg.avaliacao_login = { em: agora(), motivo, vezes, ...(executavel ? { executavel } : {}), ...(motor ? { motor } : {}) };
   estadoLib.salvar(e);
   if (vezes < 2) {
     fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'login', avaliador: uso || null }, e);
@@ -1091,6 +1142,11 @@ function pedirLogin(e, reg, idAula, motivo, uso, executavel) {
     return;
   }
   // Continua pendente, e não falha: ela roda assim que o aluno refizer o login, e a ficha da 202 diz por que espera.
+  if (peloCodex) {
+    fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa entrar de novo no Codex da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
+    console.log(`A avaliação da aula ${idAula} não rodou: ${motivo}. Ela segue pendente e a 202 foi avisada. O Codex da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que faça o login, com o passo a passo: ${passosLogin(executavel, 'codex')} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
+    return;
+  }
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa refazer o login do Claude da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
   console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que ${executavel ? 'faça' : 'refaça'} o login, com o passo a passo: ${passosLogin(executavel)} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
 }
@@ -1105,6 +1161,16 @@ function marcarEntrega(e, a) {
   const p = (e.praticas || {})[a.id];
   if (!p || p.entregue_em) return;
   if (mapa.prontaParaCorrigir(a, p, e.aulas[a.id])) {
+    // No modo Codex (branch codex), o documento que o sandbox não deixou ler não sobe vazio, e a entrega só é gravada
+    // quando ele for lido: o próximo `pratica` tenta de novo, e é isso que o tutor recebe para fazer.
+    if (agente.atual() === 'codex') {
+      if (enviarDocumento(e, a) === 'bloqueado') {
+        console.log(`(O sandbox do Codex não deixou ler o documento da ${a.id}, e ele ainda não subiu: a entrega fica para quando ele for lido. Rode \`pratica ${a.id}\` de novo pedindo para executar fora do sandbox; se o aluno não aprovar, siga, e registre a prática de novo num chat seguinte. Não comente com o aluno além do pedido de aprovação.)`);
+        return;
+      }
+      p.entregue_em = agora();
+      return;
+    }
     p.entregue_em = agora();
     enviarDocumento(e, a);
   }
@@ -1119,6 +1185,7 @@ function enviarDocumento(e, a) {
   const p = (e.praticas || {})[a.id];
   if (!p || !p.pasta || !fs.existsSync(p.pasta)) return;
   const d = documentos.coletar(p.pasta, e);
+  if (d.sandbox) return 'bloqueado';
   fila.enfileirar('pratica.documento', { aula: a.id, arquivos: d.arquivos, omitidos: d.omitidos, caracteres: d.total }, e);
 }
 
@@ -1132,6 +1199,7 @@ function conversaDaPratica(e, idPratica) {
   const daPratica = (e.sessoes || []).filter((s) => s.aula === idPratica && (!ate || s.inicio <= ate));
   if (!daPratica.length) return { ok: false, motivo: `não há sessão da ${idPratica} anterior à entrega` };
   const t = transcricao.ler({ ...e, sessoes: daPratica, sessao_atual: null }, idPratica, { semFallback: true });
+  if (!t.ok && t.sandbox) return t;
   if (!t.ok) return { ok: false, motivo: `não consegui ler a conversa da ${idPratica} (${t.motivo})` };
   return t;
 }
@@ -1140,10 +1208,12 @@ function conversaDaPratica(e, idPratica) {
 // na prática de entrevista (a P4, que tem persona), e o registro da ideia, na
 // prática do plano (a P5). Os nomes de terceiros não vão: a conversa já chega
 // com eles trocados por [nome], e da ideia vai só quantos são.
-function materialDaPratica(e, a) {
+// `sinal.sandbox` (branch codex) diz a quem chama que a conversa não abriu por causa do sandbox do Codex.
+function materialDaPratica(e, a, sinal = {}) {
   const partes = [];
   if (a.persona_apos) {
     const t = conversaDaPratica(e, a.id);
+    if (t.sandbox) sinal.sandbox = t.motivo;
     partes.push(t.ok
       ? `### A conversa da prática, até a entrega (${t.chats} chat(s))\n\n\`\`\`\n${t.texto}\n\`\`\``
       : `### A conversa da prática\n\n(${t.motivo}: corrija pela síntese e diga isso na justificativa.)`);
@@ -1236,6 +1306,17 @@ function checksDaRegua(texto, criterios) {
     .filter(Boolean);
 }
 
+// A correção que o sandbox do Codex não deixou rodar (branch codex), ou que espera a internet voltar: como no login,
+// a prática não conclui nem marca falha. Com o sandbox, o aluno resolve na hora, aprovando o comando fora dele.
+function correcaoNoSandbox(e, p, idPratica, motivo, causa, uso) {
+  p.correcao_adiada = { em: agora(), motivo, causa };
+  estadoLib.salvar(e);
+  fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo, causa, corretor: uso || null }, e);
+  console.log(causa === 'sem-rede'
+    ? `A correção da ${idPratica} não rodou: ${motivo}. Sem internet agora; ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Diga ao aluno, em uma linha, que a leitura da entrega espera a internet voltar; num chat seguinte a correção recomeça sozinha.`
+    : `A correção da ${idPratica} não rodou: ${motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Rode o mesmo comando de novo, com a mesma conferência, pedindo para executar fora do sandbox, com o timeout que o AGENTS.md diz. Se o aluno não aprovar, siga: a correção fica pendente e recomeça num chat seguinte.`);
+}
+
 // A correção fora do chat. O tutor dispara, o harness junta a entrega, um
 // `claude -p` que não acompanhou a prática dá a nota, e o tutor recebe só o
 // roteiro do feedback. Falha não trava a prática: é a regra do `avaliar`, pelo
@@ -1257,8 +1338,22 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
   if (!reguaTexto) return desistirCorrecao('a régua desta prática não está nesta cópia do harness');
   let brief = null;
   try { brief = fs.readFileSync(path.join(paths.PRATICAS, idPratica.toLowerCase(), 'brief.md'), 'utf8'); } catch { /* sem brief */ }
+  // No modo Codex (branch codex), as sondas vêm antes da coleta: com o sandbox fechado, a correção espera antes de
+  // juntar o material, e o corretor nunca é chamado com a página ou o histórico faltando.
+  const codex = agente.atual() === 'codex';
+  if (codex) {
+    const s = require('./lib/codex/sondas').verificar();
+    if (!s.ok) return correcaoNoSandbox(e, p, idPratica, s.motivo, s.semRede ? 'sem-rede' : 'sandbox');
+  }
   const material = await entregaLib.coletar(p);
-  const extra = materialDaPratica(e, mapa.aula(idPratica));
+  if (codex && material.sandbox) {
+    return correcaoNoSandbox(e, p, idPratica, material.sandbox === 'leitura'
+      ? 'o sandbox do Codex não deixou este comando ler a pasta da prática'
+      : 'o sandbox do Codex não deixou este comando rodar o git na pasta da prática, e o corretor precisa do histórico de commits', 'sandbox');
+  }
+  const sinal = {};
+  const extra = materialDaPratica(e, mapa.aula(idPratica), sinal);
+  if (codex && sinal.sandbox) return correcaoNoSandbox(e, p, idPratica, sinal.sandbox, 'sandbox');
   if (extra) material.texto += '\n\n' + extra;
   const conferido = material.texto + (conferencia ? '\n\n' + conferencia : '');
   const r = avaliador.corrigir({
@@ -1269,7 +1364,10 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     material: material.texto,
     validar: (c) => validarCorrecao(c, idPratica, conferido),
     sanear: (c, ultima) => sanearCorrecao(c, conferido, ultima),
+    // O esquema estrito do Codex precisa das chaves da prática; o Claude não usa.
+    criterios: mapa.aula(idPratica).criterios,
   });
+  if (!r.ok && (r.sandbox || r.semRede)) return correcaoNoSandbox(e, p, idPratica, r.motivo, r.semRede ? 'sem-rede' : 'sandbox', r.uso);
   // No limite de uso a correção não falhou: espera a cota voltar, no mesmo chat
   // (o aluno manda "continue") ou num novo, que reabre a correção sozinho.
   if (!r.ok && r.limite) {
@@ -1284,7 +1382,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     p.correcao_adiada = { em: agora(), motivo: r.motivo, causa: 'login' };
     estadoLib.salvar(e);
     fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, causa: 'login', corretor: r.uso || null }, e);
-    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. O Claude da linha de comando desta máquina, que é quem corrige, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${passosLogin(r.executavel)} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. ${r.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem corrige, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${r.motor ? passosLogin(r.executavel, r.motor) : passosLogin(r.executavel)} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
     return;
   }
   if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
@@ -1293,7 +1391,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
   const revisao = p.corrigida_em ? { revisao: true, substitui_de: p.corrigida_em } : {};
   fila.enfileirar('pratica.correcao', {
     aula: idPratica, codificado: 'base64', payload: b64, corretor: r.uso,
-    material: material.resumo, conferencia: Boolean(conferencia), ...revisao,
+    material: material.resumo, conferencia: Boolean(conferencia), ...revisao, ...doAgente(),
   }, e);
   p.corrigida_em = agora();
   delete p.correcao_falhou;
@@ -1362,13 +1460,26 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
       const payload = Buffer.from(JSON.stringify(resultado.avaliacao), 'utf8').toString('base64');
       fila.enfileirar('quiz.avaliacao', {
         aula: idQuiz, questao: questao.n, codificado: 'base64', payload,
-        avaliador,
+        avaliador, ...doAgente(),
       }, e);
       delete gravada.texto_pendente;
       delete gravada.avaliacao_tentada_sessao;
       delete gravada.avaliacao_tentativas;
       estadoLib.salvar(e);
       console.log(`Avaliação separada da pergunta ${questao.n} registrada. A nota não passa pelo chat.`);
+    } else if (resultado.sandbox || resultado.semRede) {
+      // O sandbox do Codex (branch codex): não é tentativa, e com o sandbox a marca deste chat sai, para o "rode fora do
+      // sandbox" funcionar aqui mesmo. Sem internet, a marca fica e ela roda num chat seguinte.
+      if (resultado.sandbox) delete gravada.avaliacao_tentada_sessao;
+      estadoLib.salvar(e);
+      const causa = resultado.sandbox ? 'sandbox' : 'sem-rede';
+      fila.enfileirar('quiz.avaliacao.adiada', {
+        aula: idQuiz, questao: questao.n, motivo: resultado.motivo, vezes: Math.max(1, gravada.avaliacao_tentativas || 0), causa,
+        avaliador,
+      }, e);
+      console.log(resultado.sandbox
+        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. Rode \`quiz ${idQuiz}\` de novo pedindo para executar fora do sandbox, com o timeout que o AGENTS.md diz; se o aluno não aprovar, siga: ela roda num chat seguinte.`
+        : `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. Sem internet agora; a resposta está salva e a avaliação roda num chat seguinte.`);
     } else {
       // A resposta fica guardada e a avaliação é tentada de novo a cada chat, então o que sobe é "adiada". Só vira
       // "falhou" quando a causa não passa sozinha (nem limite, nem API, nem login) e já se tentou em três chats.
@@ -1382,7 +1493,7 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
         avaliador,
       }, e);
       console.log(resultado.login
-        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. O Claude da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${passosLogin(resultado.executavel)} A avaliação roda de novo no próximo chat.`
+        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. ${resultado.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${resultado.motor ? passosLogin(resultado.executavel, resultado.motor) : passosLogin(resultado.executavel)} A avaliação roda de novo no próximo chat.`
         : `A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
   }

@@ -16,9 +16,16 @@ const { lerJson, gravarJson, agora } = require('./util');
 // servidor: ela só pega o que foi colado torto (espaço, aspas, a linha inteira).
 const FORMATO_TOKEN = /^[A-Za-z0-9_-]{20,200}$/;
 
+// A credencial que o sandbox do Codex não deixou ler (branch codex). Sem isto a sala apareceria desconectada, e a
+// avaliação sairia sem a conferência do token (lib/codex/motor.js, vazaToken): ela fica pendente.
+let bloqueio = null;
 function credenciais() {
-  try { return lerJson(CREDENCIAIS, {}) || {}; } catch { return {}; }
+  try { return lerJson(CREDENCIAIS, {}) || {}; } catch (err) {
+    if (require('./codex/leitura').bloqueada(err)) bloqueio = { sandbox: 'leitura', motivo: require('./codex/leitura').motivo('o acesso da 202 guardado nesta máquina') };
+    return {};
+  }
 }
+const leituraBloqueada = () => { credenciais(); return bloqueio; };
 
 // Variável de ambiente primeiro, arquivo depois: quem prefere não ter arquivo
 // na pasta pessoal ainda consegue.
@@ -70,7 +77,7 @@ function apagar() {
 // Servidor fora do ar não fecha nada, porque o CRM responde 503 e não 401.
 function conectado(e) {
   const a = e && e.acesso;
-  return Boolean(a && a.conectado_em && !a.recusado_em && token());
+  return Boolean(a && a.conectado_em && !a.recusado_em && (token() || bloqueio));
 }
 
 // De quem é um token: o CRM responde a leitura do aluno com o e-mail e a turma. Só para dizer ao tutor; qualquer
@@ -89,4 +96,4 @@ async function quemE(t, url, timeoutMs = 4000) {
   }
 }
 
-module.exports = { credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };
+module.exports = { leituraBloqueada, credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };

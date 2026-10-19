@@ -1,7 +1,7 @@
 'use strict';
 // Le uma resposta aberta fora do chat, depois de ela estar gravada.
 const crypto = require('crypto');
-const { chamar, extrairJson, TENTATIVAS } = require('./avaliador');
+const { chamar, extrairJson, TENTATIVAS, doMotor } = require('./avaliador');
 const { evidenciaNaTranscricao } = require('./transcricao');
 
 const ESCALA_VERSAO = '2';
@@ -67,17 +67,24 @@ function avaliar(idQuiz, questao, resposta) {
   let uso = null;
   let ultimo = 'o avaliador nao produziu nada';
   const rubrica_sha = rubricaSha(questao);
-  const fora = (extra) => ({ ok: false, uso, rubrica_sha, escala_versao: ESCALA_VERSAO, ...extra });
+  // O motor que respondeu, so no modo Codex (branch codex): ele vai ao passo a passo do login, com o executavel achado.
+  let quem = {};
+  const fora = (extra) => ({ ok: false, uso, rubrica_sha, escala_versao: ESCALA_VERSAO, ...quem, ...extra });
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
-    const r = chamar(prompt(idQuiz, questao, resposta, erros));
+    const r = chamar(prompt(idQuiz, questao, resposta, erros), undefined, { esquema: 'aberta' });
+    if (r.motor) quem = { motor: r.motor };
     // Limite, API fora do ar e login nao se resolvem tentando de novo agora; o resto ganha as tentativas que restam.
-    if (!r.ok && (r.limite || r.login)) return fora({ motivo: r.motivo, limite: Boolean(r.limite), login: Boolean(r.login) });
+    // O sandbox do Codex tambem nao: a resposta fica guardada, e o comando roda de novo fora dele.
+    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede)) {
+      return fora({ motivo: r.motivo, limite: Boolean(r.limite), login: Boolean(r.login), ...(r.sandbox ? { sandbox: r.sandbox } : {}), ...(r.semRede ? { semRede: true } : {}), ...(r.motor ? { executavel: r.executavel || null } : {}) });
+    }
     if (!r.ok) { ultimo = r.motivo; erros = []; continue; }
     uso = r.uso;
-    const av = extrairJson(r.texto);
+    const extraido = extrairJson(r.texto);
+    const { json: av, erros: doToken } = doMotor(r, extraido, 'aberta');
     if (tentativa === TENTATIVAS) sanear(av, resposta);
-    erros = validar(av, idQuiz, questao, resposta);
-    if (!erros.length) return { ok: true, avaliacao: av, uso, rubrica_sha, escala_versao: ESCALA_VERSAO };
+    erros = [...validar(av, idQuiz, questao, resposta), ...doToken];
+    if (!erros.length) return { ok: true, avaliacao: av, uso, rubrica_sha, escala_versao: ESCALA_VERSAO, ...quem };
     ultimo = `avaliacao fora do formato (${erros[0]})`;
   }
   return fora({ motivo: ultimo });

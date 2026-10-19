@@ -400,9 +400,12 @@ function ler(e, idAula, opcoes = {}) {
   if (!arquivos.length) return { ok: false, motivo: 'não encontrei a transcrição desta sessão' };
   const tirar = tiradorDeNomes(e);
   const partes = [];
+  // A conversa que o sandbox do Codex não deixou abrir (branch codex): é pendência, e não "não consegui ler", que cai
+  // na desistência; nem uma transcrição sem um dos chats da aula.
+  let bloqueada = false;
   fontes.forEach(({ arquivo, trecho }, i) => {
     let bruto;
-    try { bruto = fs.readFileSync(arquivo, 'utf8'); } catch { return; }
+    try { bruto = fs.readFileSync(arquivo, 'utf8'); } catch (err) { if (require('./codex/leitura').bloqueada(err)) bloqueada = true; return; }
     // A conversa do Codex começa pelo `session_meta` e tem o conversor dela (branch codex); a aula feita nos dois
     // agentes junta as duas formas, cada uma lida com o seu. O teste barato vem antes, para o Claude não carregar nada.
     const nl = bruto.indexOf('\n');
@@ -412,6 +415,7 @@ function ler(e, idAula, opcoes = {}) {
       : converter(bruto, tirar);
     if (convertido.trim()) partes.push(convertido);
   });
+  if (bloqueada) return { ok: false, sandbox: 'leitura', motivo: require('./codex/leitura').motivo('a conversa desta aula') };
   if (!partes.length) return { ok: false, motivo: 'não consegui ler a transcrição desta sessão' };
   const separador = '\n\n[--- chat seguinte, mesma aula ---]\n\n';
   const texto = cortar(partes.join(separador), limite);
