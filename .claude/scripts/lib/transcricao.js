@@ -108,19 +108,41 @@ function porHorario(e, idAula) {
     const j = janelaDoArquivo(f);
     if (cobre(j)) achados.set(f, j.inicio);
   }
+  // Com o Codex no estado (branch codex), as conversas dele também são fontes: as do registro e as da pasta do Codex
+  // abertas na sala, cada uma lida depois com o seu conversor. Um aluno só do Claude não tem `e.codex`.
+  if (e.codex) for (const [f, inicio] of require('./codex/transcricao').doHorario(e, cobre, janelaDoArquivo, achados.keys())) achados.set(f, inicio);
   return [...achados].sort((a, b) => a[1] - b[1]).map(([f]) => f);
+}
+
+// O pedaço da conversa que é desta aula, quando o registro do Codex o guarda (branch codex): na recuperação, um chat
+// que fez duas aulas vira duas sessões, `<chat>#<aula>`, sobre o mesmo arquivo.
+function trechoDe(e, s, idAula) {
+  const chats = e.codex && e.codex.chats;
+  if (!chats || !s || typeof s.id !== 'string') return null;
+  const c = chats[s.id.split('#')[0]];
+  const t = c && c.trechos && c.trechos[idAula];
+  return t && typeof t === 'object' ? t : null;
 }
 
 // Uma aula longa pode acontecer em dois chats, e o avaliador precisa da aula
 // inteira: cada sessão tem a sua transcrição, e elas entram na ordem em que
 // aconteceram. A sessão aberta é a última — é ela que está acontecendo agora.
-function arquivosDaAula(e, idAula, { semFallback = false } = {}) {
+// Cada fonte é `{ arquivo, trecho }`; o trecho só existe no Codex.
+function fontesDaAula(e, idAula, { semFallback = false } = {}) {
   // `aulas`: o chat em que o aluno emendou a aula seguinte é das duas (estado.emendar).
   const atende = (s) => s.aula === idAula || (s.aulas || []).includes(idAula);
-  const anteriores = (e.sessoes || []).filter(atende).map(localizar);
-  const atual = e.sessao_atual && atende(e.sessao_atual) ? localizar(e.sessao_atual) : null;
-  const lista = [...anteriores, atual].filter(Boolean);
-  const unicos = [...new Set(lista)];
+  const daSessao = (s) => ({ arquivo: localizar(s), trecho: trechoDe(e, s, idAula) });
+  const anteriores = (e.sessoes || []).filter(atende).map(daSessao);
+  const atual = e.sessao_atual && atende(e.sessao_atual) ? daSessao(e.sessao_atual) : null;
+  const lista = [...anteriores, atual].filter((f) => f && f.arquivo);
+  const vistos = new Set();
+  const unicos = lista.filter((f) => {
+    const chave = f.arquivo + '\u0000' + JSON.stringify(f.trecho);
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+  const soArquivos = (l) => l.map((arquivo) => ({ arquivo, trecho: null }));
   // Nenhuma sessão etiquetada: harness antigo ou estado mexido à mão. Melhor a
   // sessão mais recente desta pasta do que avaliação nenhuma. Quem lê a conversa
   // de outro chat (o `conversa` da correção) pede sem isso: o mais recente seria
@@ -129,11 +151,18 @@ function arquivosDaAula(e, idAula, { semFallback = false } = {}) {
   if (!unicos.length) {
     // A aula deixou rastro: a conversa é a que existia naquela hora, e nenhuma é melhor que a errada.
     const doHorario = porHorario(e, idAula);
-    if (doHorario) return doHorario;
+    if (doHorario) return soArquivos(doHorario);
+    // No modo Codex, só a conversa do próprio chat: a mais recente de ~/.claude/projects seria a de outra aula.
+    const agente = require('./agente');
+    if (agente.atual() === 'codex') return soArquivos(require('./codex/transcricao').doProprioChat(agente.idDoChat()));
     const ultimo = localizar(e.sessao_atual) || maisRecente();
-    return ultimo ? [ultimo] : [];
+    return ultimo ? [{ arquivo: ultimo, trecho: null }] : [];
   }
   return unicos;
+}
+
+function arquivosDaAula(e, idAula, opcoes = {}) {
+  return [...new Set(fontesDaAula(e, idAula, opcoes).map((f) => f.arquivo))];
 }
 
 function limpar(texto) {
@@ -365,16 +394,23 @@ function cortar(texto, limite = LIMITE) {
 
 function ler(e, idAula, opcoes = {}) {
   const { limite = LIMITE, semFallback = false } = typeof opcoes === 'number' ? { limite: opcoes } : opcoes;
-  const arquivos = arquivosDaAula(e, idAula, { semFallback });
+  const fontes = fontesDaAula(e, idAula, { semFallback });
+  const arquivos = [...new Set(fontes.map((f) => f.arquivo))];
   if (!arquivos.length) return { ok: false, motivo: 'não encontrei a transcrição desta sessão' };
   const tirar = tiradorDeNomes(e);
   const partes = [];
-  for (const arquivo of arquivos) {
+  fontes.forEach(({ arquivo, trecho }, i) => {
     let bruto;
-    try { bruto = fs.readFileSync(arquivo, 'utf8'); } catch { continue; }
-    const convertido = converter(bruto, tirar);
+    try { bruto = fs.readFileSync(arquivo, 'utf8'); } catch { return; }
+    // A conversa do Codex começa pelo `session_meta` e tem o conversor dela (branch codex); a aula feita nos dois
+    // agentes junta as duas formas, cada uma lida com o seu. O teste barato vem antes, para o Claude não carregar nada.
+    const nl = bruto.indexOf('\n');
+    const codex = (nl === -1 ? bruto : bruto.slice(0, nl)).includes('"session_meta"') ? require('./codex/transcricao') : null;
+    const convertido = codex && codex.eDoCodex(bruto)
+      ? codex.converter(bruto, tirar, { trecho, ultimo: i === fontes.length - 1 })
+      : converter(bruto, tirar);
     if (convertido.trim()) partes.push(convertido);
-  }
+  });
   if (!partes.length) return { ok: false, motivo: 'não consegui ler a transcrição desta sessão' };
   const separador = '\n\n[--- chat seguinte, mesma aula ---]\n\n';
   const texto = cortar(partes.join(separador), limite);
@@ -470,4 +506,4 @@ function evidenciaNaTranscricao(evidencia, falas) {
   return origemDaEvidencia(evidencia, falas) !== null;
 }
 
-module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, tiradorDeNomes, falasDoAluno, evidenciaNaTranscricao, origemDaEvidencia, normalizar, CONTINUACAO, LIMITE };
+module.exports = { ler, localizar, arquivosDaAula, converter, cortar, pastaDoProjeto, tiradorDeNomes, falasDoAluno, evidenciaNaTranscricao, origemDaEvidencia, normalizar, CONTINUACAO, LIMITE, segmentos, rotulo, continuacoes, limpar, semToken, semNota, semVeredito, umaLinha };
