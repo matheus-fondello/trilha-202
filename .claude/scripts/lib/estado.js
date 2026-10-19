@@ -59,25 +59,41 @@ function registroAula(e, idAula) {
 // montar a janela, e janela aberta e abandonada não é aula: contava sessão, abria
 // a aula e enfileirava sozinha. O início só cria o registro; contar, abrir a aula
 // e enfileirar acontece no primeiro turno, e é dali que a aula começa a valer.
-function contarSessao(e) {
+//
+// `opts` (branch codex): a sessão do Codex é contada quando o turno dela é
+// importado da conversa, e o turno pode ter acontecido antes. O relógio vem do
+// turno (`ts`, `mono_ms`, `boot_ms`), e o `id` do sessao.inicio é determinístico,
+// para a mesma importação não subir dois. Sem `opts`, é o relógio de agora.
+function contarSessao(e, opts) {
+  const o = opts && typeof opts === 'object' ? opts : {};
   const s = e.sessao_atual;
   // Só quem nasceu com o campo espera ser contado aqui. Sessão de antes desta
   // regra vem sem `contada` e já foi contada no início: não se conta de novo.
   if (!s || s.contada !== false) return false;
   s.contada = true;
-  s.inicio = agora();
+  s.inicio = o.ts || agora();
   // Com a escolha de frente pendente, a sessão conta mas nenhuma aula abre: a
   // aula é a que ele escolher, e é o `seguir` que a abre. Senão subia um
   // `aula.inicio` da frente que ele não escolheu.
   if (!escolhaPendente(e)) {
     const reg = registroAula(e, s.aula);
     reg.sessoes = (reg.sessoes || 0) + 1;
-    abrirAula(e, s.aula);
+    // A aula abre com o horário do turno: aberta com o de agora, depois de
+    // turnos importados, ela "começaria" no fim e concluiria rápido demais.
+    abrirAula(e, s.aula, { ts: o.ts });
   }
   // mono_ms e boot_ms ancoram o relógio monotônico dos turnos: o servidor liga a
   // contagem monotônica ao horário real desta sessão, e vê pelo boot se a máquina
   // reiniciou entre dois trechos (o monotônico recomeça do zero).
-  fila.enfileirar('sessao.inicio', { fonte: s.fonte || 'startup', aula: s.aula, ...(escolhaPendente(e) ? { escolha: s.escolha.opcoes } : {}), mono_ms: monoMs(), boot_ms: bootMs() }, e);
+  fila.enfileirar('sessao.inicio', {
+    fonte: s.fonte || 'startup',
+    aula: s.aula,
+    ...(escolhaPendente(e) ? { escolha: s.escolha.opcoes } : {}),
+    mono_ms: Number.isFinite(o.mono_ms) ? o.mono_ms : monoMs(),
+    boot_ms: Number.isFinite(o.boot_ms) ? o.boot_ms : bootMs(),
+    // Só a sessão do Codex tem `agente`: a do Claude não ganha chave.
+    ...(s.agente ? { agente: s.agente } : {}),
+  }, e, { ...(o.id ? { id: o.id } : {}), ...(o.ts ? { ts: o.ts } : {}) });
   return true;
 }
 
@@ -136,13 +152,17 @@ function escolher(e, idAula) {
 // aula, e o `aula.inicio` sairia com a hora errada. Chamado no primeiro turno da
 // sessão e, se a sessão já contava quando a sala abriu, pelo `conectar` — senão
 // a aula dada no mesmo chat do token abria pelo primeiro milestone, sem evento.
-function abrirAula(e, idAula) {
+//
+// `opts.ts` (branch codex): o horário em que a aula começou, quando ela abre por
+// um turno importado da conversa do Codex. Sem ele, agora.
+function abrirAula(e, idAula, opts) {
+  const ts = opts && opts.ts;
   const reg = registroAula(e, idAula);
   const a = mapa.aula(idAula);
   if (reg.status !== 'nao_iniciada' || !mapa.escrita(a) || !acesso.conectado(e)) return false;
   reg.status = 'em_andamento';
-  reg.iniciada_em = agora();
-  fila.enfileirar('aula.inicio', { aula: a.id }, e);
+  reg.iniciada_em = ts || agora();
+  fila.enfileirar('aula.inicio', { aula: a.id }, e, ts ? { ts } : {});
   return true;
 }
 

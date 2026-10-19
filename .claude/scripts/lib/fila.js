@@ -16,6 +16,14 @@ function versaoHarness() {
 // oficial: evento vindo de commit desconhecido ou de harness sujo é auto-relato
 // de um harness modificado, e é assim que se lê.
 function integridade() {
+  // Modo Codex (branch codex). O teste das variáveis vem antes do require: sem
+  // elas o agente não pode ser o Codex, e o hook do Claude, que tem teto de
+  // 300 ms, não carrega nem o agente.js.
+  if (process.env.TRILHA_202_AGENTE || process.env.CODEX_THREAD_ID) {
+    try {
+      if (require('./agente').atual() === 'codex') return integridadeCodex();
+    } catch { /* segue o de hoje */ }
+  }
   try {
     const alterados = git.alterados();
     return { commit: git.commit(), sujo: alterados.length > 0 };
@@ -24,25 +32,39 @@ function integridade() {
   }
 }
 
+// No sandbox do Codex o git pode não rodar. O commit sai então do .git, lido
+// pelo Node; e o `sujo` sai null, "não sei", e não false: false diria "íntegro"
+// a todo evento do sandbox, e no CRM um `sujo: true` com `commit: null` abre um
+// alarme que nunca se resolve. Sem git, a 202 sabe que não sabe.
+function integridadeCodex() {
+  const alterados = git.alterados({ desconhecido: true });
+  return { commit: git.commit() || git.commitPorArquivo(), sujo: alterados === null ? null : alterados.length > 0 };
+}
+
 // Um evento grande demais trava a fila: o CRM o guarda em quarentena acima disso,
 // e acima de uns 9 MB o proxy recusa com 413 em todo envio, porque a página
 // sempre leva ao menos um evento. Fica o esqueleto do que ele era.
 const MAX_DADOS = 150000;
 
-function enfileirar(tipo, dados, estado) {
+// `opts` (branch codex) é de quem importa da conversa do Codex o que já
+// aconteceu: o id determinístico (o mesmo turno importado duas vezes é o mesmo
+// evento), o horário do turno e a sessão do chat dele. Sem `opts`, o evento é o
+// de sempre, com as chaves na mesma ordem.
+function enfileirar(tipo, dados, estado, opts) {
+  const o = opts && typeof opts === 'object' ? opts : {};
   const bruto = JSON.stringify(dados || {});
   if (bruto.length > MAX_DADOS) {
     dados = { aula: dados && dados.aula, cortado: true, caracteres: bruto.length, chaves: Object.keys(dados || {}).slice(0, 50) };
   }
   const ev = {
-    id: id(),
+    id: o.id || id(),
     // Contínuo entre sessões: buraco na sequência é evento que não chegou, e o
     // servidor marca a sessão como incompleta em vez de somar errado calado.
     seq: seq.proximo(),
-    ts: agora(),
+    ts: o.ts || agora(),
     tipo,
     aula: (dados && dados.aula) || (estado && estado.aula_atual) || null,
-    sessao: estado && estado.sessao_atual ? estado.sessao_atual.id : null,
+    sessao: 'sessao' in o ? o.sessao : (estado && estado.sessao_atual ? estado.sessao_atual.id : null),
     aluno: estado ? { email: estado.aluno.email, id: estado.aluno.id } : null,
     harness: versaoHarness(),
     ...integridade(),
@@ -67,6 +89,14 @@ function ler() {
   return eventos;
 }
 
+// Se um evento com este id ainda está na fila local (branch codex): quem
+// importa da conversa do Codex pula o que já enfileirou, em vez de deixar para
+// o dedupe do CRM, que gastaria um `seq` e deixaria buraco.
+function temId(idEvento) {
+  if (!idEvento) return false;
+  return ler().some((e) => e.id === idEvento);
+}
+
 // Reescreve a fila sem os enviados. Lê o arquivo de novo logo antes de trocar,
 // porque o envio leva segundos e outro processo (um hook, o CLI numa segunda
 // janela) pode ter enfileirado no meio: sem isso o rename apagava esse evento.
@@ -81,4 +111,4 @@ function remover(ids) {
   fs.renameSync(tmp, FILA);
 }
 
-module.exports = { enfileirar, ler, remover };
+module.exports = { enfileirar, ler, temId, remover };
