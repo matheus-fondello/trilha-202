@@ -18,8 +18,8 @@ function padrao() {
     aluno: { email: null, nome: null, id: null },
     aula_atual: mapa.todas()[0].id,
     aulas: {},          // por id: { status, iniciada_em, concluida_em, milestones: {id: ts}, fluencia, avaliada_em, sessoes }
-    sessao_atual: null, // { id, inicio, ultima_atividade, aula, turnos, n_base, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }
-    sessoes: [],        // histórico: { id, inicio, fim, minutos, aula, turnos, n_base?, fechada_por, transcricao }
+    sessao_atual: null, // { id, inicio, ultima_atividade, aula, aulas?, turnos, n_base, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }
+    sessoes: [],        // histórico: { id, inicio, fim, minutos, aula, aulas?, turnos, n_base?, fechada_por, transcricao }
     oficina: null,      // caminho da pasta irmã onde o aluno pratica
     praticas: {},       // por id: { url, registrada_em }
   };
@@ -146,6 +146,27 @@ function abrirAula(e, idAula) {
   return true;
 }
 
+// O aluno emendou outra aula no mesmo chat, depois do `concluir` (19/10). Os
+// turnos depois do `concluir` ficam com a unidade que fechou (é o "obrigado"),
+// e quem seguia direto para a aula nova tinha ela inteira contada para a
+// anterior: uma 1.1 saiu com 0 minuto. O primeiro registro da aula nova neste
+// chat (marco, quiz) leva o chat para ela, como um chat novo levaria. Só a aula
+// da vez: a P2 se registra dentro da 2.8, e não é a 2.8 que acabou.
+// Devolve se trocou.
+function emendar(e, idAula) {
+  const s = e.sessao_atual;
+  if (!s || !s.contada || !s.aula || s.aula === idAula || idAula !== e.aula_atual) return false;
+  if (((e.aulas || {})[s.aula] || {}).status !== 'concluida') return false;
+  // O chat continua sendo também da que fechou: a avaliação dela, se ficou
+  // pendente, roda no chat seguinte e precisa achar esta transcrição.
+  s.aulas = [...new Set([...(s.aulas || [s.aula]), idAula])];
+  s.aula = idAula;
+  const reg = registroAula(e, idAula);
+  reg.sessoes = (reg.sessoes || 0) + 1;
+  abrirAula(e, idAula);
+  return true;
+}
+
 // A unidade atual concluída, com outra aberta, é material que chegou depois
 // (o `concluir` da última unidade não tinha para onde avançar, e a atualização
 // trouxe o módulo novo) ou uma frente que fechou com a outra ainda aberta. Sem
@@ -203,7 +224,7 @@ function fecharSessao(e, fimIso, motivo) {
   // O caminho da transcrição fica na máquina e não sobe: ele carrega o nome de
   // usuário do aluno, e a 202 não tem o que fazer com ele. Quem precisa dele é o
   // avaliador, quando a aula acontece em mais de um chat.
-  e.sessoes.push({ ...registro, transcricao: localizarTranscricao(s), ...(s.n_base ? { n_base: s.n_base } : {}) });
+  e.sessoes.push({ ...registro, transcricao: localizarTranscricao(s), ...(s.n_base ? { n_base: s.n_base } : {}), ...(s.aulas ? { aulas: s.aulas } : {}) });
   fila.enfileirar('sessao.fim', registro, e);
   e.sessao_atual = null;
   return registro;
@@ -248,6 +269,7 @@ function retomarSessao(e, entrada) {
     turno_aberto: null,
     ultimo_turno_fim: antiga ? antiga.fim : null,
     trabalho_ms: antiga ? antiga.trabalho_ms || 0 : 0,
+    ...(antiga && antiga.aulas ? { aulas: antiga.aulas } : {}),
   };
   return true;
 }
@@ -263,4 +285,4 @@ function avaliacaoRodando(reg) {
   try { process.kill(m.pid, 0); return true; } catch (err) { return err.code === 'EPERM'; }
 }
 
-module.exports = { avaliacaoRodando, carregar, salvar, registroAula, padrao, contarSessao, abrirAula, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
+module.exports = { avaliacaoRodando, carregar, salvar, registroAula, padrao, contarSessao, abrirAula, emendar, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };

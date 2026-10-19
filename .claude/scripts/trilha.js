@@ -252,6 +252,8 @@ const comandos = {
     if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idAula)) estadoLib.escolher(e, idAula);
     const reg = estadoLib.registroAula(e, idAula);
     if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
+    // A aula emendada no chat da que acabou de fechar passa a ser a do chat.
+    estadoLib.emendar(e, idAula);
     if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
     if (reg.milestones[idMilestone]) {
       console.log(`Milestone ${idMilestone} já estava fechado (${reg.milestones[idMilestone]}). Nada a fazer.`);
@@ -664,6 +666,8 @@ const comandos = {
     // Como no `milestone`: o quiz de uma das opções diz qual foi a escolha.
     if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idQuiz)) { estadoLib.escolher(e, idQuiz); estadoLib.salvar(e); }
     const reg = estadoLib.registroAula(e, idQuiz);
+    // Como no `milestone`: o quiz emendado no chat da aula que fechou é do chat.
+    if (reg.status !== 'concluida' && estadoLib.emendar(e, idQuiz)) estadoLib.salvar(e);
     const q = quizLib.registro(reg);
     if (reg.status === 'concluida' && sub === 'responder') falhar(`o ${idQuiz} já foi concluído.`);
     // Uma leitura interrompida nao perde a resposta: a proxima chamada do quiz

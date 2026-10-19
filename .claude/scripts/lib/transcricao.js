@@ -57,8 +57,10 @@ function maisRecente() {
 // inteira: cada sessão tem a sua transcrição, e elas entram na ordem em que
 // aconteceram. A sessão aberta é a última — é ela que está acontecendo agora.
 function arquivosDaAula(e, idAula, { semFallback = false } = {}) {
-  const anteriores = (e.sessoes || []).filter((s) => s.aula === idAula).map(localizar);
-  const atual = e.sessao_atual && e.sessao_atual.aula === idAula ? localizar(e.sessao_atual) : null;
+  // `aulas`: o chat em que o aluno emendou a aula seguinte é das duas (estado.emendar).
+  const atende = (s) => s.aula === idAula || (s.aulas || []).includes(idAula);
+  const anteriores = (e.sessoes || []).filter(atende).map(localizar);
+  const atual = e.sessao_atual && atende(e.sessao_atual) ? localizar(e.sessao_atual) : null;
   const lista = [...anteriores, atual].filter(Boolean);
   const unicos = [...new Set(lista)];
   // Nenhuma sessão etiquetada: harness antigo ou estado mexido à mão. Melhor a
