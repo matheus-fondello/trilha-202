@@ -29,4 +29,7 @@ module.exports = {
   // público, e um token commitado é um token vazado. A variável troca o lugar
   // (os testes usam, para não tocar no acesso de quem roda).
   CREDENCIAIS: process.env.TRILHA_202_CREDENCIAIS || path.join(os.homedir(), '.trilha-202', 'credenciais.json'),
+  // A pasta do Codex, onde ele grava as conversas (branch codex). Função, e não constante como as de cima: o Codex
+  // respeita o CODEX_HOME do momento, e os testes trocam a variável no meio do processo.
+  codexHome: () => process.env.CODEX_HOME || path.join(os.homedir(), '.codex'),
 };
