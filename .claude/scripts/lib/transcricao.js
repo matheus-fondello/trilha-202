@@ -53,6 +53,64 @@ function maisRecente() {
   }
 }
 
+// Os instantes em que a aula deixou rastro no estado: o início, os marcos, a fluência e a conclusão.
+function marcasDaAula(e, idAula) {
+  const r = (e.aulas || {})[idAula] || {};
+  return [r.iniciada_em, ...Object.values(r.milestones || {}), r.fluencia && r.fluencia.registrada_em, r.concluida_em]
+    .filter((t) => typeof t === 'string')
+    .map(Date.parse)
+    .filter((t) => !Number.isNaN(t));
+}
+
+// De quando a quando a conversa existiu: o primeiro `timestamp` do arquivo e a última escrita nele.
+function janelaDoArquivo(arquivo) {
+  try {
+    const fd = fs.openSync(arquivo, 'r');
+    const buf = Buffer.alloc(64 * 1024);
+    const n = fs.readSync(fd, buf, 0, buf.length, 0);
+    fs.closeSync(fd);
+    const m = buf.toString('utf8', 0, n).match(/"timestamp"\s*:\s*"([^"]+)"/);
+    const inicio = m ? Date.parse(m[1]) : NaN;
+    return Number.isNaN(inicio) ? null : { inicio, fim: fs.statSync(arquivo).mtimeMs };
+  } catch {
+    return null;
+  }
+}
+
+// A aula sem nenhum chat etiquetado com ela (19/10): o aluno a fez no chat de outra, antes do `emendar`, ou em
+// pasta que o estado não conhece. O "mais recente da pasta" avaliava a conversa errada (um aluno teve a 1.1 lida em
+// cima de outro chat e a nota saiu inválida). Valem as conversas da sala que existiam quando a aula deixou rastro.
+// Devolve null quando a aula não tem rastro nenhum no estado, e aí não há com o que comparar.
+const FOLGA_MS = 2 * 60 * 1000;
+function porHorario(e, idAula) {
+  const marcas = marcasDaAula(e, idAula);
+  if (!marcas.length) return null;
+  // A folga é só depois do fim: as marcas nascem dentro do chat, e antes do início ela puxaria o chat seguinte,
+  // aberto logo depois do `concluir`.
+  const cobre = (j) => j && marcas.some((t) => t >= j.inicio && t <= j.fim + FOLGA_MS);
+  // A janela que o estado guarda de cada chat (início e fim, ou a última atividade do aberto) e, para as conversas da
+  // pasta que o estado não conhece, a do próprio arquivo.
+  const janelaDoRegistro = (s) => {
+    const inicio = Date.parse(s.inicio);
+    const fim = Date.parse(s.fim || s.ultima_atividade || '') || Date.now();
+    return Number.isNaN(inicio) ? null : { inicio, fim };
+  };
+  const achados = new Map();
+  for (const s of [...(e.sessoes || []), e.sessao_atual].filter(Boolean)) {
+    const f = localizar(s);
+    const j = janelaDoRegistro(s);
+    if (f && cobre(j) && !achados.has(f)) achados.set(f, j.inicio);
+  }
+  let daPasta = [];
+  try { daPasta = fs.readdirSync(pastaDoProjeto()).filter((f) => f.endsWith('.jsonl')).map((f) => path.join(pastaDoProjeto(), f)); } catch { /* sem pasta */ }
+  for (const f of daPasta) {
+    if (achados.has(f)) continue;
+    const j = janelaDoArquivo(f);
+    if (cobre(j)) achados.set(f, j.inicio);
+  }
+  return [...achados].sort((a, b) => a[1] - b[1]).map(([f]) => f);
+}
+
 // Uma aula longa pode acontecer em dois chats, e o avaliador precisa da aula
 // inteira: cada sessão tem a sua transcrição, e elas entram na ordem em que
 // aconteceram. A sessão aberta é a última — é ela que está acontecendo agora.
@@ -69,6 +127,9 @@ function arquivosDaAula(e, idAula, { semFallback = false } = {}) {
   // o próprio chat dele.
   if (!unicos.length && semFallback) return [];
   if (!unicos.length) {
+    // A aula deixou rastro: a conversa é a que existia naquela hora, e nenhuma é melhor que a errada.
+    const doHorario = porHorario(e, idAula);
+    if (doHorario) return doHorario;
     const ultimo = localizar(e.sessao_atual) || maisRecente();
     return ultimo ? [ultimo] : [];
   }

@@ -72,7 +72,18 @@ function pendencias(e, linhas) {
       // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
       && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
     .map(([id]) => id);
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. O comando leva uns vinte segundos. Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
+  // A que estourou o tempo (19/10) roda de novo com prazo longo: nesta máquina a leitura é lenta, e o mesmo teto
+  // estouraria de novo. Em segundo plano, para o aluno não esperar minutos pela primeira resposta; o terminal do
+  // tutor corta em dois minutos o comando que roda na frente.
+  const lenta = (id) => {
+    const r = e.aulas[id] || {};
+    return /passou de \d+ segundos|não terminou a tempo/.test([(r.avaliacao_adiada || {}).motivo, (r.avaliacao_falhou || {}).motivo].filter(Boolean).join(' '));
+  };
+  const lentas = adiadas.filter(lenta);
+  const tempo = lentas.length
+    ? `Nesta máquina a avaliação é lenta e pode levar alguns minutos: rode ${lentas.length > 1 ? 'esses comandos' : 'o comando'} em segundo plano (run_in_background), sem esperar o resultado, e siga a aula; se a sua ferramenta de terminal não tiver essa opção, rode com o tempo máximo dela (timeout de 600000 ms), senão ela o corta em dois minutos.`
+    : 'O comando leva uns vinte segundos.';
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}${lenta(id) ? ' --longo' : ''}\``).join(' e ')}. ${tempo} Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);

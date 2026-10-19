@@ -37,6 +37,11 @@ const ORCAMENTO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_MS) || 95
 // segunda tentativa (o estouro sai como `limite`): uma máquina lenta (um aluno com leituras de 42 a 49 s e quatro mil
 // tokens de saída) perdia a 1.2 por isso, com a leitura que terminaria cortada no meio.
 const TIMEOUT_AULA_MS = Number(process.env.TRILHA_202_AVALIADOR_TIMEOUT_MS) || ORCAMENTO_MS;
+// A nova tentativa de uma avaliação que estourou o tempo (19/10). O tempo de uma leitura é o dos tokens que o modelo
+// escreve, uns 12 ms cada, e em algumas máquinas ele escreve de quatro a seis mil (contra 1.200 na maioria): uma aula
+// maior passa dos 95 s, e passaria em toda tentativa. No chat seguinte o tutor roda `avaliar <aula> --longo` com o
+// tempo máximo do terminal dele (dez minutos), e a avaliação ganha oito.
+const ORCAMENTO_LONGO_MS = Number(process.env.TRILHA_202_AVALIADOR_ORCAMENTO_LONGO_MS) || 8 * 60 * 1000;
 // Com menos que isto pela frente, não vale começar outra chamada.
 const MINIMO_PARA_TENTAR_MS = Math.min(15 * 1000, ORCAMENTO_MS / 4);
 // O esforço de raciocínio do avaliador é fixo. Sem isto ele herda o do Claude de cada máquina, e `--setting-sources ""`
@@ -292,7 +297,7 @@ Responda **apenas** com o objeto JSON, sem cerca de código, sem comentário ant
 // Até três tentativas: a segunda e a terceira levam a lista de erros da validação. Forma errada é o que mais
 // acontece, e perder a avaliação de uma aula inteira por uma vírgula seria pior que a chamada extra. `prazo` é o
 // instante em que a avaliação inteira tem de ter acabado: uma tentativa só começa se couber.
-function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite = TENTATIVAS, prazo = Date.now() + ORCAMENTO_MS) {
+function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = false }, limite = TENTATIVAS, prazo = Date.now() + ORCAMENTO_MS) {
   let ultimo = 'o avaliador não produziu nada';
   let erros = null;
   let uso = null;
@@ -303,7 +308,7 @@ function avaliarUma({ contexto, transcricao, produto, validar, sanear }, limite 
     if (tentativa > 1 && resta < MINIMO_PARA_TENTAR_MS) {
       return { ok: false, limite: true, motivo: `o avaliador não terminou a tempo (${ultimo})`, tentativas: tentativa - 1, uso };
     }
-    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(TIMEOUT_AULA_MS, resta)));
+    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(longo ? ORCAMENTO_LONGO_MS : TIMEOUT_AULA_MS, resta)));
     // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
     // (adiar, pedir o login); o Claude Code que não foi achado também não aparece na tentativa seguinte. Qualquer outra falha da chamada ganha as tentativas que restam.
     if (!r.ok && (r.limite || r.login || r.ausente)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo, tentativas: tentativa, uso };
@@ -373,7 +378,7 @@ function aplicarIniciativa(av) {
 function avaliar(entrada) {
   // A medição pode impor um teto de chamadas; a sala usa sempre o fluxo completo.
   const maxLeituras = Number.isInteger(entrada.maxLeituras) && entrada.maxLeituras > 0 ? entrada.maxLeituras : Infinity;
-  const prazo = Date.now() + ORCAMENTO_MS;
+  const prazo = Date.now() + (entrada.longo ? ORCAMENTO_LONGO_MS : ORCAMENTO_MS);
   const primeira = avaliarUma(entrada, maxLeituras, prazo);
   if (!primeira.ok) return { ...primeira, leituras: primeira.tentativas };
 

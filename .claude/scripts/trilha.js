@@ -315,9 +315,11 @@ const comandos = {
   // leitura só (lib/avaliador.js) ela leva de dez a trinta segundos, e como a aula já está concluída quando ela
   // começa, parar ou fechar o chat no meio não perde nada: a aula fica com `avaliacao_pendente`, e o chat seguinte a
   // refaz.
-  avaliar([idAula]) {
+  avaliar([idAula, ...opcoes]) {
     exigirAcesso();
-    if (!idAula) falhar('Uso: avaliar <aula>');
+    if (!idAula) falhar('Uso: avaliar <aula> [--longo]');
+    // `--longo`: a nova tentativa de uma avaliação que estourou o tempo, com o terminal do tutor em dez minutos.
+    const longo = opcoes.includes('--longo');
     const aulaAv = mapa.aula(idAula);
     // A unidade que não ensina matéria não é avaliada, e a porta fecha aqui também:
     // avaliação de conversa de combinado é ruído para a 202.
@@ -333,7 +335,7 @@ const comandos = {
     // A leitura leva segundos, e nesse tempo um hook pode ter gravado: o estado é relido antes de qualquer escrita.
     const reler = () => { e = estadoLib.carregar(); reg = estadoLib.registroAula(e, idAula); delete reg.avaliacao_em_andamento; return { e, reg }; };
     try {
-      return avaliarAgora(idAula, aulaAv, reler, e, reg);
+      return avaliarAgora(idAula, aulaAv, reler, e, reg, { longo });
     } catch (err) {
       reler();
       return desistir(e, reg, idAula, `erro interno do avaliador (${String(err && err.message).slice(0, 160)})`);
@@ -863,7 +865,19 @@ const comandos = {
 // nota e por quê. O tutor lê um recado que não o convida a contornar nada.
 // A avaliação em si, no processo à parte. Lê a transcrição e o produto com o estado de quando começou; `reler`
 // devolve o estado de agora, que é onde se grava.
-function avaliarAgora(idAula, aulaAv, reler, e, reg) {
+function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
+  // A tentativa longa conta antes de começar (19/10): cortada no meio (o terminal sem o tempo máximo, o aluno parou o
+  // comando, o aplicativo fechou), ela não chegaria ao `adiar`, e o chat seguinte mandaria a mesma tentativa sem fim.
+  if (longo) {
+    emSegundoPlano = true;
+    const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + 1;
+    if (vezes > MAX_ADIAMENTOS) return desistir(e, reg, idAula, `${(reg.avaliacao_adiada || {}).motivo || 'o avaliador passou do tempo'}; adiada ${MAX_ADIAMENTOS} vezes`);
+    reg.avaliacao_adiada = { ...(reg.avaliacao_adiada || {}), em: agora(), vezes, contada: true };
+    // Roda em segundo plano, com o chat seguindo: um chat aberto no meio não sobe outra igual (resumo e `avaliar`
+    // pulam o que está rodando), e o `reler` apaga a marca no fim.
+    reg.avaliacao_em_andamento = { em: agora(), pid: process.pid };
+    estadoLib.salvar(e);
+  }
   const t = transcricao.ler(e, idAula);
   if (!t.ok) { ({ e, reg } = reler()); return desistir(e, reg, idAula, t.motivo); }
 
@@ -874,6 +888,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg) {
       produto: anexo.texto,
       validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
       sanear: (av, ultima) => sanearAvaliacao(av, t.texto, ultima),
+      longo,
     });
     ({ e, reg } = reler());
     if (!r.ok && r.limite) return adiar(e, reg, idAula, r.motivo, r.uso);
@@ -914,13 +929,18 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg) {
 // do próximo chat manda rodá-la de novo, quando a cota já voltou. Três adiamentos
 // seguidos viram falha, para não tentar para sempre.
 const MAX_ADIAMENTOS = 3;
+// Em segundo plano (`avaliar --longo`), o recado chega ao tutor no meio da aula seguinte, com a avaliada já fechada:
+// o "feche com concluir" o mandaria fazer o que não deve.
+let emSegundoPlano = false;
+const recado = (texto) => console.log(emSegundoPlano ? texto.replace(/Feche a aula normalmente com `concluir [^`]+`; /, 'Siga a aula; ') : texto);
 function adiar(e, reg, idAula, motivo, uso) {
-  const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + 1;
+  // A tentativa longa já foi contada ao começar (avaliarAgora).
+  const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + ((reg.avaliacao_adiada || {}).contada ? 0 : 1);
   if (vezes > MAX_ADIAMENTOS) return desistir(e, reg, idAula, `${motivo}; adiada ${MAX_ADIAMENTOS} vezes`, uso);
   reg.avaliacao_adiada = { em: agora(), motivo, vezes };
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, avaliador: uso || null }, e);
-  console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
+  recado(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno.`);
 }
 
 // O Claude Code não foi achado nesta máquina (12/10: quem só tem o aplicativo de desktop, cujo Claude Code embutido o
@@ -934,7 +954,7 @@ function semClaude(e, reg, idAula, motivo) {
   reg.avaliacao_pendente = true;
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: 1, causa: 'sem-claude', avaliador: null }, e);
-  console.log(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+  recado(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
 // A falha que não é limite nem login (resposta fora do formato nas três tentativas, transcrição que não abriu, o
@@ -961,11 +981,11 @@ function desistir(e, reg, idAula, motivo, uso) {
   estadoLib.salvar(e);
   if (vezes < MAX_FALHAS) {
     fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'erro', avaliador: uso || null }, e);
-    console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+    recado(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
     return;
   }
   fila.enfileirar('avaliacao.falhou', { aula: idAula, motivo, vezes, avaliador: uso || null }, e);
-  console.log(`Não consegui avaliar a aula ${idAula}, em ${vezes} chats: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+  recado(`Não consegui avaliar a aula ${idAula}, em ${vezes} chats: ${motivo}. Isso já foi registrado e a 202 foi avisada. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
 // O `claude` da linha de comando desta máquina está sem login (lib/avaliador.js, LOGIN), e a conversa segue
@@ -985,7 +1005,7 @@ function pedirLogin(e, reg, idAula, motivo, uso, executavel) {
   estadoLib.salvar(e);
   if (vezes < 2) {
     fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes, causa: 'login', avaliador: uso || null }, e);
-    console.log(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno agora.`);
+    recado(`A avaliação da aula ${idAula} não terminou agora (${motivo}). Ela não se perdeu: fica pendente e roda no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não é assunto para o aluno agora.`);
     return;
   }
   // Continua pendente, e não falha: ela roda assim que o aluno refizer o login, e a ficha da 202 diz por que espera.
