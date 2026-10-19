@@ -129,8 +129,8 @@ function chatDoCodex(e) {
       const arquivo = rollout.achar(id);
       if (!arquivo) return null;
       const meta = rollout.meta(arquivo);
-      const naSala = (p) => rollout.mesmaPasta(p, paths.RAIZ);
-      if (!(meta && meta.subagente) && !(meta && naSala(meta.cwd)) && !rollout.ler(arquivo).cwds.some(naSala)) {
+      // Só 'fora' recusa: a conversa que não diz pasta nenhuma sincroniza, e o alarme de formato avisa a 202.
+      if (!(meta && meta.subagente) && sessao.pasta(arquivo) === 'fora') {
         const causa = sessao.comTrava(() => {
           const e2 = estadoLib.carregar();
           const cx = e2.codex || (e2.codex = { chats: {} });
@@ -158,7 +158,10 @@ function chatDoCodex(e) {
       const atual = estadoLib.carregar().sessao_atual;
       if (!atual || atual.id !== id) return 'ocupada';
     }
-  } catch { /* uma conversa que a sala não entende não trava a aula */ }
+  } catch (err) {
+    // Uma conversa que a sala não entende não trava a aula; a 202 fica sabendo.
+    sessao.avisarErro(err);
+  }
   return null;
 }
 function foraDaSala(e, causa) {
@@ -820,16 +823,29 @@ const comandos = {
   registrar([tipo, ...resto]) {
     if (!tipo) falhar('Uso: registrar <tipo> [chave=valor ...]');
     if (!/^[a-z][a-z0-9_.-]*$/.test(tipo)) falhar('tipo deve ser minúsculo, ex.: suspeita, duvida, nota');
-    // No Codex, sincroniza antes, senão o evento sai com a sessão de outro chat. Sem recusa: o feedback vale de
-    // qualquer chat.
+    // No Codex, sincroniza antes, senão o evento sai com a sessão de outro chat. Sem recusa, porque o feedback vale de
+    // qualquer chat; mas um chat de fora da sala não sincroniza por aqui, senão o `registrar` faria dele a sessão da
+    // sala, fecharia a do aluno e o poria no registro, onde ele nunca mais seria recusado. O evento dele, e o de um
+    // chat que achou a sala ocupada com a sessão de outro, sai sem sessão: o feedback não se perde nem vai para a
+    // sessão errada.
+    let semSessao = false;
     if (agente.atual() === 'codex') {
+      const sessao = require('./lib/codex/sessao');
       try {
-        const r = require('./lib/codex/sessao').sincronizar(agente.idDoChat());
-        if (r && r.pedirStatus) pedirStatus = true;
-      } catch { /* segue */ }
+        const id = agente.idDoChat();
+        const arquivo = id ? require('./lib/codex/rollout').achar(id) : null;
+        const conhecido = Boolean(((estadoLib.carregar().codex || {}).chats || {})[id]);
+        if (arquivo && !conhecido && sessao.pasta(arquivo) === 'fora') semSessao = true;
+        else if (arquivo) {
+          const r = sessao.sincronizar(id);
+          if (r && r.pedirStatus) pedirStatus = true;
+          const atual = estadoLib.carregar().sessao_atual;
+          if (r && r.ocupada && (!atual || atual.id !== id)) semSessao = true;
+        }
+      } catch (err) { sessao.avisarErro(err); }
     }
     const e = estadoLib.carregar();
-    fila.enfileirar(tipo, parChaveValor(resto), e);
+    fila.enfileirar(tipo, parChaveValor(resto), e, semSessao ? { sessao: null } : undefined);
     console.log(`Evento "${tipo}" enfileirado.`);
   },
 

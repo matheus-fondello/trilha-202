@@ -71,6 +71,8 @@ async function enviar({ timeoutMs = 3000, estado = null, token = null, url = nul
   const destino = url || acesso.servidor();
   const chave = token || acesso.token();
   const todos = lerFila();
+  // `null` só vem do modo Codex (lerFila, que já decidiu por `agente.atual()`): no Claude a fila é sempre uma lista.
+  // É a exceção registrada à regra de todo ramo novo começar pelo teste do agente.
   if (!todos) return { ok: false, enviados: 0, pendentes: fila.ler().length, motivo: 'sala ocupada; a fila sobe no próximo envio' };
   if (!todos.length) return { ok: true, enviados: 0, motivo: 'fila vazia' };
   const eventos = pagina(todos);

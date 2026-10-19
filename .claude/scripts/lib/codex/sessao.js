@@ -70,7 +70,13 @@ function comTrava(fn) {
       // EPERM e EBUSY: no Windows (e no OneDrive) um arquivo que outro processo está apagando ou sincronizando.
       if (!['EEXIST', 'EPERM', 'EBUSY', 'EACCES'].includes(err.code)) return null;
     }
-    if (Date.now() >= limite) return null;
+    if (Date.now() >= limite) {
+      // Uma trava que não sai nunca (o OneDrive segura o arquivo, um EPERM que não passa) faria todo chat responder
+      // "ocupada" para sempre. Passado um minuto sem conseguir removê-la, ela é ignorada: a sincronização roda sem
+      // trava, e a 202 fica sabendo uma vez (`travaIgnorada`, lido pela sincronização).
+      if (presa()) { travaIgnorada = true; return fn(); }
+      return null;
+    }
     if (!quebrarVelha()) dormir(PASSO_TRAVA_MS);
   }
   try {
@@ -79,6 +85,11 @@ function comTrava(fn) {
     // Só solta a própria: se esta passou do prazo e outro processo a quebrou, a trava de agora é dele.
     try { if (fs.readFileSync(TRAVA, 'utf8') === marca) fs.unlinkSync(TRAVA); } catch { /* já não existe */ }
   }
+}
+const TRAVA_PRESA_MS = 60000;
+let travaIgnorada = false;
+function presa() {
+  try { return Date.now() - fs.statSync(TRAVA).mtimeMs > TRAVA_PRESA_MS; } catch { return false; }
 }
 // A trava de um processo que morreu. Renomeada antes de apagada: dois processos que a acham velha ao mesmo tempo
 // tentam o rename, e só um consegue; o outro volta a esperar. EPERM ou EBUSY no rename é trava ocupada.
@@ -338,7 +349,10 @@ function sobTrava(idChat, arquivo, meta, fonte) {
   // O alarme de formato, uma vez por versão: a conversa mudou e a sala não entende mais, ou é de uma versão do Codex
   // mais nova do que as que a sala conhece.
   const versao = meta && meta.cli_version;
-  const motivo = conv.tamanho > 0 && conv.n === 0 && !fonte ? 'sem-turnos' : versaoMaior(versao) ? 'versao-nova' : null;
+  // `sem-pasta`: a conversa não diz em que pasta foi aberta (o chat não foi recusado por isso, ver `pasta`).
+  const motivo = conv.tamanho > 0 && conv.n === 0 && !fonte ? 'sem-turnos'
+    : novoNoRegistro && conv.tamanho > 0 && !conv.cwds.length ? 'sem-pasta'
+      : versaoMaior(versao) ? 'versao-nova' : null;
   // `formato_avisado` guarda as versões que já avisaram: um aluno com dois chats de versões diferentes não avisa a
   // cada troca de chat.
   const avisadas = Array.isArray(cx.formato_avisado) ? cx.formato_avisado : [];
@@ -346,6 +360,7 @@ function sobTrava(idChat, arquivo, meta, fonte) {
     cx.formato_avisado = [...avisadas, versao || '?'];
     fila.enfileirar('harness.codex_formato', { cli_version: versao || null, motivo }, e);
   }
+  if (travaIgnorada) avisoUnico(e, 'trava', { cli_version: versao || null, motivo: 'trava' });
 
   // Volta ao chat e compactação, sem hook: no Claude o SessionStart de `resume` e de `compact` injeta o estado de novo
   // (pendências, a retomada no fechamento). Aqui o comando que sincronizou manda o tutor rodar `status`.
@@ -356,4 +371,37 @@ function sobTrava(idChat, arquivo, meta, fonte) {
   return { nova, importados: ctx.importados, fechou, ...(pedirStatus ? { pedirStatus: true } : {}) };
 }
 
-module.exports = { idTurno, idInicio, comTrava, sincronizar, TRAVA };
+// Avisos à 202 que não são de versão (a trava presa, um erro da sincronização): uma vez cada, guardados em
+// `e.codex.avisos`.
+function avisoUnico(e, chave, dados) {
+  const cx = e.codex || (e.codex = { chats: {} });
+  const avisos = Array.isArray(cx.avisos) ? cx.avisos : [];
+  if (avisos.includes(chave)) return false;
+  cx.avisos = [...avisos, chave];
+  fila.enfileirar('harness.codex_formato', dados, e);
+  return true;
+}
+
+// Uma exceção dentro da sincronização não trava a aula, mas não pode sumir calada: a 202 recebe a mensagem curta,
+// uma vez por mensagem.
+function avisarErro(err) {
+  try {
+    const mensagem = String((err && err.message) || err).split('\n')[0].slice(0, 160);
+    const e = estadoLib.carregar();
+    if (avisoUnico(e, `erro:${mensagem}`, { cli_version: null, motivo: 'erro', mensagem })) estadoLib.salvar(e);
+  } catch { /* nem o aviso saiu: segue */ }
+}
+
+// Onde a conversa foi aberta: 'sala', 'fora', ou null quando ela não diz pasta nenhuma (a primeira linha ilegível, o
+// campo com outro nome numa versão nova). Desconhecido não é fora: recusar ali mandaria embora o aluno que está na
+// pasta certa. Ele sincroniza, e o alarme de formato avisa a 202.
+function pasta(arquivo) {
+  const meta = rollout.meta(arquivo);
+  const naSala = (p) => rollout.mesmaPasta(p, paths.RAIZ);
+  if (meta && naSala(meta.cwd)) return 'sala';
+  const cwds = rollout.ler(arquivo).cwds;
+  if (cwds.some(naSala)) return 'sala';
+  return cwds.length || (meta && meta.cwd) ? 'fora' : null;
+}
+
+module.exports = { idTurno, idInicio, comTrava, sincronizar, pasta, avisarErro, TRAVA };

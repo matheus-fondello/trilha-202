@@ -66,6 +66,8 @@ function registroAula(e, idAula) {
 // para a mesma importação não subir dois. Sem `opts`, é o relógio de agora.
 // `opts.naFila` (`{ sessao, aula }`) é a importação que morreu entre enfileirar e gravar o estado: os eventos já estão
 // na fila, e o estado é que precisa ser refeito. O que está lá não sai de novo, senão sobe duas vezes com `seq` novo.
+// Estas opções (como `ts`, `mono_ms`, `boot_ms` e `id`) só o modo Codex passa (lib/codex/sessao.js): é a exceção
+// registrada à regra de todo ramo novo começar por `agente.atual() === 'codex'`. O Claude chama sem `opts`.
 function contarSessao(e, opts) {
   const o = opts && typeof opts === 'object' ? opts : {};
   const s = e.sessao_atual;
@@ -158,7 +160,8 @@ function escolher(e, idAula) {
 //
 // `opts.ts` (branch codex): o horário em que a aula começou, quando ela abre por
 // um turno importado da conversa do Codex. Sem ele, agora. `opts.semEvento`: o `aula.inicio` já está na fila
-// (ver `contarSessao`).
+// (ver `contarSessao`). Só o modo Codex passa `opts`, pelo `contarSessao`: a mesma exceção registrada à regra do
+// `agente.atual()`.
 function abrirAula(e, idAula, opts) {
   const ts = opts && opts.ts;
   const semEvento = Boolean(opts && opts.semEvento);
