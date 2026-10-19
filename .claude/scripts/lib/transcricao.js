@@ -393,7 +393,8 @@ function cortar(texto, limite = LIMITE) {
 }
 
 function ler(e, idAula, opcoes = {}) {
-  const { limite = LIMITE, semFallback = false } = typeof opcoes === 'number' ? { limite: opcoes } : opcoes;
+  // `fechamento`: quem lê é o `avaliar`, no chat que está fechando a aula (ver o conversor do Codex).
+  const { limite = LIMITE, semFallback = false, fechamento = false } = typeof opcoes === 'number' ? { limite: opcoes } : opcoes;
   const fontes = fontesDaAula(e, idAula, { semFallback });
   const arquivos = [...new Set(fontes.map((f) => f.arquivo))];
   if (!arquivos.length) return { ok: false, motivo: 'não encontrei a transcrição desta sessão' };
@@ -407,7 +408,7 @@ function ler(e, idAula, opcoes = {}) {
     const nl = bruto.indexOf('\n');
     const codex = (nl === -1 ? bruto : bruto.slice(0, nl)).includes('"session_meta"') ? require('./codex/transcricao') : null;
     const convertido = codex && codex.eDoCodex(bruto)
-      ? codex.converter(bruto, tirar, { trecho, ultimo: i === fontes.length - 1 })
+      ? codex.converter(bruto, tirar, { trecho, aula: idAula, ultimo: fechamento && i === fontes.length - 1 })
       : converter(bruto, tirar);
     if (convertido.trim()) partes.push(convertido);
   });

@@ -960,7 +960,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     reg.avaliacao_em_andamento = { em: agora(), pid: process.pid };
     estadoLib.salvar(e);
   }
-  const t = transcricao.ler(e, idAula);
+  const t = transcricao.ler(e, idAula, { fechamento: true });
   if (!t.ok) { ({ e, reg } = reler()); return desistir(e, reg, idAula, t.motivo); }
 
     const anexo = produto.coletar(e, reg);

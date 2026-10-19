@@ -36,10 +36,21 @@ function limparFala(t) {
 }
 
 // Os comandos do harness como o Codex os grava: o `command` é a lista que o shell recebeu, e o que o tutor escreveu é
-// o último elemento (`powershell.exe -NoProfile -Command <cmd>`, `zsh -lc <cmd>`). As aspas antes do subcomando são de
-// quem escreve o caminho entre aspas no PowerShell.
-const AVALIAR = /(?:trilha\.js|sala\.cjs)["']?\s+avaliar\b/;
-const CONCLUIR = /(?:trilha\.js|sala\.cjs)["']?\s+concluir\s+\S/;
+// o último elemento (`powershell.exe -NoProfile -Command <cmd>`, `zsh -lc <cmd>`).
+//
+// O tutor do Codex escreve o caminho entre aspas no PowerShell (`node ".claude\scripts\trilha.js" nota ...`), e o
+// lançador da sala seria `node .codex/sala.cjs ...`. As limpezas comuns (`semNota`, `semVeredito`) só reconhecem
+// `trilha.js ` sem aspas, e não mudam, para o texto do Claude ficar idêntico: aqui o comando é posto nessa forma
+// antes delas, e o juízo do tutor não vaza por uma aspa.
+function formaComum(cmd) {
+  return String(cmd)
+    .replace(/["']([^"'\n]*?(?:trilha\.js|sala\.cjs))["']/g, '$1')
+    .replace(/\bsala\.cjs\b/g, 'trilha.js');
+}
+// O `avaliar` e o `concluir` de uma aula: `1.1` não casa `1.10`.
+const ancoraDe = (sub, aula) => new RegExp(`trilha\\.js\\s+${sub}\\s+${String(aula).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w.])`);
+const AVALIAR_QUALQUER = /trilha\.js\s+avaliar\b/;
+const CONCLUIR_QUALQUER = /trilha\.js\s+concluir\s+\S/;
 function comandoDe(item) {
   if (Array.isArray(item.command)) {
     const ultimo = item.command[item.command.length - 1];
@@ -64,7 +75,7 @@ function dentro(ordinal, trecho) {
   return ordinal >= de && ordinal <= ate;
 }
 
-function falasDoItem(item, itens, tirar) {
+function falasDoItem(item, itens, tirar, ancoras) {
   const tipo = item.type;
   if (tipo === 'UserMessage') {
     for (const c of Array.isArray(item.content) ? item.content : []) {
@@ -88,9 +99,13 @@ function falasDoItem(item, itens, tirar) {
     }
   } else if (tipo === 'CommandExecution') {
     const cmd = comandoDe(item);
+    const comumCmd = formaComum(cmd);
+    // A forma comum só aparece quando havia juízo a tirar; senão o comando sai como o tutor o escreveu.
+    const semJuizo = comum.semVeredito(comum.semNota(comumCmd));
+    const base = semJuizo === comumCmd ? cmd : semJuizo;
     itens.push({
-      quem: 'cmd', avaliar: AVALIAR.test(cmd), concluir: CONCLUIR.test(cmd),
-      linha: `  [tutor rodou: ${comum.umaLinha(tirar(semTokenJson(comum.semVeredito(comum.semToken(comum.semNota(cmd))))), 200)}]`,
+      quem: 'cmd', avaliar: ancoras.avaliar.test(comumCmd), concluir: ancoras.concluir.test(comumCmd),
+      linha: `  [tutor rodou: ${comum.umaLinha(tirar(semTokenJson(comum.semToken(base))), 200)}]`,
     });
     const saida = typeof item.aggregated_output === 'string' ? item.aggregated_output : texto(item.stdout) + texto(item.stderr);
     const t = tirar(comum.semVeredito(semTokenJson(comum.semToken(comum.limpar(saida)))));
@@ -110,10 +125,13 @@ function falasDoItem(item, itens, tirar) {
 }
 
 // Uma linha por fala, com o contrato do conversor do Claude. `trecho` (`{ de_ordinal, ate_ordinal }`) lê só as linhas
-// nesse intervalo: na recuperação, um chat que fez duas aulas é lido em dois pedaços. `ultimo` diz se este é o último
-// arquivo da aula (ver o fechamento, abaixo).
-function converter(bruto, tirar = (t) => t, { trecho, ultimo = false } = {}) {
+// nesse intervalo: na recuperação, um chat que fez duas aulas é lido em dois pedaços. `aula` é a aula avaliada, dona
+// da âncora do fechamento; `ultimo` diz se este é o último arquivo dela, lido pelo `avaliar` (ver abaixo).
+function converter(bruto, tirar = (t) => t, { trecho, ultimo = false, aula } = {}) {
   const itens = [];
+  const ancoras = aula
+    ? { avaliar: ancoraDe('avaliar', aula), concluir: ancoraDe('concluir', aula) }
+    : { avaliar: AVALIAR_QUALQUER, concluir: CONCLUIR_QUALQUER };
   try {
     let ordinal = -1;
     let primeira = true;
@@ -140,7 +158,7 @@ function converter(bruto, tirar = (t) => t, { trecho, ultimo = false } = {}) {
       if (o.type !== 'event_msg') continue;
       if (p.type === 'item_completed') {
         const item = objeto(p.item);
-        if (item) falasDoItem(item, itens, tirar);
+        if (item) falasDoItem(item, itens, tirar, ancoras);
       } else if ((p.type === 'task_complete' || p.type === 'turn_aborted') && p.error) {
         itens.push({ quem: 'aviso', linha: marcaDeErro(p.error) });
       }
@@ -148,10 +166,11 @@ function converter(bruto, tirar = (t) => t, { trecho, ultimo = false } = {}) {
   } catch { /* o que já foi lido vale */ }
 
   // O fechamento do tutor fica de fora, como no Claude: é o veredito de quem deu a aula. A âncora é o último `avaliar`
-  // e, sem ele, o último `concluir`. No Codex o item do comando só é gravado quando o comando termina: o `avaliar`
-  // que lê o próprio chat ainda não está lá, e o `concluir` da mesma linha também não. Sem âncora, no último arquivo
-  // da aula (o do chat que está fechando), sai o texto do tutor depois da última fala do aluno; os do meio passam
-  // inteiros, como no conversor do Claude.
+  // da aula avaliada e, sem ele, o último `concluir` dela. Da aula avaliada, e não qualquer um: no Codex o comando que
+  // está rodando ainda não foi gravado, e o último visível pode ser de outra aula (a pendente da anterior, rodada no
+  // primeiro turno; o `concluir` da aula emendada no meio do chat), o que tiraria o texto do tutor da aula inteira.
+  // Sem âncora, no último arquivo da aula lido pelo `avaliar` (o do chat que está fechando), sai o texto do tutor
+  // depois da última fala do aluno; os do meio, e a conversa que outro comando lê, passam inteiros, como no Claude.
   let fim = -1;
   for (let i = itens.length - 1; i >= 0; i--) if (itens[i].avaliar) { fim = i; break; }
   if (fim < 0) for (let i = itens.length - 1; i >= 0; i--) if (itens[i].concluir) { fim = i; break; }
@@ -202,13 +221,24 @@ function conversasDaPasta(dir, profundidade, out) {
     else if (x.isDirectory() && profundidade > 0) conversasDaPasta(p, profundidade - 1, out);
   }
 }
+// O mesmo arquivo escrito de dois jeitos (o registro e a pasta do Codex, a caixa e as barras no Windows, o acento em
+// NFD no Mac) é um só: senão a mesma conversa entraria duas vezes na transcrição.
+function chaveDe(arquivo) {
+  let p = path.resolve(arquivo);
+  try { p = fs.realpathSync.native(p); } catch { /* arquivo que não existe: fica o caminho resolvido */ }
+  p = p.normalize('NFC');
+  return process.platform === 'win32' || process.platform === 'darwin' ? p.toLowerCase() : p;
+}
 function doHorario(e, cobre, janelaDoArquivo, jaAchados) {
   const achados = [];
-  const visto = new Set(jaAchados);
+  const visto = new Set();
+  for (const f of jaAchados) { try { visto.add(chaveDe(f)); } catch { /* segue */ } }
   const considerar = (arquivo, naSala) => {
     try {
-      if (typeof arquivo !== 'string' || visto.has(arquivo)) return;
-      visto.add(arquivo);
+      if (typeof arquivo !== 'string') return;
+      const chave = chaveDe(arquivo);
+      if (visto.has(chave)) return;
+      visto.add(chave);
       const st = fs.statSync(arquivo);
       // A última escrita antes da primeira marca: a conversa não cobre a aula, e nem a primeira linha é lida.
       if (!st.isFile() || !cobre({ inicio: -Infinity, fim: st.mtimeMs })) return;
