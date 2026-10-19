@@ -18,8 +18,8 @@ function padrao() {
     aluno: { email: null, nome: null, id: null },
     aula_atual: mapa.todas()[0].id,
     aulas: {},          // por id: { status, iniciada_em, concluida_em, milestones: {id: ts}, fluencia, avaliada_em, sessoes }
-    sessao_atual: null, // { id, inicio, ultima_atividade, aula, turnos, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }
-    sessoes: [],        // histórico: { id, inicio, fim, minutos, aula, turnos, fechada_por, transcricao }
+    sessao_atual: null, // { id, inicio, ultima_atividade, aula, turnos, n_base, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }
+    sessoes: [],        // histórico: { id, inicio, fim, minutos, aula, turnos, n_base?, fechada_por, transcricao }
     oficina: null,      // caminho da pasta irmã onde o aluno pratica
     praticas: {},       // por id: { url, registrada_em }
   };
@@ -203,7 +203,7 @@ function fecharSessao(e, fimIso, motivo) {
   // O caminho da transcrição fica na máquina e não sobe: ele carrega o nome de
   // usuário do aluno, e a 202 não tem o que fazer com ele. Quem precisa dele é o
   // avaliador, quando a aula acontece em mais de um chat.
-  e.sessoes.push({ ...registro, transcricao: localizarTranscricao(s) });
+  e.sessoes.push({ ...registro, transcricao: localizarTranscricao(s), ...(s.n_base ? { n_base: s.n_base } : {}) });
   fila.enfileirar('sessao.fim', registro, e);
   e.sessao_atual = null;
   return registro;
@@ -226,14 +226,22 @@ function retomarSessao(e, entrada) {
     turnos.fechar(e, { interrompido: true, tarde: true });
     fecharSessao(e, s.ultima_atividade || s.inicio, 'outra-sessao');
   }
+  // Antes de tirar o registro do histórico: o número segue do maior que o chat
+  // usou, que pode ser de um pedaço anterior a este (turnos.ultimoNumero).
+  const ultimo = turnos.ultimoNumero(e, id);
   const i = (e.sessoes || []).map((x) => x.id).lastIndexOf(id);
   const antiga = i >= 0 ? e.sessoes.splice(i, 1)[0] : null;
+  const jaContados = antiga ? antiga.turnos || 0 : 0;
   e.sessao_atual = {
     id,
     inicio: antiga ? antiga.inicio : agora(),
     ultima_atividade: agora(),
     aula: antiga ? antiga.aula : e.aula_atual,
-    turnos: antiga ? antiga.turnos || 0 : 0,
+    turnos: jaContados,
+    n_base: ultimo - jaContados,
+    // O chat tinha fechado de verdade (o fim dele rodou depois do início da
+    // retomada), e não só cedido a vez a outra sessão: o turno é uma retomada.
+    retomada_pendente: Boolean(antiga) && !['recuperada', 'outra-sessao'].includes(antiga.fechada_por),
     fonte: 'retomada',
     contada: Boolean(antiga),
     transcricao: entrada.transcript_path || (antiga && antiga.transcricao) || null,

@@ -20,9 +20,11 @@ function abrir(e) {
   const s = e.sessao_atual;
   if (!s) return null;
   if (s.turno_aberto) fechar(e, { interrompido: true, tarde: true });
-  const n = (s.turnos || 0) + 1;
+  // `turnos` conta os deste pedaço do chat (é o que o `sessao.fim` leva); o
+  // número que sobe continua de onde o chat parou antes de ser retomado.
+  s.turnos = (s.turnos || 0) + 1;
+  const n = (s.n_base || 0) + s.turnos;
   const mono = monoMs();
-  s.turnos = n;
   // O horário é o do evento, e o estado herda dele: o fato é o que foi para o
   // disco, e o servidor compara `sessao.fim` com o `ts` do último turno.
   // Depois do `concluir` a unidade atual já é a seguinte, mas o "obrigado" do
@@ -31,7 +33,12 @@ function abrir(e) {
   // no meio de uma sessão continua contando para a unidade nova.
   const daSessao = s.aula && ((e.aulas || {})[s.aula] || {}).status === 'concluida';
   const aula = daSessao ? s.aula : e.aula_atual;
-  const ev = fila.enfileirar('turno.envio', { sessao: s.id, n, aula, mono_ms: mono }, e);
+  // O primeiro turno depois de o chat ser fechado e retomado: o CRM conta a
+  // espera desde o turno anterior só até o limite (foi à oficina e voltou); acima
+  // dele o aluno saiu, e ela vale zero.
+  const retomada = Boolean(s.retomada_pendente) || (Boolean(s.n_base) && s.turnos === 1);
+  delete s.retomada_pendente;
+  const ev = fila.enfileirar('turno.envio', { sessao: s.id, n, aula, mono_ms: mono, ...(retomada ? { retomada: true } : {}) }, e);
   s.turno_aberto = { n, mono_ms: mono, ts: ev.ts, aula };
   s.ultima_atividade = ev.ts;
   return n;
@@ -72,4 +79,14 @@ function fecharOuRegistrar(e, opcoes) {
   return fechar(e, opcoes);
 }
 
-module.exports = { abrir, fechar, fecharOuRegistrar };
+// O maior número de turno que este chat já usou. O aplicativo encerra a sessão
+// quando o aluno sai do chat e a retoma com o mesmo id quando ele volta; o CRM
+// guarda um turno por chat e número, e um número repetido gravava por cima do
+// turno anterior (um aluno perdeu 61 de 138 turnos, 18/10). Pedaço gravado antes
+// deste conserto não tem `n_base` e recomeçou do 1: o maior dele é o `turnos`.
+function ultimoNumero(e, id) {
+  if (!id) return 0;
+  return (e.sessoes || []).filter((x) => x.id === id).reduce((m, x) => Math.max(m, (x.n_base || 0) + (x.turnos || 0)), 0);
+}
+
+module.exports = { abrir, fechar, fecharOuRegistrar, ultimoNumero };
