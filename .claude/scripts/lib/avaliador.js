@@ -260,11 +260,15 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
 // (sobrecarga, 5xx, tempo) continua `limite`, com o teto de adiamentos de hoje.
 const BLOQUEIO = /\b(EPERM|EACCES)\b|operation not permitted/i;
 const CONEXAO = /\b(ENOTFOUND|ECONNREFUSED)\b|connect EACCES|fetch failed|127\.0\.0\.1:9\b|connection refused/i;
+// Só a falha do Claude é relida, e só nos motivos que vêm do erro do processo ou do stderr: o erro de conexão sai do
+// caminho passageiro (`limite`), e o bloqueio, do processo que não abriu ou da saída fora do formato. "O avaliador
+// falhou: ..." traz o texto do envelope, e pode citar a aula; o motor do Codex classifica as dele sozinho.
 function doSandbox(r) {
-  if (r.ok || r.ausente || r.sandbox || r.semRede) return r;
+  if (r.ok || r.ausente || r.sandbox || r.semRede || r.motor === 'codex') return r;
   const motivo = String(r.motivo || '');
-  if (CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
-  if (BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
+  const doProcesso = /^o avaliador (não rodou|respondeu fora do formato)/.test(motivo);
+  if (r.limite && CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
+  if (doProcesso && BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
   return r;
 }
 function comMotor(r, motor) {
@@ -307,7 +311,10 @@ const timeoutAula = () => (agente.atual() === 'codex' ? Number(process.env.TRILH
 // Claude não passa por nada disto.
 function doMotor(r, json, chamador) {
   if (r.motor !== 'codex') return { json, erros: [] };
-  return { json: motor.formaDoClaude(json, chamador), erros: motor.vazaToken(json) };
+  // A recusa vem antes da troca: as mensagens da validação citam trechos da resposta, e com o token trocado por
+  // `[token]` nenhuma delas o leva ao motivo que sobe para a 202.
+  const erros = motor.vazaToken(json);
+  return { json: motor.formaDoClaude(motor.tirarToken(json), chamador), erros };
 }
 // O que a falha leva de volta a quem chamou, além do de hoje: só no modo Codex.
 const doCodex = (r) => ({ ...(r.sandbox ? { sandbox: r.sandbox } : {}), ...(r.semRede ? { semRede: true } : {}), ...(r.motor ? { motor: r.motor } : {}) });

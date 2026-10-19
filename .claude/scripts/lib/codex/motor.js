@@ -93,7 +93,14 @@ function rodar({ bin, shell }, args, opcoes) {
 // O primeiro Codex que existe, pelo `codex login status`. Ele escreve só no stderr, às vezes depois de um aviso de
 // "PATH aliases": a decisão é pelo código de saída (1 é sem login), não pela primeira linha. O 0 não garante que o
 // login vale; a chamada de verdade diz.
+// O achado fica guardado no processo, como as sondas: as tentativas do avaliador não repetem o `codex login status`
+// nem a consulta ao registro. `undefined` é "ainda não procurou".
+let achadoGuardado;
 function achar() {
+  if (achadoGuardado === undefined) achadoGuardado = procurar();
+  return achadoGuardado;
+}
+function procurar() {
   for (const c of candidatos()) {
     const r = rodar(c, ['login', 'status'], { timeout: 15000, cwd: os.tmpdir() });
     if (r.error && r.error.code === 'ENOENT') continue;
@@ -120,6 +127,22 @@ function esquemaDe(nome, criterios) {
     e.properties.criterios.required = [...criterios];
   }
   return e;
+}
+
+// As mensagens dos eventos de erro do `--json` (`error`, `turn.failed`), e nada mais do stdout.
+function errosDoJson(stdout) {
+  const msgs = [];
+  for (const l of String(stdout || '').replace(/^﻿/, '').split(/\r?\n/)) {
+    const t = l.trim();
+    if (!t.startsWith('{')) continue;
+    try {
+      const j = JSON.parse(t);
+      if (!j || typeof j !== 'object') continue;
+      if (j.type === 'error' && j.message) msgs.push(String(j.message));
+      if (j.type === 'turn.failed') msgs.push(String((j.error && j.error.message) || j.message || 'turn.failed'));
+    } catch { /* linha que não é JSON fica de fora */ }
+  }
+  return msgs.join('\n');
 }
 
 // O uso, da última linha `turn.completed` do `--json`.
@@ -177,8 +200,10 @@ function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
       }
       let texto = null;
       try { texto = fs.readFileSync(arqSaida, 'utf8').replace(/^\uFEFF/, ''); } catch { /* sem saída */ }
-      const tudo = `${r.stdout || ''}\n${r.stderr || ''}`;
       if (r.status === 0 && texto && texto.trim()) return { ok: true, motor: 'codex', texto, uso: usoDe(r.stdout, modelo, ms) };
+      // A classificação lê só o stderr e os eventos de erro do `--json`. O resto do stdout traz a fala do aluno (que pode
+      // citar um "EACCES" ou um "fetch failed") e os números de tokens (um "output_tokens":401 não é login).
+      const tudo = `${errosDoJson(r.stdout)}\n${r.stderr || ''}`;
       if (MODELO_RECUSADO.test(tudo)) { ultimo = `o modelo ${modelo} não é aceito por esta conta`; continue; }
       if (LIMITE.test(tudo)) return { ok: false, limite: true, motor: 'codex', motivo: `limite de uso da conta (${curto(tudo).slice(-120)})` };
       if (CONEXAO.test(tudo)) return { ok: false, sandbox: 'rede', motor: 'codex', motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${curto(tudo).slice(-120)})` };
@@ -227,5 +252,19 @@ function vazaToken(json) {
   visitar(json);
   return achou.length ? ['a resposta traz o token de acesso do aluno; tire-o de todo campo'] : [];
 }
+// O token sai de todo campo antes da validação: as mensagens dela citam trechos da resposta, e o motivo de uma
+// avaliação recusada sobe para a 202. A recusa (`vazaToken`) continua sendo a causa.
+function tirarToken(json) {
+  const acesso = require('../acesso');
+  const t = acesso.token();
+  if (!t || !acesso.tokenValido(t) || !json || typeof json !== 'object') return json;
+  const trocar = (v) => {
+    if (typeof v === 'string') return v.split(t).join('[token]');
+    if (Array.isArray(v)) return v.map(trocar);
+    if (v && typeof v === 'object') { for (const k of Object.keys(v)) v[k] = trocar(v[k]); return v; }
+    return v;
+  };
+  return trocar(json);
+}
 
-module.exports = { chamar, candidatos, formaDoClaude, vazaToken, esquemaDe, ESQUEMAS, OMITIDAS };
+module.exports = { chamar, candidatos, formaDoClaude, vazaToken, tirarToken, esquemaDe, ESQUEMAS, OMITIDAS };

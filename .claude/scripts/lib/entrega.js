@@ -110,10 +110,10 @@ function historico(pasta) {
 function historicoCodex(pasta) {
   const r = spawnSync('git', ['-c', 'safe.directory=*', 'log', '--date=iso-strict', '--pretty=format:%h %ad %s', '-n', '80'], { cwd: pasta, encoding: 'utf8', timeout: 10000, windowsHide: true });
   if (r.status === 0) return r.stdout.trim() || null;
-  // Duas saídas que não são o sandbox: o git que não existe nesta máquina, e o repositório ainda sem commit nenhum.
-  // Tomadas por sandbox, deixariam a correção pendente para sempre.
+  // Três saídas que não são o sandbox: o git que não existe nesta máquina, o repositório ainda sem commit nenhum e o
+  // `.git` quebrado. Tomadas por sandbox, deixariam a correção pendente para sempre.
   if (r.error && r.error.code === 'ENOENT') return null;
-  if (/does not have any commits|n[aã]o tem nenhum commit|bad default revision/i.test(String(r.stderr || ''))) return null;
+  if (/does not have any commits|n[aã]o tem nenhum commit|bad default revision|not a git repository|n[aã]o [eé] um reposit[oó]rio git/i.test(String(r.stderr || ''))) return null;
   bloqueio = bloqueio || 'processo';
   return null;
 }

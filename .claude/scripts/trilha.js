@@ -966,6 +966,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + 1;
     if (vezes > MAX_ADIAMENTOS) return desistir(e, reg, idAula, `${(reg.avaliacao_adiada || {}).motivo || 'o avaliador passou do tempo'}; adiada ${MAX_ADIAMENTOS} vezes`);
     reg.avaliacao_adiada = { ...(reg.avaliacao_adiada || {}), em: agora(), vezes, contada: true };
+    contouNesteComando = true;
     // Roda em segundo plano, com o chat seguindo: um chat aberto no meio não sobe outra igual (resumo e `avaliar`
     // pulam o que está rodando), e o `reler` apaga a marca no fim.
     reg.avaliacao_em_andamento = { em: agora(), pid: process.pid };
@@ -1031,6 +1032,8 @@ const MAX_ADIAMENTOS = 3;
 // Em segundo plano (`avaliar --longo`), o recado chega ao tutor no meio da aula seguinte, com a avaliada já fechada:
 // o "feche com concluir" o mandaria fazer o que não deve.
 let emSegundoPlano = false;
+// A tentativa do `--longo` que este comando contou (avaliarAgora), para o sandbox poder desfazê-la (pendenteDoCodex).
+let contouNesteComando = false;
 const recado = (texto) => console.log(emSegundoPlano ? texto.replace(/Feche a aula normalmente com `concluir [^`]+`; /, 'Siga a aula; ') : texto);
 function adiar(e, reg, idAula, motivo, uso) {
   // A tentativa longa já foi contada ao começar (avaliarAgora).
@@ -1062,14 +1065,14 @@ function semClaude(e, reg, idAula, motivo) {
 // comando. A diferença é que o aluno resolve na hora, aprovando o comando fora do sandbox; se ele não aprovar, ela roda
 // num chat seguinte.
 //
-// No `--longo`, nada muda na contagem dele (as sondas rodam antes dela; uma contagem já feita volta) e o motivo da
+// No `--longo`, nada muda na contagem dele (as sondas rodam antes dela; a que este comando fez volta) e o motivo da
 // lentidão fica, que é a marca pela qual o resumo põe o `--longo` (resumo.js, pendencias). O comando repetido leva o
 // `--longo`, senão a reexecução aprovada usaria o orçamento curto e estouraria de novo.
 function pendenteDoCodex(e, reg, idAula, motivo, causa, longo) {
   const antes = reg.avaliacao_adiada || {};
   const lenta = /passou de \d+ segundos|não terminou a tempo/.test(antes.motivo || '');
-  const vezes = Math.max(0, (antes.vezes || 0) - (antes.contada ? 1 : 0));
-  delete reg.avaliacao_falhou;
+  // Só desconta a tentativa que este comando contou: um `contada` no estado pode ser de outro comando, cortado no meio.
+  const vezes = Math.max(0, (antes.vezes || 0) - (contouNesteComando ? 1 : 0));
   reg.avaliacao_adiada = { em: agora(), motivo: lenta ? antes.motivo : motivo, vezes, causa };
   reg.avaliacao_pendente = true;
   estadoLib.salvar(e);
@@ -1183,7 +1186,9 @@ function marcarEntrega(e, a) {
 function enviarDocumento(e, a) {
   if (mapa.entregaExigida(a).includes('url')) return;
   const p = (e.praticas || {})[a.id];
-  if (!p || !p.pasta || !fs.existsSync(p.pasta)) return;
+  if (!p || !p.pasta) return;
+  // A pasta que o sandbox do Codex não deixou ver não é pasta que não existe (branch codex): o documento espera.
+  try { fs.statSync(p.pasta); } catch (err) { return require('./lib/codex/leitura').bloqueada(err) ? 'bloqueado' : undefined; }
   const d = documentos.coletar(p.pasta, e);
   if (d.sandbox) return 'bloqueado';
   fila.enfileirar('pratica.documento', { aula: a.id, arquivos: d.arquivos, omitidos: d.omitidos, caracteres: d.total }, e);

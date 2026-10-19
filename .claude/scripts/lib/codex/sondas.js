@@ -5,10 +5,11 @@
 // sem login", e o tutor mandaria o aluno fazer login à toa. Ou o `fetch failed` de um Claude que nasceu sem rede, que o
 // avaliador lê como API fora do ar e conta para a desistência.
 //
-// Três sondas, nesta ordem, em menos de 3 s ao todo (T0, codex/MODOS-SANDBOX.md):
+// Três sondas, nesta ordem (T0, codex/MODOS-SANDBOX.md). A de rede espera o CRM até 3 s: um CRM em cold start não pode
+// passar por máquina sem internet.
 //   1. processo: abrir um programa (o próprio Node). O `unelevated` não deixa;
 //   2. pasta pessoal: criar e apagar um arquivo na pasta da trilha em `~`;
-//   3. rede: um pedido curto ao endereço do CRM.
+//   3. rede: um pedido ao endereço do CRM.
 //
 // Uma rodada por comando: o resultado fica guardado no processo, e as tentativas do avaliador não repetem as sondas.
 // As variáveis que o Codex põe no ambiente do sandbox entram só como dica no motivo, menos o ENOTFOUND: com
@@ -59,7 +60,7 @@ function pessoal() {
 // O `fetch` roda num Node filho, porque o avaliador é síncrono. O filho imprime o que viu numa linha de JSON.
 const SONDA_REDE = `
 const ctrl = new AbortController();
-const t = setTimeout(() => ctrl.abort(), 1500);
+const t = setTimeout(() => ctrl.abort(), 3000);
 const fim = (o) => { clearTimeout(t); process.stdout.write(JSON.stringify(o)); };
 fetch(process.argv[1], { method: 'HEAD', signal: ctrl.signal, redirect: 'manual' })
   .then((r) => fim({ ok: true, status: r.status }))
@@ -69,7 +70,7 @@ function rede() {
   const url = require('../acesso').servidor();
   // Sem endereço do CRM não há o que sondar: o avaliador diz o que for.
   if (!url || typeof fetch !== 'function') return null;
-  const r = spawnSync(process.execPath, ['-e', SONDA_REDE, url], { timeout: 1900, windowsHide: true, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['-e', SONDA_REDE, url], { timeout: 3500, windowsHide: true, encoding: 'utf8' });
   if (r.error) {
     if (BLOQUEIO.test(`${r.error.code || ''} ${r.error.message || ''}`)) return sandbox('processo', r.error.code);
     // O filho não respondeu no tempo: a rede pendurou.
