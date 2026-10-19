@@ -260,14 +260,16 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
 // (sobrecarga, 5xx, tempo) continua `limite`, com o teto de adiamentos de hoje.
 const BLOQUEIO = /\b(EPERM|EACCES)\b|operation not permitted/i;
 const CONEXAO = /\b(ENOTFOUND|ECONNREFUSED)\b|connect EACCES|fetch failed|127\.0\.0\.1:9\b|connection refused/i;
-// Só a falha do Claude é relida, e só nos motivos que vêm do erro do processo ou do stderr: o erro de conexão sai do
-// caminho passageiro (`limite`), e o bloqueio, do processo que não abriu ou da saída fora do formato. "O avaliador
-// falhou: ..." traz o texto do envelope, e pode citar a aula; o motor do Codex classifica as dele sozinho.
+// Só a falha do Claude é relida, e só nos motivos que vêm do erro do processo ou do stderr: o caminho passageiro
+// (`limite`), o processo que não abriu e a saída fora do formato. O erro de conexão vale nos três: o `PASSAGEIRO` do
+// Claude não casa um ECONNREFUSED solto, e o "Unable to connect (ECONNREFUSED 127.0.0.1:9)" do proxy morto do
+// `unelevated` chega como saída fora do formato, que contaria para a desistência. "O avaliador falhou: ..." traz o
+// texto do envelope, e pode citar a aula; o motor do Codex classifica as dele sozinho.
 function doSandbox(r) {
   if (r.ok || r.ausente || r.sandbox || r.semRede || r.motor === 'codex') return r;
   const motivo = String(r.motivo || '');
   const doProcesso = /^o avaliador (não rodou|respondeu fora do formato)/.test(motivo);
-  if (r.limite && CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
+  if ((r.limite || doProcesso) && CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
   if (doProcesso && BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
   return r;
 }
