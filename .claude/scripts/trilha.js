@@ -46,6 +46,7 @@ const documentos = require('./lib/documentos');
 const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const quizAvaliador = require('./lib/quiz-avaliador');
+const agente = require('./lib/agente');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -84,8 +85,10 @@ function pastaDoChat(id) {
   } catch { /* sem a pasta, não se sabe */ }
   return null;
 }
-// Devolve null quando o chat é da sala (ou quando a recusa já passou do teto), e senão o porquê: 'fora' ou 'sem-hooks'.
+// Devolve null quando o chat é da sala (ou quando a recusa já passou do teto), e senão o porquê: 'fora' ou 'sem-hooks'
+// (no Codex, 'fora' ou 'ocupada').
 function chatDaSala(e) {
+  if (agente.atual() === 'codex') return chatDoCodex(e);
   const id = process.env.CLAUDE_CODE_SESSION_ID;
   if (!id) return null;
   const s = e.sessao_atual;
@@ -110,7 +113,59 @@ function chatDaSala(e) {
   estadoLib.salvar(e);
   return causa;
 }
+// No modo Codex (branch codex) a conversa é a fonte do tempo, e todo comando a sincroniza com o estado
+// (lib/codex/sessao.js): quem chama `chatDaSala` e já tinha o estado na mão relê depois. O chat é da sala se a pasta
+// da conversa é a sala. A recusa do chat de fora tem o teto de hoje, num contador próprio: o `chats_sem_hooks` é um só
+// para as duas causas do Claude, e recusas antigas dele contariam aqui. Liberado pelo teto, o chat sincroniza
+// normalmente. Não há 'sem-hooks': no Codex o hook é só um acelerador.
+let pedirStatus = false;
+function chatDoCodex(e) {
+  const id = agente.idDoChat();
+  if (!id) return null;
+  const sessao = require('./lib/codex/sessao');
+  const rollout = require('./lib/codex/rollout');
+  try {
+    if (!((e.codex || {}).chats || {})[id]) {
+      const arquivo = rollout.achar(id);
+      if (!arquivo) return null;
+      const meta = rollout.meta(arquivo);
+      const naSala = (p) => rollout.mesmaPasta(p, paths.RAIZ);
+      if (!(meta && meta.subagente) && !(meta && naSala(meta.cwd)) && !rollout.ler(arquivo).cwds.some(naSala)) {
+        const causa = sessao.comTrava(() => {
+          const e2 = estadoLib.carregar();
+          const cx = e2.codex || (e2.codex = { chats: {} });
+          const reg = cx.recusas || (cx.recusas = { chats: [], liberados: [] });
+          if (reg.liberados.includes(id)) return '';
+          if (!reg.chats.includes(id)) reg.chats.push(id);
+          if (reg.chats.length > RECUSAS.fora) {
+            reg.liberados.push(id);
+            estadoLib.salvar(e2);
+            fila.enfileirar('harness.sem_hooks', { causa: 'fora', chats: reg.chats.length }, e2);
+            return '';
+          }
+          estadoLib.salvar(e2);
+          return 'fora';
+        });
+        if (causa === null) return 'ocupada';
+        if (causa) return causa;
+      }
+    }
+    const r = sessao.sincronizar(id);
+    if (r && r.pedirStatus) pedirStatus = true;
+    // Sem a trava, o comando só segue se a sessão já é deste chat (os turnos dele entram na próxima). Senão um marco
+    // seria registrado na sessão de outro chat.
+    if (r && r.ocupada) {
+      const atual = estadoLib.carregar().sessao_atual;
+      if (!atual || atual.id !== id) return 'ocupada';
+    }
+  } catch { /* uma conversa que a sala não entende não trava a aula */ }
+  return null;
+}
 function foraDaSala(e, causa) {
+  if (agente.atual() === 'codex') {
+    if (causa === 'ocupada') return 'a sala estava ocupada; rode o mesmo comando de novo. Nada foi registrado, e não é assunto para o aluno.';
+    return `este chat foi aberto em outra pasta, e não na pasta da sala. Sem ela não há tempo de aula, proteção nem avaliação, e por isso a aula não acontece aqui. Não dê aula e não registre nada neste chat. Diga ao aluno, em duas ou três linhas e sem jargão, que falta um passo só: abrir a pasta ${paths.RAIZ} como projeto no aplicativo do ChatGPT, no modo Codex, começar um chat novo nela e mandar "oi" lá. O que já foi registrado continua valendo${acesso.conectado(e) ? ', inclusive o acesso: ele não vai colar o token de novo' : ''}.`;
+  }
   const porque = causa === 'fora'
     ? 'este chat foi aberto em outra pasta, e não na pasta da sala'
     : 'os registros da sala não rodaram neste chat (o mais comum: o aplicativo abriu antes de o Node.js estar instalado)';
@@ -140,9 +195,11 @@ function parChaveValor(lista) {
 
 const comandos = {
   status() {
+    const lido = estadoLib.carregar();
+    const causa = chatDaSala(lido);
+    if (causa) { console.log('Atenção: ' + foraDaSala(lido, causa)); return; }
+    // Relido: no Codex o `chatDaSala` sincroniza e grava, e gravar o estado lido antes apagaria o que ele importou.
     const e = estadoLib.carregar();
-    const causa = chatDaSala(e);
-    if (causa) { console.log('Atenção: ' + foraDaSala(e, causa)); return; }
     if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
     console.log(resumo(e));
     const pend = fila.ler().length;
@@ -209,7 +266,8 @@ const comandos = {
     // Conectou de um chat que não é da sala: o acesso fica guardado, e a aula começa no chat certo.
     const causa = chatDaSala(e2);
     if (causa) { console.log('\nAtenção: ' + foraDaSala(e2, causa)); return; }
-    console.log('\n' + resumo(e2));
+    // Relido: no Codex o `chatDaSala` acabou de sincronizar a sessão deste chat.
+    console.log('\n' + resumo(estadoLib.carregar()));
   },
 
   oficina([caminho]) {
@@ -762,6 +820,14 @@ const comandos = {
   registrar([tipo, ...resto]) {
     if (!tipo) falhar('Uso: registrar <tipo> [chave=valor ...]');
     if (!/^[a-z][a-z0-9_.-]*$/.test(tipo)) falhar('tipo deve ser minúsculo, ex.: suspeita, duvida, nota');
+    // No Codex, sincroniza antes, senão o evento sai com a sessão de outro chat. Sem recusa: o feedback vale de
+    // qualquer chat.
+    if (agente.atual() === 'codex') {
+      try {
+        const r = require('./lib/codex/sessao').sincronizar(agente.idDoChat());
+        if (r && r.pedirStatus) pedirStatus = true;
+      } catch { /* segue */ }
+    }
     const e = estadoLib.carregar();
     fila.enfileirar(tipo, parChaveValor(resto), e);
     console.log(`Evento "${tipo}" enfileirado.`);
@@ -1486,6 +1552,9 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
   }
   try {
     await comandos[comando](args);
+    // Codex sem hook: o chat voltou depois de um tempo, ou a conversa foi resumida. No Claude o SessionStart de
+    // `resume` e de `compact` reinjeta o estado; aqui o tutor recebe o pedido de rodar `status`, por último.
+    if (pedirStatus && comando !== 'status') console.log('\n(Antes de seguir, rode `node .claude/scripts/trilha.js status`: este chat voltou depois de um tempo, ou a conversa foi resumida, e o estado da trilha precisa voltar para você. Não comente com o aluno.)');
     // O que acabou de ir para a fila sobe agora, sem esperar hook. `nota` fica de
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
     // O que o `avaliar` enfileirou é a nota, e ele é o último comando da aula: tenta duas vezes, e sem a espera de dois

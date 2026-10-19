@@ -50,13 +50,28 @@ function servidorPadrao(config) {
   return url ? url.replace(/\/+$/, '') : null;
 }
 
+// No modo Codex (branch codex) a fila é lida sob a trava da sincronização (lib/codex/sessao.js): uma sincronização
+// enfileira os turnos e só depois grava o estado que os marca como importados. Lido no meio, um turno subiria e sairia
+// da fila antes de o estado o marcar; se aquele processo morresse ali, a sincronização seguinte não o acharia nem no
+// estado nem na fila, e o mandaria de novo. Fora da trava, tudo o que está na fila já foi marcado. O teste das
+// variáveis vem antes do require, como na integridade da fila: o hook do Claude não carrega nada a mais.
+function lerFila() {
+  if (process.env.TRILHA_202_AGENTE || process.env.CODEX_THREAD_ID) {
+    try {
+      if (require('./agente').atual() === 'codex') return require('./codex/sessao').comTrava(() => fila.ler());
+    } catch { /* segue o de hoje */ }
+  }
+  return fila.ler();
+}
+
 // `token` e `url` explícitos são do `conectar`, que confere um token antes de
 // guardá-lo: nesse caso a resposta é dele para interpretar, e o estado não muda aqui.
 async function enviar({ timeoutMs = 3000, estado = null, token = null, url = null } = {}) {
   const config = lerJson(CONFIG, {});
   const destino = url || acesso.servidor();
   const chave = token || acesso.token();
-  const todos = fila.ler();
+  const todos = lerFila();
+  if (!todos) return { ok: false, enviados: 0, pendentes: fila.ler().length, motivo: 'sala ocupada; a fila sobe no próximo envio' };
   if (!todos.length) return { ok: true, enviados: 0, motivo: 'fila vazia' };
   const eventos = pagina(todos);
   if (!destino) return { ok: false, enviados: 0, pendentes: todos.length, motivo: 'servidor não configurado' };

@@ -64,6 +64,8 @@ function registroAula(e, idAula) {
 // importado da conversa, e o turno pode ter acontecido antes. O relógio vem do
 // turno (`ts`, `mono_ms`, `boot_ms`), e o `id` do sessao.inicio é determinístico,
 // para a mesma importação não subir dois. Sem `opts`, é o relógio de agora.
+// `opts.naFila` (`{ sessao, aula }`) é a importação que morreu entre enfileirar e gravar o estado: os eventos já estão
+// na fila, e o estado é que precisa ser refeito. O que está lá não sai de novo, senão sobe duas vezes com `seq` novo.
 function contarSessao(e, opts) {
   const o = opts && typeof opts === 'object' ? opts : {};
   const s = e.sessao_atual;
@@ -80,12 +82,13 @@ function contarSessao(e, opts) {
     reg.sessoes = (reg.sessoes || 0) + 1;
     // A aula abre com o horário do turno: aberta com o de agora, depois de
     // turnos importados, ela "começaria" no fim e concluiria rápido demais.
-    abrirAula(e, s.aula, { ts: o.ts });
+    abrirAula(e, s.aula, { ts: o.ts, ...(o.naFila && o.naFila.aula ? { semEvento: true } : {}) });
   }
+  const naFila = Boolean(o.naFila && o.naFila.sessao);
   // mono_ms e boot_ms ancoram o relógio monotônico dos turnos: o servidor liga a
   // contagem monotônica ao horário real desta sessão, e vê pelo boot se a máquina
   // reiniciou entre dois trechos (o monotônico recomeça do zero).
-  fila.enfileirar('sessao.inicio', {
+  if (!naFila) fila.enfileirar('sessao.inicio', {
     fonte: s.fonte || 'startup',
     aula: s.aula,
     ...(escolhaPendente(e) ? { escolha: s.escolha.opcoes } : {}),
@@ -154,15 +157,17 @@ function escolher(e, idAula) {
 // a aula dada no mesmo chat do token abria pelo primeiro milestone, sem evento.
 //
 // `opts.ts` (branch codex): o horário em que a aula começou, quando ela abre por
-// um turno importado da conversa do Codex. Sem ele, agora.
+// um turno importado da conversa do Codex. Sem ele, agora. `opts.semEvento`: o `aula.inicio` já está na fila
+// (ver `contarSessao`).
 function abrirAula(e, idAula, opts) {
   const ts = opts && opts.ts;
+  const semEvento = Boolean(opts && opts.semEvento);
   const reg = registroAula(e, idAula);
   const a = mapa.aula(idAula);
   if (reg.status !== 'nao_iniciada' || !mapa.escrita(a) || !acesso.conectado(e)) return false;
   reg.status = 'em_andamento';
   reg.iniciada_em = ts || agora();
-  fila.enfileirar('aula.inicio', { aula: a.id }, e, ts ? { ts } : {});
+  if (!semEvento) fila.enfileirar('aula.inicio', { aula: a.id }, e, ts ? { ts } : {});
   return true;
 }
 
