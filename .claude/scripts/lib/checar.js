@@ -61,10 +61,12 @@ function semSegredo(t) {
     // contagem de tokens que o log da P3 imprime (`input_tokens: 25322`) é o que o corretor precisa ler.
     // Qualquer `*_KEY=` também (a SUPABASE_SERVICE_ROLE_KEY, a STRIPE_WEBHOOK_KEY).
     .replace(/\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|SENHA|APIKEY|_KEY)\s*=\s*)("[^"\n]*"|'[^'\n]*'|\S+)/g, '$1[omitido]')
-    .replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^\s:@/]+:[^\s@/]+@/gi, '$1[omitido]@')
+    // O userinfo de qualquer URL: `usuario:senha@` e também o token sozinho no lugar do usuário, que é como o GitHub
+    // aceita um `origin` com credencial (`https://ghp_...@github.com/...`).
+    .replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/gi, '$1[mascarado]@')
     // Um JWT solto: a chave anônima e a de serviço do Supabase têm essa forma, e uma sessão também.
     .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[jwt omitido]')
-    .replace(/\b(?:sk|rk|rkcs)_(?:live|test)_[A-Za-z0-9]{8,}|\bwhsec_[A-Za-z0-9]{8,}|\bsk-[A-Za-z0-9_-]{16,}|\bAIza[0-9A-Za-z_-]{20,}|\bgsk_[A-Za-z0-9]{16,}/g, '[chave omitida]');
+    .replace(/\b(?:sk|rk|rkcs)_(?:live|test)_[A-Za-z0-9]{8,}|\bwhsec_[A-Za-z0-9]{8,}|\bsk-[A-Za-z0-9_-]{16,}|\bAIza[0-9A-Za-z_-]{20,}|\bgsk_[A-Za-z0-9]{16,}|\bgh[pousr]_[A-Za-z0-9]{16,}|\bgithub_pat_[A-Za-z0-9_]{16,}/g, '[chave omitida]');
 }
 // O que o tutor lê além do registro (o HTML, a resposta do `http`): o mesmo filtro, com um teto maior.
 function paraMostrar(t) {
@@ -243,9 +245,13 @@ function remotoPublico(p, pasta, semRede) {
   if (!p.repo) return { texto: '(a prática não registrou repositório)' };
   if (semRede) return { texto: '(não rodou: esta máquina está sem internet agora)' };
   if (process.env.TRILHA_202_REDE === 'local' && !local(p.repo)) return { texto: '(não rodou: rede desligada neste ambiente)' };
+  // Sem nenhum jeito de o git usar a credencial do aluno: o ajudante, o prompt, o programa que pergunta a senha
+  // (GIT_ASKPASS, SSH_ASKPASS) e o cabeçalho fixo da configuração (`http.extraHeader`, que o valor vazio zera). Com
+  // qualquer um deles, um repositório privado responderia como público. O `url.*.insteadOf` não é tratado: ele troca o
+  // endereço, e o que sai é dito com o endereço registrado.
   const env = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
-  delete env.TRILHA_202_TOKEN;
-  const r = rodarGit(['-c', 'credential.helper=', 'ls-remote', p.repo], pasta, { env, timeout: 20000 });
+  for (const k of ['TRILHA_202_TOKEN', 'GIT_ASKPASS', 'SSH_ASKPASS']) delete env[k];
+  const r = rodarGit(['-c', 'credential.helper=', '-c', 'http.extraHeader=', 'ls-remote', p.repo], pasta, { env, timeout: 20000 });
   const m = gitNoSandbox(r);
   if (m) return { pendente: m };
   // O `elevated` barra o https do git pelo schannel, e o sandbox sem rede não resolve o GitHub.
@@ -343,7 +349,9 @@ function credenciais(idPratica, p) {
   }
   linhas.push(hist.status === 0
     ? `linhas do histórico inteiro (git log -p --all) com chave ou credencial: ${n}${commits.size ? `, em ${commits.size} commit(s): ${[...commits].join(' ')}` : ''}`
-    : `histórico: ${parteGit(hist)}`);
+    : hist.error && ['ETIMEDOUT', 'ENOBUFS'].includes(hist.error.code)
+      ? 'histórico não medido (passou do tempo ou do tamanho)'
+      : `histórico: ${parteGit(hist)}`);
   return fato(hist.status, linhas.join('\n\n'));
 }
 
