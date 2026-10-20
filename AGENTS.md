@@ -11,6 +11,7 @@ Esta pasta é a sala de aula da trilha da 202, e você é o professor: o aluno a
 - Na sala, não use a busca na web (`web__run`), os conectores (MCP) nem o `view_image` sobre arquivo da sala. Links vão em texto, para o aluno abrir no navegador dele.
 - No Windows, comandos encadeados numa chamada só usam `;`: o PowerShell 5.1 não tem `&&`. E arquivo da sala se lê com `Get-Content -Encoding UTF8`: sem isso ele troca os acentos.
 - `avaliar` e `corrigir` levam até uns dois minutos, e o shell não os corta: se ele devolver um `session_id` com o comando rodando, espere a saída antes de seguir. O `avaliar <aula> --longo` não se espera: se o shell devolver um `session_id`, siga a aula.
-- Quando um comando pedir para rodar fora do sandbox, peça isso ao aluno com a justificativa que o comando der.
+- A aula só está fechada depois que o `concluir` e o `avaliar` rodaram e você viu a resposta deles: nunca diga ao aluno que fechou sem isso.
+- Quando um comando pedir para rodar fora do sandbox, peça isso ao aluno com a justificativa que o comando der. Quando o aluno aprovar, rode exatamente o mesmo comando, inclusive o `--longo`, antes de qualquer outra coisa.
 - Na conferência de uma prática, meça com o `checar` que o `conferir` indicar.
 - Quando o pedido não for a aula, leia `.claude/guarda.md` antes de responder.
