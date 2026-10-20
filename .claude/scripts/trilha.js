@@ -211,13 +211,13 @@ const comoAgente = () => (agente.atual() === 'codex' ? 'codex' : undefined);
 // resumo, e o SessionStart de `resume` e de `compact` o injeta de novo. No Codex sem hook, quem faz isso é o `status`
 // que o tutor roda no primeiro turno (AGENTS.md) e na volta ao chat (a sincronização pede).
 
-// O chat já tinha turno antes do que está rodando agora. O `status` do primeiro turno já contou esse turno: contar
-// turnos não basta para dizer que o chat é velho.
-const jaConversou = (s) => Boolean(s) && ((s.turnos || 0) > 1 || (s.n_base || 0) > 0);
+// O número do turno que está rodando agora neste chat (`n == n_base + turnos` na sessão viva, lib/codex/sessao.js).
+const turnoAtual = (s) => (s ? (s.n_base || 0) + (s.turnos || 0) : null);
 const hojeLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 // O que impede de atualizar e que rodar fora do sandbox resolve (o git não grava no .git de dentro dele, em modo
-// nenhum, T0.16): é quando o tutor ouve o pedido de `atualizar`.
-const ATUALIZAR_FORA = ['sem-rede', 'sem-git', 'alterada', 'falhou'];
+// nenhum, T0.16): é quando o tutor ouve o pedido de `atualizar`. A sala com arquivo mexido fica de fora: fora do
+// sandbox ela continua sem atualizar, e o aluno aprovaria à toa todo dia. Como no Claude, só o `harness.alterado` conta.
+const ATUALIZAR_FORA = ['sem-rede', 'sem-git', 'falhou'];
 
 function anotarAtualizacao(e, r) {
   // O commit e o `sujo` deste processo foram lidos antes de a sala andar.
@@ -242,10 +242,21 @@ async function statusDoCodex(args) {
   const id = agente.idDoChat();
   const e0 = estadoLib.carregar();
   const s = e0.sessao_atual && e0.sessao_atual.id === id ? e0.sessao_atual : null;
-  const novo = relancado || (Boolean(sinc.nova) && !jaConversou(s));
   const c = ((e0.codex || {}).chats || {})[id] || {};
+  // Chat novo é o que ainda não teve `status` nenhum, pelo registro da conversa: o `nova` da sincronização não serve,
+  // porque outro comando antes do `status` já fez nascer a sessão, e contar turnos também não, porque o `status` pode
+  // vir só no segundo. Todo `status` depois do primeiro é retomada (a volta ao chat, a compactação ou um pedido do tutor).
+  // Sem a conversa no registro (a sincronização não a achou), não há chat a começar nem a retomar: só o resumo.
+  const conhecido = Boolean(((e0.codex || {}).chats || {})[id]);
+  const novo = relancado || (conhecido && c.ultimo_status == null);
   const compactou = c.ultimo_compactado != null && c.ultimo_compactado > (c.ultimo_status == null ? -1 : c.ultimo_status);
-  const retomado = !novo && (Boolean(sinc.pedirStatus) || jaConversou(s));
+  const retomado = conhecido && !novo;
+  // Em que turno o `status` rodou: é o que diz ao `atualizar` se ele vem logo depois do pedido (o mesmo turno, tudo
+  // entra) ou no meio do chat (só código).
+  if (!relancado && e0.codex && e0.codex.chats && e0.codex.chats[id] && s) {
+    e0.codex.chats[id].status_n = turnoAtual(s);
+    estadoLib.salvar(e0);
+  }
   // A aula que começou no outro agente e segue aqui. O relançado não vê o fechamento, que já aconteceu no pai.
   const [deAgente, deAula] = String(kv['--continuacao'] || '').split(':');
   const continuacaoDe = sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou
@@ -260,7 +271,7 @@ async function statusDoCodex(args) {
       const filho = require('child_process').spawnSync(process.execPath, [__filename, ...passa], { cwd: paths.RAIZ, env: process.env, encoding: 'utf8', timeout: 60000, windowsHide: true });
       if (!filho.error && filho.status === 0 && filho.stdout) { process.stdout.write(filho.stdout); return; }
       // Sem processo filho (o modo `unelevated` não deixa abrir um), o resto sai deste: o resumo é o do código de antes.
-      avisos.push('(Atualização: a sala foi atualizada; o próximo chat já usa o material novo. Este estado saiu dos comandos de antes da atualização, e a aula segue com ele. Não comente com o aluno, salvo se ele perguntar.)');
+      avisos.push(`(Atualização: a sala foi atualizada; o próximo chat já usa o material novo. Este estado saiu dos comandos e do mapa de antes da atualização, e o que você já leu neste chat continua da versão de antes até o próximo chat. Os comandos que rodar daqui em diante e as skills que ler a partir de agora já são os novos${agentsMdMudou(r) ? '; o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
     } else if (ATUALIZAR_FORA.includes(r.motivo)) {
       // Uma vez por dia: o pedido de aprovação a cada chat cansaria o aluno, e material novo não é urgente.
       const e1 = estadoLib.carregar();
@@ -278,13 +289,17 @@ async function statusDoCodex(args) {
       avisos.push('(Os comandos da sala acabaram de receber correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.)');
     }
   }
-  if (relancado) avisos.push(`(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova${args.includes('--agents-md') ? '; o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
+  if (relancado) avisos.push(`(A sala acabou de se atualizar com material novo da 202. Os comandos, o mapa e as skills deste chat já são os novos, e este estado saiu deles${args.includes('--agents-md') ? '; só o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
 
+  // Uma vez por mudança, como o hook de início faz em todo chat, retomado ou compactado também. Sem git, o registro
+  // fica como estava (lib/alteracoes.js).
   let sujo = [];
-  if (novo) {
-    // Uma vez por mudança, como no hook de início. Sem git, o registro fica como estava (lib/alteracoes.js).
+  if (novo || retomado) {
     try { const e = estadoLib.carregar(); sujo = alteracoes.registrar(e, 'inicio'); estadoLib.salvar(e); } catch { /* segue */ }
-    // O rascunho que ficou de outro chat não pode ser lido por este.
+  }
+  // O rascunho que ficou de outro chat não pode ser lido por este. Só no chat novo: no Claude o `resume` também apaga,
+  // mas aqui o `status` de retomada pode vir no meio da aula, com a conferência da prática sendo escrita em trilha/tmp.
+  if (novo) {
     try { fs.rmSync(paths.TMP, { recursive: true, force: true }); } catch { /* segue */ }
   }
 
@@ -320,14 +335,17 @@ async function atualizarDoCodex() {
   const e = estadoLib.carregar();
   const id = agente.idDoChat();
   const s = e.sessao_atual && e.sessao_atual.id === id ? e.sessao_atual : null;
-  // No meio de um chat que já conversou, só o que é código, como ao retomar no Claude: trocar skill e mapa com a aula
-  // andando deixa o tutor com metade das instruções em cada versão. No primeiro turno, tudo.
-  const r = require('./lib/atualizar').atualizar({ soCodigo: jaConversou(s) });
+  // No meio do chat, só o que é código, como ao retomar no Claude: trocar skill e mapa com a aula andando deixa o tutor
+  // com metade das instruções em cada versão. Tudo entra quando o `atualizar` vem no mesmo turno do primeiro `status`
+  // (o que fez o pedido), ou num chat sem `status` ainda e no primeiro turno.
+  const c = ((e.codex || {}).chats || {})[id] || {};
+  const n = turnoAtual(s);
+  const r = require('./lib/atualizar').atualizar({ soCodigo: c.status_n != null ? c.status_n < n : n > 1 });
   if (r.atualizada) {
     anotarAtualizacao(e, r);
     console.log(r.soCodigo
       ? 'Os comandos da sala receberam correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.'
-      : `Sala atualizada com material novo da 202 (${r.commits || 'alguns'} commit(s)). Os comandos já são os novos; as skills, o mapa e o AGENTS.md valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.`);
+      : `Sala atualizada com material novo da 202 (${r.commits || 'alguns'} commit(s)). Os comandos, o mapa e as skills no disco já são os novos; o que você já leu neste chat é da versão de antes. Rode \`node .claude/scripts/trilha.js status\` de novo e siga dali, lendo de novo as skills que ele indicar.${agentsMdMudou(r) ? ' Só o AGENTS.md novo vale a partir do próximo chat.' : ''} Não comente com o aluno, salvo se ele perguntar.`);
     // Fora do sandbox há rede: o `harness.atualizado` sobe agora.
     await enviarAgora({ timeoutMs: prazoDeEnvio('atualizar') });
     return;
