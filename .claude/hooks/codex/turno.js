@@ -8,6 +8,11 @@ process.env.TRILHA_202_AGENTE = 'codex';
 //
 // A fila sobe de vez em quando, como no `atividade.js`: só no Stop, porque o UserPromptSubmit segura a mensagem do
 // aluno até o hook sair. Sem saída, e sempre com 0.
+//
+// O Stop não fecha o turno em andamento, e não adianta esperar por isso: o Codex roda o Stop dentro do turno (ele pode
+// pedir que o turno continue) e só grava o `task_complete` depois que o hook sai (codex-rs, session/turn.rs e
+// tasks/mod.rs). Esperar aqui só atrasaria cada turno até o teto (A5 do Davi, 20/10). O fim entra na sincronização
+// seguinte, com o horário do `task_complete`.
 const INTERVALO_ENVIO_MS = 2 * 60 * 1000;
 
 async function main() {
