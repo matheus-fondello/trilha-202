@@ -38,7 +38,13 @@ function git(args, timeout = 3000) {
 // subprocesso a cada avaliação, nunca pelo tutor. Skill, mapa, CLAUDE.md e
 // settings ficam de fora: trocá-los com a aula andando deixa o tutor com metade
 // das instruções em cada versão.
-const SO_CODIGO = /^\.claude\/(scripts|hooks|avaliador)\//;
+//
+// O AGENTS.md (branch codex) entra: é texto que o Codex só lê no começo do chat,
+// e sem ele um commit que o mexe junto com código barraria o hotfix de quem
+// retoma um chat no Claude. A .codex/ não: um hooks.json novo no meio da aula
+// desligaria os hooks do Codex até o aluno confiar de novo, e por isso o commit
+// que a mexe vai separado do de código.
+const SO_CODIGO = /^(\.claude\/(scripts|hooks|avaliador)\/|AGENTS\.md$)/;
 
 // Devolve { atualizada: true, de, para, commits } ou { atualizada: false, motivo }.
 // Com `soCodigo` (chat retomado, 16/10), só avança se tudo o que chega é código:

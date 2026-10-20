@@ -39,8 +39,10 @@ const RAIZ = real(paths.RAIZ);
 const TMP = real(paths.TMP);
 
 // Nomes que identificam o harness dentro de um comando de shell. Se um deles
-// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura.
-const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
+// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura. O
+// AGENTS.md e a .codex/ são a casca do Codex (branch codex): no sandbox
+// `unelevated` o shell do agente grava na .codex/ (T0.16).
+const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|\.codex[/\\]|AGENTS\.md|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é

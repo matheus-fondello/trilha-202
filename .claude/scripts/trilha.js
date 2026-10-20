@@ -24,6 +24,7 @@
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
 //   node .claude/scripts/trilha.js atualizar                                         (só no modo Codex, fora do sandbox)
+//   node .claude/scripts/trilha.js preparar                                          (se o Codex confia na pasta e nos hooks; só lê)
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
@@ -1066,6 +1067,30 @@ const comandos = {
   atualizar() {
     if (agente.atual() !== 'codex') { console.log('A sala se atualiza sozinha no início de cada chat.'); return; }
     return atualizarDoCodex();
+  },
+
+  // Se o Codex desta máquina confia na pasta da sala e nos hooks dela (branch codex). Só lê o config.toml do Codex, de
+  // qualquer agente ou de um terminal comum: quem confia é o aluno, pela tela do Codex. Nada aqui é condição para a
+  // aula: sem hook, os comandos da sala fazem o mesmo trabalho, só mais tarde.
+  preparar() {
+    const r = require('./lib/codex/confianca').verificar();
+    const total = r.hooks.length;
+    const revisados = r.hooks.filter((h) => h.estado === 'revisado').length;
+    const conta = (estado) => r.hooks.filter((h) => h.estado === estado).map((h) => h.evento);
+    const linhas = [`Pasta da sala: ${paths.RAIZ}`];
+    linhas.push(r.pasta === 'confiada' ? '- A pasta está confiada no Codex: a configuração e os hooks da sala podem valer.'
+      : r.pasta === 'nao-confiavel' ? '- A pasta está marcada como não confiável no Codex: ele ignora a configuração e os hooks da sala.'
+        : '- A pasta não está confiada no Codex: ele ignora a configuração e os hooks da sala até o aluno confiar nela.');
+    linhas.push(`- Hooks da sala: ${revisados} de ${total} revisados.`);
+    const mudaram = conta('mudou');
+    if (mudaram.length) linhas.push(`  ${mudaram.length} mudou desde a revisão e está desligado até ser revisado de novo: ${mudaram.join(', ')}.`);
+    const sem = conta('sem-revisao');
+    if (sem.length) linhas.push(`  Sem revisão: ${sem.join(', ')}.`);
+    const desligados = conta('desligado');
+    if (desligados.length) linhas.push(`  Desligados pelo aluno: ${desligados.join(', ')}.`);
+    if (!r.config) linhas.push(`- Não há ${path.join(paths.codexHome(), 'config.toml')} nesta máquina.`);
+    linhas.push('A aula funciona sem eles: os comandos da sala fazem o mesmo trabalho. Nada foi alterado.');
+    console.log(linhas.join('\n'));
   },
 
   dev([sub, ...resto]) {

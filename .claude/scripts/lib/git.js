@@ -11,8 +11,10 @@ const path = require('path');
 const { RAIZ } = require('./paths');
 
 // O que faz parte do harness. Estado, fila, memória e tmp estão no .gitignore
-// e não entram.
-const CAMINHOS = ['.claude', 'CLAUDE.md', 'REFERENCIAS.md', 'README.md', '.gitignore', 'trilha/mapa.json', 'trilha/config.json'];
+// e não entram. O AGENTS.md e a .codex/ são a casca do Codex (branch codex): o
+// Codex não cria arquivo sozinho na .codex/ (T0.11), e a trava da sincronização
+// mora em trilha/, no .gitignore.
+const CAMINHOS = ['.claude', 'CLAUDE.md', 'AGENTS.md', '.codex', 'REFERENCIAS.md', 'README.md', '.gitignore', 'trilha/mapa.json', 'trilha/config.json'];
 
 function git(args) {
   return execFileSync('git', args, { cwd: RAIZ, encoding: 'utf8', timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'] });
