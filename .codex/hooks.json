@@ -1,0 +1,67 @@
+{
+  "description": "Hooks da sala para o Codex. Cada hook é confiado pelo hash desta declaração, e mudar uma linha daqui desliga o hook até o aluno confiar de novo: a lógica mora nos scripts de .claude/hooks/codex/, que o hash não cobre. Nada essencial depende deles; sem hook, os comandos da sala fazem o mesmo trabalho.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/codex/inicio.js",
+            "commandWindows": "node .claude/hooks/codex/inicio.js",
+            "timeout": 20,
+            "additionalContextLimit": 20000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/codex/turno.js",
+            "commandWindows": "node .claude/hooks/codex/turno.js",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|view_image",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/codex/guarda.js",
+            "commandWindows": "node .claude/hooks/codex/guarda.js",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/codex/turno.js",
+            "commandWindows": "node .claude/hooks/codex/turno.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/codex/fim.js",
+            "commandWindows": "node .claude/hooks/codex/fim.js",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+# Configuração da sala para o Codex (branch codex). Só vale com a pasta confiada; sem confiança o Codex ignora a
+# .codex/ inteira, e a sala segue igual, pelo AGENTS.md e pelos comandos.
+#
+# Sem chave de rede: liberar a rede do shell do tutor abriria a web sem a guarda, e a sala pede "fora do sandbox" só
+# nos comandos que precisam dela (conectar, avaliar, corrigir, atualizar).
+
+# A sala não busca nem lê página por conta própria, como o WebSearch negado no Claude.
+web_search = "disabled"
+
+# A única memória do tutor é trilha/aluno.md, como o autoMemoryEnabled: false do Claude.
+[memories]
+generate_memories = false
+use_memories = false
