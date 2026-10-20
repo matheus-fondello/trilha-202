@@ -78,6 +78,26 @@ async function main() {
   const avisoAtualizacao = !atualizacao.atualizada ? ''
     : atualizacao.soCodigo ? '\n(Os comandos da sala acabaram de receber correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.)'
     : '\n(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova; o AGENTS.md e a configuração da sala valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.)';
+
+  // A marca deste início, para o `status` do primeiro turno (AGENTS.md) não refazer nada disto: o `atualizar` dele roda
+  // no sandbox e daria `sem-rede`, e o tutor pediria ao aluno uma aprovação à toa. Uma chave própria, e não o
+  // `ultimo_status` da conversa, que é do comando. Com as pendências que este resumo já levou, para o `status` dizer só
+  // as novas. As de mais de um dia saem.
+  if (id) {
+    sessao.comTrava(() => {
+      const e2 = estadoLib.carregar();
+      const cx = e2.codex || (e2.codex = { chats: {} });
+      const marcas = cx.inicio_hook && typeof cx.inicio_hook === 'object' ? cx.inicio_hook : {};
+      for (const [k, m] of Object.entries(marcas)) if (!(Date.now() - Date.parse((m || {}).ts) < 86400000)) delete marcas[k];
+      marcas[id] = {
+        ts: new Date().toISOString(), fonte,
+        atualizacao: atualizacao.atualizada ? 'atualizada' : atualizacao.motivo || null,
+        pendencias: texto.split('\n').filter((l) => l.startsWith('Pendência do harness')),
+      };
+      cx.inicio_hook = marcas;
+      estadoLib.salvar(e2);
+    });
+  }
   responder(texto + aviso + avisoHarness + avisoAtualizacao);
 }
 

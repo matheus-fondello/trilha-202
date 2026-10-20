@@ -39,10 +39,18 @@ const RAIZ = real(paths.RAIZ);
 const TMP = real(paths.TMP);
 
 // Nomes que identificam o harness dentro de um comando de shell. Se um deles
-// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura. O
-// AGENTS.md e a .codex/ são a casca do Codex (branch codex): no sandbox
-// `unelevated` o shell do agente grava na .codex/ (T0.16).
-const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|\.codex[/\\]|AGENTS\.md|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
+// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura.
+const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
+// No modo Codex (branch codex), também a casca dele: o AGENTS.md e a .codex/,
+// onde o shell do agente grava no sandbox `unelevated` (T0.16). Para o Claude a
+// regra é a de cima. As variáveis vêm antes do require, como em fila.js: sem
+// elas o agente não pode ser o Codex, e a guarda do Claude não carrega o agente.js.
+const NOMES_DO_CODEX = /(^|[\s"'`=:/\\(])(\.codex[/\\]|AGENTS\.md)\b/;
+function codex() {
+  if (!process.env.TRILHA_202_AGENTE && !process.env.CODEX_THREAD_ID) return false;
+  try { return require('../scripts/lib/agente').atual() === 'codex'; } catch { return false; }
+}
+const protegido = (seg) => NOMES_PROTEGIDOS.test(seg) || (NOMES_DO_CODEX.test(seg) && codex());
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
 // avaliação; scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é
@@ -165,7 +173,7 @@ function conferirBash(entrada) {
     if (REMOVE.test(seg)) {
       bloquear(`\`${seg}\` apaga arquivos. Nada na sala precisa disso.`);
     }
-    if (NOMES_PROTEGIDOS.test(seg)) {
+    if (protegido(seg)) {
       const primeiro = seg.split(/\s+/)[0];
       const redireciona = /(^|[^<])>|\btee\b/.test(seg);
       if (LEITURA.has(primeiro.toLowerCase()) && !redireciona) continue;

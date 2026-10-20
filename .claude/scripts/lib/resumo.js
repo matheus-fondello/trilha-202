@@ -10,7 +10,9 @@ const { avaliacaoRodando } = require('./estado');
 
 // O Codex não tem a ferramenta de skill do Claude Code (branch codex): para ele a skill é um arquivo que se lê e se
 // segue. Todo texto do modo Codex que manda carregar skill passa por aqui; o do Claude fica como era, letra a letra.
-const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\` e siga`;
+// No Windows, com o encoding dito: o `Get-Content` do PowerShell 5.1 lê UTF-8 sem BOM como ANSI e troca os acentos da
+// skill (T8, passo 5), mesmo que o tutor esqueça o AGENTS.md.
+const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\`${process.platform === 'win32' ? ' com `Get-Content -Encoding UTF8`' : ''} e siga`;
 
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
 // e nada da aula aparece: o tutor não tem o que começar antes do `conectar`.

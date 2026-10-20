@@ -36,14 +36,16 @@ function semAspas(s) {
 
 // O comando de dentro de `powershell [opções] -Command <cmd>` (e de `bash -lc <cmd>`, a forma do Mac e do Linux). As
 // opções antes do -Command podem ter valor (`-ExecutionPolicy Bypass`), por isso o corte é no -Command, e não numa
-// lista de opções conhecidas.
-const EMBRULHO = /^\s*(?:&\s*)?(["']?)(?:[^\s"']*[\\/])?(?:powershell|pwsh)(?:\.exe)?\1\s+(?:[\s\S]*?\s)?-(?:command|c)\s+([\s\S]+)$/i;
+// lista de opções conhecidas. O PowerShell aceita qualquer começo do nome (`-c`, `-Co`, `-Comm`); o `cmd /c "<cmd>"`
+// é a outra forma do Windows. Sem desembrulhar, o CLI legítimo chegava à guarda como um comando que cita `.claude/`.
+const EMBRULHO = /^\s*(?:&\s*)?(["']?)(?:[^\s"']*[\\/])?(?:powershell|pwsh)(?:\.exe)?\1\s+(?:[\s\S]*?\s)?-c(?:o(?:m(?:m(?:a(?:n(?:d)?)?)?)?)?)?\s+([\s\S]+)$/i;
+const EMBRULHO_CMD = /^\s*(["']?)(?:[^\s"']*[\\/])?cmd(?:\.exe)?\1\s+(?:\/[a-z]\s+)*?\/c\s+([\s\S]+)$/i;
 const EMBRULHO_SH = /^\s*(["']?)(?:[^\s"']*[\\/])?(?:bash|sh|zsh)\1\s+-l?c\s+([\s\S]+)$/;
 function desembrulhar(bruto) {
   let cmd = Array.isArray(bruto) ? bruto[bruto.length - 1] : bruto;
   cmd = typeof cmd === 'string' ? cmd : '';
   for (let i = 0; i < 3; i++) {
-    const m = EMBRULHO.exec(cmd) || EMBRULHO_SH.exec(cmd);
+    const m = EMBRULHO.exec(cmd) || EMBRULHO_CMD.exec(cmd) || EMBRULHO_SH.exec(cmd);
     if (!m) break;
     cmd = semAspas(m[2]);
   }

@@ -232,6 +232,49 @@ function agentsMdMudou(r) {
   } catch { return false; }
 }
 
+// O pedido de rodar o `atualizar` fora do sandbox, uma vez por dia: o pedido de aprovação a cada chat cansaria o aluno,
+// e material novo não é urgente. Vazio quando já foi feito hoje.
+function pedidoDeAtualizar() {
+  const e1 = estadoLib.carregar();
+  const cx = e1.codex || (e1.codex = { chats: {} });
+  if (cx.atualizacao_avisada === hojeLocal()) return '';
+  cx.atualizacao_avisada = hojeLocal();
+  estadoLib.salvar(e1);
+  return '(Atualização: a sala pode ter material novo: rode `node .claude/scripts/trilha.js atualizar` fora do sandbox, pedindo a aprovação do aluno, no primeiro turno. Se ele não aprovar, siga a aula: o pedido volta amanhã. Não comente além disso.)';
+}
+
+// O hook de início do Codex (.claude/hooks/codex/inicio.js) deixa uma marca por chat em `e.codex.inicio_hook`: ele já
+// atualizou a sala (fora do sandbox), limpou trilha/tmp, registrou o harness alterado e injetou o resumo. O `status` do
+// primeiro turno que vem logo depois não refaz nada disso: refazer o `atualizar` dentro do sandbox daria `sem-rede`, e
+// o tutor pediria ao aluno uma aprovação à toa, depois de o hook ter atualizado. Vale uma vez, e por meia hora: um
+// `status` pedido na volta ao chat, horas depois, é o de sempre.
+function marcaDoHook(e, id) {
+  const m = ((e.codex || {}).inicio_hook || {})[id];
+  if (!m || !m.ts) return null;
+  const idade = Date.now() - Date.parse(m.ts);
+  return idade >= 0 && idade <= MINUTOS_VIVA * 60000 ? m : null;
+}
+const linhasDePendencia = (texto) => String(texto).split('\n').filter((l) => l.startsWith('Pendência do harness'));
+
+async function statusDepoisDoHook(marca, id) {
+  require('./lib/codex/sessao').comTrava(() => {
+    const e = estadoLib.carregar();
+    if (e.codex && e.codex.inicio_hook && e.codex.inicio_hook[id]) { delete e.codex.inicio_hook[id]; estadoLib.salvar(e); }
+  });
+  await enviar({ timeoutMs: 2500 });
+  const e = estadoLib.carregar();
+  // A sala fechou desde o hook (o envio deu 401): o resumo inteiro, que agora é o pedido do token.
+  if (!acesso.conectado(e)) { console.log(resumo(e, { fonte: 'startup', agente: 'codex' })); return; }
+  const linhas = ['(O estado deste chat já veio no início do chat; siga por ele. Não comente com o aluno.)'];
+  const vistas = new Set(marca.pendencias || []);
+  for (const l of linhasDePendencia(resumo(e, { fonte: 'resume', agente: 'codex' }))) if (!vistas.has(l)) linhas.push(l);
+  if (ATUALIZAR_FORA.includes(marca.atualizacao)) {
+    const pedido = pedidoDeAtualizar();
+    if (pedido) linhas.push(pedido);
+  }
+  console.log(linhas.join('\n'));
+}
+
 async function statusDoCodex(args) {
   const { atualizar } = require('./lib/atualizar');
   const alteracoes = require('./lib/alteracoes');
@@ -258,6 +301,9 @@ async function statusDoCodex(args) {
     e0.codex.chats[id].status_n = turnoAtual(s);
     estadoLib.salvar(e0);
   }
+  // O hook de início do Codex já fez o trabalho deste começo de chat e já pôs o estado no contexto do tutor.
+  const marca = !relancado && (novo || retomado) ? marcaDoHook(e0, id) : null;
+  if (marca) return statusDepoisDoHook(marca, id);
   // A aula que começou no outro agente e segue aqui. O relançado não vê o fechamento, que já aconteceu no pai.
   const [deAgente, deAula] = String(kv['--continuacao'] || '').split(':');
   const continuacaoDe = sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou
@@ -274,14 +320,8 @@ async function statusDoCodex(args) {
       // Sem processo filho (o modo `unelevated` não deixa abrir um), o resto sai deste: o resumo é o do código de antes.
       avisos.push(`(Atualização: a sala foi atualizada; o próximo chat já usa o material novo. Este estado saiu dos comandos e do mapa de antes da atualização, e o que você já leu neste chat continua da versão de antes até o próximo chat. Os comandos que rodar daqui em diante e as skills que ler a partir de agora já são os novos${agentsMdMudou(r) ? '; o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
     } else if (ATUALIZAR_FORA.includes(r.motivo)) {
-      // Uma vez por dia: o pedido de aprovação a cada chat cansaria o aluno, e material novo não é urgente.
-      const e1 = estadoLib.carregar();
-      const cx = e1.codex || (e1.codex = { chats: {} });
-      if (cx.atualizacao_avisada !== hojeLocal()) {
-        cx.atualizacao_avisada = hojeLocal();
-        estadoLib.salvar(e1);
-        avisos.push('(Atualização: a sala pode ter material novo: rode `node .claude/scripts/trilha.js atualizar` fora do sandbox, pedindo a aprovação do aluno, no primeiro turno. Se ele não aprovar, siga a aula: o pedido volta amanhã. Não comente além disso.)');
-      }
+      const pedido = pedidoDeAtualizar();
+      if (pedido) avisos.push(pedido);
     }
   } else if (retomado) {
     const r = atualizar({ soCodigo: true });
