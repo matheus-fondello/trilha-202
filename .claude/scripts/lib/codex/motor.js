@@ -40,6 +40,11 @@ const MODELO_RECUSADO = /model is not supported|not supported when using Codex/i
 const CONEXAO = /\b(ENOTFOUND|ECONNREFUSED)\b|connect EACCES|fetch failed|127\.0\.0\.1:9\b|connection refused|os error (10061|10013|11001)/i;
 const BLOQUEIO = /\b(EPERM|EACCES)\b|operation not permitted/i;
 const PASSAGEIRO = /overloaded|internal server error|service unavailable|bad gateway|gateway timeout|\b(500|502|503|504|529)\b|ECONNRESET|ETIMEDOUT|stream (error|disconnected)/i;
+// O Codex antigo demais para a chamada do avaliador: o `-c web_search="disabled"` e os `-c features.<nome>=false` são
+// de versões recentes, e uma versão de antes recusa o valor (`invalid type`, `unknown variant`) ou a chave
+// (`unknown field`) ao ler a configuração, antes de qualquer modelo. Não é falha do avaliador nem do aluno: é o
+// aplicativo para atualizar.
+const CONFIG_ANTIGA = /\b(?:web_search|features)\b[\s\S]{0,300}?(?:invalid type|unknown variant|unknown field)|(?:invalid type|unknown variant|unknown field)[\s\S]{0,300}?\b(?:web_search|features)\b/i;
 const NAO_ACHOU = /n.{1,3}o .{1,3} reconhecido como um comando|is not recognized as an internal or external command|command not found|No such file or directory/i;
 // O aviso de "PATH aliases" do `login status` pode trazer um "No such file or directory" do próprio Codex: com a palavra
 // login na saída, quem respondeu foi o Codex, e ele existe.
@@ -246,6 +251,7 @@ function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
       // A classificação lê só o stderr e os eventos de erro do `--json`. O resto do stdout traz a fala do aluno (que pode
       // citar um "EACCES" ou um "fetch failed") e os números de tokens (um "output_tokens":401 não é login).
       const tudo = `${errosDoJson(r.stdout)}\n${r.stderr || ''}`;
+      if (CONFIG_ANTIGA.test(tudo)) return { ok: false, motor: 'codex', executavel, motivo: `o Codex instalado é antigo para o avaliador; atualize o aplicativo do ChatGPT (${curto(tudo).slice(-120)})` };
       if (MODELO_RECUSADO.test(tudo)) { ultimo = `o modelo ${modelo} não é aceito por esta conta`; continue; }
       if (LIMITE.test(tudo)) return { ok: false, limite: true, motor: 'codex', motivo: `limite de uso da conta (${curto(tudo).slice(-120)})` };
       if (CONEXAO.test(tudo)) return { ok: false, sandbox: 'rede', motor: 'codex', motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${curto(tudo).slice(-120)})` };
