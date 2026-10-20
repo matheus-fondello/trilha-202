@@ -7,6 +7,13 @@ process.env.TRILHA_202_AGENTE = 'codex';
 //
 // - O shell chega em `tool_input.command` como o agente o escreveu; às vezes embrulhado num `powershell -Command`, ou
 //   como lista de argumentos. A guarda confere o comando de dentro.
+// - No aplicativo do ChatGPT o shell vem do modo de código: o modelo chama a ferramenta `exec`, que chama
+//   `tools.exec_command`. O `exec` não passa pelo PreToolUse; o `exec_command` de dentro dele passa, com o nome `Bash` e
+//   só o `cmd` em `tool_input.command`, igual ao chamado direto (codex-rs 0.157 a 0.163, `pre_tool_use_payload` do
+//   exec_command; medido com o `codex exec --enable code_mode` em 20/10). Por isso o matcher `Bash` do hooks.json basta,
+//   e ele não muda: mudar a declaração desliga os hooks até o aluno aprovar de novo. O que o payload não traz é o
+//   `workdir` do comando: um caminho relativo a uma subpasta (`Get-Content banco` rodado em quiz/q1) chega à guarda
+//   como relativo à raiz e passa. Fica com o AGENTS.md, como tudo o que a guarda não vê (regra de casa: sinal).
 // - O `apply_patch` chega como o texto do patch: cada arquivo que ele cria, muda, apaga ou para onde move vira uma
 //   escrita, conferida como o Write do Claude.
 // - O `view_image` lê um arquivo do disco para o contexto: vira uma leitura pelo shell, para o sigilo valer também por
