@@ -9,6 +9,24 @@ const path = require('path');
 const { lerStdin } = require('../scripts/lib/util');
 const { atualizar } = require('../scripts/lib/atualizar');
 
+// A sessão do Codex que este chat sucede (branch codex, T10): a que ele fecha agora (sem o hook de fim, o Codex deixa a
+// dele aberta), ou, sem sessão aberta, a última do histórico, que o hook de fim do Codex ou um comando já fechou. Só com
+// o registro do Codex no estado: quem só usa o Claude não tem `e.codex`, e a chamada do resumo fica a de hoje. Devolve
+// `{ agente, aula }`; o resumo só escreve a linha quando a aula é a da vez e ainda não fechou.
+function vindaDoCodex(e, idChat) {
+  try {
+    const chats = e.codex && e.codex.chats;
+    if (!chats || typeof chats !== 'object') return null;
+    const s = e.sessao_atual;
+    // O mesmo chat, retomado com a sessão dele ainda aberta: nada fechou entre um e outro.
+    if (s && s.id === idChat) return null;
+    const anterior = s || (Array.isArray(e.sessoes) ? e.sessoes[e.sessoes.length - 1] : null);
+    if (!anterior || !anterior.id || !anterior.aula) return null;
+    const doCodex = anterior.agente === 'codex' || Object.prototype.hasOwnProperty.call(chats, anterior.id);
+    return doCodex ? { agente: 'codex', aula: anterior.aula } : null;
+  } catch { return null; }
+}
+
 async function main() {
   const entrada = await lerStdin();
   const fonte = entrada.how_session_started || entrada.source || 'startup';
@@ -36,8 +54,11 @@ async function main() {
   const { agora } = require('../scripts/lib/util');
 
   const e = estadoLib.carregar();
+  // A aula que seguiu no Codex e volta ao Claude (branch codex, T10): o tutor daqui não viu aquele chat.
+  let continuacaoDe = null;
 
   if (fonte !== 'compact') {
+    continuacaoDe = vindaDoCodex(e, entrada.session_id);
     // Sessão anterior que não fechou (terminal morto, máquina desligada): fecha pelo último sinal de vida.
     if (e.sessao_atual && e.sessao_atual.id !== entrada.session_id) {
       // Turno que ficou aberto: o agente morreu no meio da resposta. Fecha pelo
@@ -81,7 +102,7 @@ async function main() {
   // O envio vem antes do resumo: um 401 aqui fecha a sala, e o resumo precisa
   // já dizer isso ao tutor nesta sessão, não na próxima.
   const envio = await enviar({ timeoutMs: 2500, estado: e });
-  const texto = resumo(e, { fonte });
+  const texto = continuacaoDe ? resumo(e, { fonte, continuacaoDe }) : resumo(e, { fonte });
   const aviso = envio.ok || !acesso.conectado(e) ? '' :`\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
 
