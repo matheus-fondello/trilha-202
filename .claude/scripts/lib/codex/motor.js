@@ -43,8 +43,10 @@ const PASSAGEIRO = /overloaded|internal server error|service unavailable|bad gat
 // O Codex antigo demais para a chamada do avaliador: o `-c web_search="disabled"` e os `-c features.<nome>=false` são
 // de versões recentes, e uma versão de antes recusa o valor (`invalid type`, `unknown variant`) ou a chave
 // (`unknown field`) ao ler a configuração, antes de qualquer modelo. Não é falha do avaliador nem do aluno: é o
-// aplicativo para atualizar.
-const CONFIG_ANTIGA = /\b(?:web_search|features)\b[\s\S]{0,300}?(?:invalid type|unknown variant|unknown field)|(?:invalid type|unknown variant|unknown field)[\s\S]{0,300}?\b(?:web_search|features)\b/i;
+// aplicativo para atualizar. Só a forma em que o erro de configuração escreve a chave, entre aspas ou crases
+// (`web_search`, `features.code_mode_host`), perto da recusa: um "features" solto numa mensagem que cita a fala do
+// agente não é a configuração (revisão de 20/10).
+const CONFIG_ANTIGA = /[`"'](?:web_search|features\.[a-z_]+)[`"'][\s\S]{0,120}?(?:invalid type|unknown variant|unknown field)|(?:invalid type|unknown variant|unknown field)[\s\S]{0,120}?[`"'](?:web_search|features\.[a-z_]+)[`"']/i;
 const NAO_ACHOU = /n.{1,3}o .{1,3} reconhecido como um comando|is not recognized as an internal or external command|command not found|No such file or directory/i;
 // O aviso de "PATH aliases" do `login status` pode trazer um "No such file or directory" do próprio Codex: com a palavra
 // login na saída, quem respondeu foi o Codex, e ele existe.
