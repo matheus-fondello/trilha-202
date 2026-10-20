@@ -90,4 +90,12 @@ function alterados(opts) {
   return cacheAlterados;
 }
 
-module.exports = { commit, commitPorArquivo, alterados, CAMINHOS };
+// O `status` do Codex (branch codex) atualiza a sala de dentro de um processo que já leu o commit: sem esquecer, o
+// `harness.atualizado` sairia com o commit de antes, e o `sujo` com a lista de antes. O Claude não precisa: o hook de
+// início carrega este módulo só depois de atualizar.
+function esquecer() {
+  cacheCommit = undefined;
+  cacheAlterados = undefined;
+}
+
+module.exports = { commit, commitPorArquivo, alterados, esquecer, CAMINHOS };

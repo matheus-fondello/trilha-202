@@ -23,6 +23,7 @@
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
+//   node .claude/scripts/trilha.js atualizar                                         (só no modo Codex, fora do sandbox)
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
@@ -119,6 +120,9 @@ function chatDaSala(e) {
 // para as duas causas do Claude, e recusas antigas dele contariam aqui. Liberado pelo teto, o chat sincroniza
 // normalmente. Não há 'sem-hooks': no Codex o hook é só um acelerador.
 let pedirStatus = false;
+// O que a sincronização deste comando devolveu ({ nova, fechou, pedirStatus }): o `status` decide por ela se o chat é
+// novo, retomado ou compactado, como o hook de início do Claude decide pela origem.
+let sincronizacao = null;
 function chatDoCodex(e) {
   const id = agente.idDoChat();
   if (!id) return null;
@@ -151,6 +155,7 @@ function chatDoCodex(e) {
       }
     }
     const r = sessao.sincronizar(id);
+    sincronizacao = r;
     if (r && r.pedirStatus) pedirStatus = true;
     // Sem a trava, o comando só segue se a sessão já é deste chat (os turnos dele entram na próxima). Senão um marco
     // seria registrado na sessão de outro chat.
@@ -196,15 +201,155 @@ function parChaveValor(lista) {
   return obj;
 }
 
+// O agente que o resumo recebe (branch codex). `undefined` fora do Codex, e nunca `null`: com `null` o padrão da
+// desestruturação de `resumo` não se aplica, e o texto do Claude mudaria.
+const comoAgente = () => (agente.atual() === 'codex' ? 'codex' : undefined);
+
+// --- o início do chat no modo Codex (branch codex) ---
+//
+// No Claude, o hook de início atualiza a sala, apaga `trilha/tmp`, registra o harness alterado, sobe a fila e injeta o
+// resumo, e o SessionStart de `resume` e de `compact` o injeta de novo. No Codex sem hook, quem faz isso é o `status`
+// que o tutor roda no primeiro turno (AGENTS.md) e na volta ao chat (a sincronização pede).
+
+// O chat já tinha turno antes do que está rodando agora. O `status` do primeiro turno já contou esse turno: contar
+// turnos não basta para dizer que o chat é velho.
+const jaConversou = (s) => Boolean(s) && ((s.turnos || 0) > 1 || (s.n_base || 0) > 0);
+const hojeLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// O que impede de atualizar e que rodar fora do sandbox resolve (o git não grava no .git de dentro dele, em modo
+// nenhum, T0.16): é quando o tutor ouve o pedido de `atualizar`.
+const ATUALIZAR_FORA = ['sem-rede', 'sem-git', 'alterada', 'falhou'];
+
+function anotarAtualizacao(e, r) {
+  // O commit e o `sujo` deste processo foram lidos antes de a sala andar.
+  require('./lib/git').esquecer();
+  try { fila.enfileirar('harness.atualizado', { de: r.de, para: r.para, commits: r.commits, ...(r.soCodigo ? { ao_retomar: true } : {}) }, e); } catch { /* segue */ }
+}
+
+function agentsMdMudou(r) {
+  try {
+    return require('child_process').execFileSync('git', ['diff', '--name-only', r.de, r.para, '--', 'AGENTS.md'], { cwd: paths.RAIZ, encoding: 'utf8', timeout: 3000, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }).trim() !== '';
+  } catch { return false; }
+}
+
+async function statusDoCodex(args) {
+  const { atualizar } = require('./lib/atualizar');
+  const alteracoes = require('./lib/alteracoes');
+  const kv = parChaveValor(args);
+  // O mesmo `status`, relançado depois de a sala andar: este processo já carregou as libs de antes, e só um processo
+  // novo roda o código que chegou.
+  const relancado = args.includes('--pos-atualizacao');
+  const sinc = sincronizacao || {};
+  const id = agente.idDoChat();
+  const e0 = estadoLib.carregar();
+  const s = e0.sessao_atual && e0.sessao_atual.id === id ? e0.sessao_atual : null;
+  const novo = relancado || (Boolean(sinc.nova) && !jaConversou(s));
+  const c = ((e0.codex || {}).chats || {})[id] || {};
+  const compactou = c.ultimo_compactado != null && c.ultimo_compactado > (c.ultimo_status == null ? -1 : c.ultimo_status);
+  const retomado = !novo && (Boolean(sinc.pedirStatus) || jaConversou(s));
+  // A aula que começou no outro agente e segue aqui. O relançado não vê o fechamento, que já aconteceu no pai.
+  const [deAgente, deAula] = String(kv['--continuacao'] || '').split(':');
+  const continuacaoDe = sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou
+    : deAgente && deAula ? { agente: deAgente, aula: deAula } : null;
+  const avisos = [];
+
+  if (novo && !relancado) {
+    const r = atualizar();
+    if (r.atualizada) {
+      anotarAtualizacao(e0, r);
+      const passa = ['status', '--pos-atualizacao', ...(agentsMdMudou(r) ? ['--agents-md'] : []), ...(continuacaoDe ? [`--continuacao=${continuacaoDe.agente}:${continuacaoDe.aula}`] : [])];
+      const filho = require('child_process').spawnSync(process.execPath, [__filename, ...passa], { cwd: paths.RAIZ, env: process.env, encoding: 'utf8', timeout: 60000, windowsHide: true });
+      if (!filho.error && filho.status === 0 && filho.stdout) { process.stdout.write(filho.stdout); return; }
+      // Sem processo filho (o modo `unelevated` não deixa abrir um), o resto sai deste: o resumo é o do código de antes.
+      avisos.push('(Atualização: a sala foi atualizada; o próximo chat já usa o material novo. Este estado saiu dos comandos de antes da atualização, e a aula segue com ele. Não comente com o aluno, salvo se ele perguntar.)');
+    } else if (ATUALIZAR_FORA.includes(r.motivo)) {
+      // Uma vez por dia: o pedido de aprovação a cada chat cansaria o aluno, e material novo não é urgente.
+      const e1 = estadoLib.carregar();
+      const cx = e1.codex || (e1.codex = { chats: {} });
+      if (cx.atualizacao_avisada !== hojeLocal()) {
+        cx.atualizacao_avisada = hojeLocal();
+        estadoLib.salvar(e1);
+        avisos.push('(Atualização: a sala pode ter material novo: rode `node .claude/scripts/trilha.js atualizar` fora do sandbox, pedindo a aprovação do aluno, no primeiro turno. Se ele não aprovar, siga a aula: o pedido volta amanhã. Não comente além disso.)');
+      }
+    }
+  } else if (retomado) {
+    const r = atualizar({ soCodigo: true });
+    if (r.atualizada) {
+      anotarAtualizacao(e0, r);
+      avisos.push('(Os comandos da sala acabaram de receber correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.)');
+    }
+  }
+  if (relancado) avisos.push(`(A sala acabou de se atualizar com material novo da 202. Skills, mapa e comandos já estão na versão nova${args.includes('--agents-md') ? '; o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
+
+  let sujo = [];
+  if (novo) {
+    // Uma vez por mudança, como no hook de início. Sem git, o registro fica como estava (lib/alteracoes.js).
+    try { const e = estadoLib.carregar(); sujo = alteracoes.registrar(e, 'inicio'); estadoLib.salvar(e); } catch { /* segue */ }
+    // O rascunho que ficou de outro chat não pode ser lido por este.
+    try { fs.rmSync(paths.TMP, { recursive: true, force: true }); } catch { /* segue */ }
+  }
+
+  // O envio antes do resumo: um 401 aqui fecha a sala, e o resumo já diz isso ao tutor neste chat. Sem rede (o sandbox
+  // sem a rede liberada), falha calado e a fila espera o primeiro comando com rede.
+  const envio = await enviar({ timeoutMs: 2500 });
+  const e = estadoLib.carregar();
+  if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
+  const fonte = novo ? 'startup' : compactou ? 'compact' : retomado ? 'resume' : 'startup';
+  const texto = resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) });
+  const aviso = envio.ok || !acesso.conectado(e) ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
+  console.log(texto + aviso + avisoHarness + avisos.map((x) => '\n' + x).join(''));
+  console.log(`\nFila: ${fila.ler().length} evento(s) pendente(s) de envio.`);
+}
+
+const MOTIVO_ATUALIZAR = {
+  'em-dia': 'A sala já está na versão mais nova da 202.',
+  'meio-de-aula': 'A 202 publicou material novo, mas ele muda as aulas e não entra no meio de um chat: entra no começo do próximo. Siga a aula.',
+  'sem-rede': 'Não deu para buscar o material novo: sem internet, ou o comando rodou dentro do sandbox. Se foi o sandbox, rode o mesmo comando fora dele; senão, siga a aula, e a sala tenta de novo num chat novo.',
+  'sem-git': 'Não deu para atualizar a sala: o git não rodou. Se o comando rodou dentro do sandbox, rode-o de novo fora dele; senão, siga a aula normalmente.',
+  falhou: 'Não deu para atualizar a sala: o git não terminou a atualização. Se o comando rodou dentro do sandbox, rode-o de novo fora dele; senão, siga a aula normalmente.',
+  alterada: 'A sala tem arquivos do harness mexidos nesta máquina e não se atualiza sozinha, para não apagar nada. Siga a aula; isso é com a 202, e não é assunto para o aluno.',
+  divergente: 'Esta cópia da sala tem commits locais e não se atualiza sozinha. Siga a aula.',
+  'fora-da-main': 'Esta cópia da sala está em outro ramo e não se atualiza sozinha. Siga a aula.',
+  desligada: 'A atualização automática está desligada nesta sala.',
+};
+
+async function atualizarDoCodex() {
+  const lido = estadoLib.carregar();
+  const causa = chatDaSala(lido);
+  if (causa) { console.log('Atenção: ' + foraDaSala(lido, causa)); return; }
+  const e = estadoLib.carregar();
+  const id = agente.idDoChat();
+  const s = e.sessao_atual && e.sessao_atual.id === id ? e.sessao_atual : null;
+  // No meio de um chat que já conversou, só o que é código, como ao retomar no Claude: trocar skill e mapa com a aula
+  // andando deixa o tutor com metade das instruções em cada versão. No primeiro turno, tudo.
+  const r = require('./lib/atualizar').atualizar({ soCodigo: jaConversou(s) });
+  if (r.atualizada) {
+    anotarAtualizacao(e, r);
+    console.log(r.soCodigo
+      ? 'Os comandos da sala receberam correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.'
+      : `Sala atualizada com material novo da 202 (${r.commits || 'alguns'} commit(s)). Os comandos já são os novos; as skills, o mapa e o AGENTS.md valem a partir do próximo chat. Não comente com o aluno, salvo se ele perguntar.`);
+    // Fora do sandbox há rede: o `harness.atualizado` sobe agora.
+    await enviarAgora({ timeoutMs: prazoDeEnvio('atualizar') });
+    return;
+  }
+  // O material que muda a aula ficou para o próximo chat: o pedido de lá não espera o dia seguinte.
+  if (r.motivo === 'meio-de-aula' && e.codex && e.codex.atualizacao_avisada) {
+    delete e.codex.atualizacao_avisada;
+    estadoLib.salvar(e);
+  }
+  console.log(MOTIVO_ATUALIZAR[r.motivo] || `Nada a atualizar (${r.motivo}).`);
+}
+
 const comandos = {
-  status() {
+  status(args) {
     const lido = estadoLib.carregar();
     const causa = chatDaSala(lido);
     if (causa) { console.log('Atenção: ' + foraDaSala(lido, causa)); return; }
+    if (agente.atual() === 'codex') return statusDoCodex(args);
     // Relido: no Codex o `chatDaSala` sincroniza e grava, e gravar o estado lido antes apagaria o que ele importou.
     const e = estadoLib.carregar();
     if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
-    console.log(resumo(e));
+    console.log(resumo(e, { agente: comoAgente() }));
     const pend = fila.ler().length;
     console.log(`\nFila: ${pend} evento(s) pendente(s) de envio.`);
   },
@@ -270,7 +415,7 @@ const comandos = {
     const causa = chatDaSala(e2);
     if (causa) { console.log('\nAtenção: ' + foraDaSala(e2, causa)); return; }
     // Relido: no Codex o `chatDaSala` acabou de sincronizar a sessão deste chat.
-    console.log('\n' + resumo(estadoLib.carregar()));
+    console.log('\n' + resumo(estadoLib.carregar(), { agente: comoAgente() }));
   },
 
   oficina([caminho]) {
@@ -296,7 +441,7 @@ const comandos = {
     const erro = estadoLib.escolher(e, idAula);
     if (erro) falhar(erro);
     estadoLib.salvar(e);
-    console.log(resumo(e));
+    console.log(resumo(e, { agente: comoAgente() }));
   },
 
   milestone([idAula, idMilestone]) {
@@ -896,6 +1041,13 @@ const comandos = {
   async enviar() {
     const r = await enviar({ timeoutMs: 5000 });
     console.log(r.ok ? `Enviado: ${r.enviados} evento(s). ${r.motivo}.` : `Não enviado (${r.motivo}). Pendentes: ${r.pendentes}.`);
+  },
+
+  // A atualização pedida (branch codex): no sandbox do Codex o git não grava no .git (T0.16), e o `status` do chat
+  // novo pede este comando fora dele, no máximo uma vez por dia. No Claude o hook de início já faz isso a cada chat.
+  atualizar() {
+    if (agente.atual() !== 'codex') { console.log('A sala se atualiza sozinha no início de cada chat.'); return; }
+    return atualizarDoCodex();
   },
 
   dev([sub, ...resto]) {

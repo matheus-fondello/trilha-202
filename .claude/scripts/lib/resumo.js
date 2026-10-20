@@ -8,9 +8,13 @@ const quiz = require('./quiz');
 const { relativo } = require('./util');
 const { avaliacaoRodando } = require('./estado');
 
+// O Codex não tem a ferramenta de skill do Claude Code (branch codex): para ele a skill é um arquivo que se lê e se
+// segue. Todo texto do modo Codex que manda carregar skill passa por aqui; o do Claude fica como era, letra a letra.
+const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\` e siga`;
+
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
 // e nada da aula aparece: o tutor não tem o que começar antes do `conectar`.
-function portaFechada(e, a, linhas) {
+function portaFechada(e, a, linhas, codex) {
   const recusado = Boolean(e.acesso && e.acesso.recusado_em);
   const guardado = !recusado && Boolean(acesso.token());
   // Com o endereço do CRM no config.json (o caso normal), o aluno só cola o
@@ -49,7 +53,9 @@ function portaFechada(e, a, linhas) {
   linhas.push('Enquanto a conexão não passar, não há aula: não carregue skill de aula, não ensine, não abra referência; o CLI recusa registrar qualquer coisa antes disso. Se ele não tem o token, diga que é a 202 quem emite, pelo canal por onde ele entrou na trilha, e pare aí. Se pedir para pular, a resposta é a mesma, em uma linha. Se o `conectar` recusar, diga o que o comando disse, com as suas palavras.');
   linhas.push('O token é dele e não volta ao chat: não repita, não mostre onde fica guardado, não escreva em arquivo. Quem guarda é o `conectar`, fora deste repositório.');
   linhas.push('');
-  linhas.push('Antes de responder ao aluno, invoque só a skill `tutor`. Quando o `conectar` passar, ele imprime o estado da trilha com a skill da aula a carregar: siga dali, neste mesmo chat.');
+  linhas.push(codex
+    ? `Antes de responder ao aluno, ${lerSkill('tutor')}, e só ela. Quando o \`conectar\` passar, ele imprime o estado da trilha com a skill da aula a ler: siga dali, neste mesmo chat.`
+    : 'Antes de responder ao aluno, invoque só a skill `tutor`. Quando o `conectar` passar, ele imprime o estado da trilha com a skill da aula a carregar: siga dali, neste mesmo chat.');
   return linhas.join('\n');
 }
 
@@ -58,7 +64,7 @@ function portaFechada(e, a, linhas) {
 // fecha, porque o fechamento dela já roda o `avaliar`.
 // Desde 11/10 também a que falhou por outro motivo é tentada de novo, até a terceira (trilha.js, MAX_FALHAS), e a que falhou uma vez por falta de
 // login no `claude` da máquina; a que já falhou duas por login fica com o bloco de login (avaliacoesSemLogin).
-function pendencias(e, linhas) {
+function pendencias(e, linhas, codex) {
   const adiadas = Object.entries(e.aulas || {})
     .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
       // Um processo à parte da versão anterior ainda vivo não é pendência: rodar de novo daria duas avaliações.
@@ -80,7 +86,12 @@ function pendencias(e, linhas) {
     return /passou de \d+ segundos|não terminou a tempo/.test([(r.avaliacao_adiada || {}).motivo, (r.avaliacao_falhou || {}).motivo].filter(Boolean).join(' '));
   };
   const lentas = adiadas.filter(lenta);
-  const tempo = lentas.length
+  // No Codex (branch codex, T0.9) o shell não corta o comando longo: depois de uns 10 a 30 s ele devolve um
+  // `session_id` com o comando ainda rodando, e o agente pode seguir a conversa. Esperar por ele custa uma volta do
+  // modelo a cada 30 s, na cota do aluno: por isso o texto manda deixar rodando.
+  const tempo = lentas.length && codex
+    ? `Nesta máquina a avaliação é lenta e pode levar alguns minutos: rode ${lentas.length > 1 ? 'esses comandos' : 'o comando'} sem esperar o resultado e siga a aula. Se o shell devolver um \`session_id\` com o comando ainda rodando, deixe rodando e não volte a esperar por ele.`
+    : lentas.length
     ? `Nesta máquina a avaliação é lenta e pode levar alguns minutos: rode ${lentas.length > 1 ? 'esses comandos' : 'o comando'} em segundo plano (run_in_background), sem esperar o resultado, e siga a aula; se a sua ferramenta de terminal não tiver essa opção, rode com o tempo máximo dela (timeout de 600000 ms), senão ela o corta em dois minutos.`
     : 'O comando leva uns vinte segundos.';
   if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}${lenta(id) ? ' --longo' : ''}\``).join(' e ')}. ${tempo} Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
@@ -131,7 +142,7 @@ function semLogin(e, linhas) {
 
 // Duas frentes abertas e o chat ainda sem escolha: o resumo inteiro vira a
 // pergunta, e nada de aula aparece. O `seguir` imprime o resumo da escolhida.
-function escolhaDeFrente(e, linhas) {
+function escolhaDeFrente(e, linhas, codex) {
   const s = e.sessao_atual;
   linhas.push('Frentes paralelas: depois do M1 a trilha corre em duas frentes ao mesmo tempo, engenharia (M2, depois M3) e negócio (M4, depois M5), e o M6 abre quando as duas fecharem. Neste chat ele escolhe por qual seguir agora:');
   for (const id of s.escolha.opcoes) {
@@ -149,11 +160,13 @@ function escolhaDeFrente(e, linhas) {
   linhas.push('Antes de qualquer conteúdo, cumprimente em uma linha e pergunte qual ele quer fazer agora, com as opções acima em palavras simples: número, título e onde ele parou em cada uma. Não recomende nem empurre uma delas: a ordem é dele, nenhuma pula a outra, e as duas fecham antes do M6. Se a primeira mensagem dele já disse qual, não pergunte de novo. Com a resposta, rode:');
   linhas.push('  node .claude/scripts/trilha.js seguir <aula>');
   linhas.push('O comando imprime o estado da aula escolhida e a skill a carregar: siga dali, neste mesmo chat.');
-  pendencias(e, linhas);
+  pendencias(e, linhas, codex);
   const memoria = notas.paraContexto();
   if (memoria) { linhas.push(''); linhas.push(memoria); }
   linhas.push('');
-  linhas.push('Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula antes do `seguir`.');
+  linhas.push(codex
+    ? `Antes de responder ao aluno, ${lerSkill('tutor')}, e só ela. Não leia skill de aula antes do \`seguir\`.`
+    : 'Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula antes do `seguir`.');
   return linhas.join('\n');
 }
 
@@ -161,7 +174,11 @@ function rotuloDe(a) {
   return a.tipo === 'pratica' ? 'Prática atual' : a.tipo === 'quiz' ? 'Quiz atual' : 'Aula atual';
 }
 
-function resumo(e, { fonte = 'startup' } = {}) {
+// `agente` e `continuacaoDe` são do modo Codex (branch codex). Com o padrão, o texto é o de hoje, letra a letra.
+// `continuacaoDe` é a sessão de outro agente que o comando acabou de fechar ({ agente, aula }, de
+// lib/codex/sessao.js): a aula que começou no Claude Code e segue no Codex ganha a linha com os marcos já feitos.
+function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null } = {}) {
+  const codex = agente === 'codex';
   const a = mapa.aula(e.aula_atual);
   const reg = e.aulas[a.id] || { status: 'nao_iniciada', milestones: {}, fluencia: null, sessoes: 0 };
   // Prática com correção tem duas fases, e a segunda é de outro papel: entregue e
@@ -174,12 +191,12 @@ function resumo(e, { fonte = 'startup' } = {}) {
   linhas.push('# Estado da trilha (gerado pelo harness, não editado pelo aluno)');
   linhas.push('');
 
-  if (!acesso.conectado(e)) return portaFechada(e, a, linhas);
+  if (!acesso.conectado(e)) return portaFechada(e, a, linhas, codex);
 
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
   semLogin(e, linhas);
-  if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas);
+  if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas, codex);
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
 
@@ -209,6 +226,11 @@ function resumo(e, { fonte = 'startup' } = {}) {
     linhas.push(`Milestones: ${fechados.length} de ${a.milestones.length} fechados.`);
     if (fechados.length) linhas.push('  Fechados: ' + fechados.map((m) => `${m.id} (${m.titulo})`).join('; '));
     if (pendentes.length) linhas.push('  Pendentes: ' + pendentes.map((m) => `${m.id} (${m.titulo})`).join('; '));
+    // A troca de agente no meio da aula (o limite do Claude acabou na 1.7): o tutor de agora não viu o chat de antes.
+    if (continuacaoDe && continuacaoDe.aula === a.id && continuacaoDe.agente !== agente && reg.status !== 'concluida' && !emCorrecao) {
+      const onde = continuacaoDe.agente === 'codex' ? 'no Codex' : 'no Claude Code';
+      linhas.push(`Continuação: ${a.tipo === 'pratica' ? 'esta prática' : 'esta aula'} começou ${onde}, num chat que acabou de fechar; marcos feitos: ${fechados.length ? fechados.map((m) => m.id).join(', ') : 'nenhum ainda'}. Siga do primeiro pendente, sem refazer o que já foi fechado e sem apresentar a aula de novo.`);
+    }
     if (a.tipo === 'pratica') {
       if (!a.correcao) {
         linhas.push('Prática: sem fluência e sem avaliação. Fecha com o artefato registrado (pasta, e URL se houver).');
@@ -308,7 +330,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
   const concluidas = Object.entries(e.aulas).filter(([, r]) => r.status === 'concluida').map(([id]) => id);
   if (concluidas.length) linhas.push(`Aulas concluídas: ${concluidas.join(', ')}.`);
 
-  pendencias(e, linhas);
+  pendencias(e, linhas, codex);
 
   // A memória do aluno entra inteira: são no máximo sete linhas e é o que
   // permite retomar o fio pessoal entre aulas separadas por dias.
@@ -316,10 +338,15 @@ function resumo(e, { fonte = 'startup' } = {}) {
   if (memoria) { linhas.push(''); linhas.push(memoria); }
 
   linhas.push('');
+  const skillDaVez = emCorrecao ? 'corrigir' : (a.skill || 'tutor');
   if (fonte === 'compact') {
     linhas.push('Contexto foi compactado no meio da sessão. Continue a aula de onde estava, sem reapresentação. Os milestones acima são a verdade sobre o que já foi fechado.');
+    // No Codex a skill é a saída de um comando de leitura, e o resumo da conversa compactada pode não guardá-la: sem
+    // ela o tutor seguiria a aula sem as regras dela.
+    if (codex && !fimDoMapa) linhas.push(`Se as instruções das skills não estão mais com você, ${lerSkill('tutor')}, e depois ${lerSkill(skillDaVez)}${mapa.escrita(a) ? '' : ', se ele existir'}.`);
   } else {
-    if (fimDoMapa) linhas.push('Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula.');
+    if (fimDoMapa) linhas.push(codex ? `Antes de responder ao aluno, ${lerSkill('tutor')}, e só ela. Não leia skill de aula.` : 'Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula.');
+    else if (codex) linhas.push(`Antes de responder ao aluno, ${lerSkill('tutor')}, e depois ${lerSkill(skillDaVez)}${mapa.escrita(a) ? '' : ', se ele existir'}. Não leia skills de outras aulas.`);
     else linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
     if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
       linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
@@ -331,7 +358,7 @@ function resumo(e, { fonte = 'startup' } = {}) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
     }
     if (emCorrecao) {
-      linhas.push('A skill da prática não se carrega nesta fase.');
+      linhas.push(codex ? 'A skill da prática não se lê nesta fase.' : 'A skill da prática não se carrega nesta fase.');
     }
   }
   return linhas.join('\n');
