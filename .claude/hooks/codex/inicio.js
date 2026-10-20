@@ -20,6 +20,10 @@ async function main() {
   const { lerStdin } = require('../../scripts/lib/util');
   const { atualizar } = require('../../scripts/lib/atualizar');
   const entrada = await lerStdin();
+  // A chave de desligar (T13): com `codex.ativo: false` no config da sala, ou TRILHA_202_CODEX=0, o hook confiado não
+  // faz nada, como se não existisse. Sem isto o aluno seguiria sincronizando e recebendo o resumo do Codex. Depois de
+  // ler a entrada, para o Codex não escrever num cano já fechado.
+  if (require('../../scripts/lib/agente').atual() !== 'codex') return;
   const id = entrada.session_id || null;
   const fonte = entrada.source || 'startup';
 
@@ -82,7 +86,9 @@ async function main() {
   // A marca deste início, para o `status` do primeiro turno (AGENTS.md) não refazer nada disto: o `atualizar` dele roda
   // no sandbox e daria `sem-rede`, e o tutor pediria ao aluno uma aprovação à toa. Uma chave própria, e não o
   // `ultimo_status` da conversa, que é do comando. Com as pendências que este resumo já levou, para o `status` dizer só
-  // as novas. As de mais de um dia saem.
+  // as novas. As de mais de um dia saem. `sincronizou` diz se este resumo já saiu com a sessão deste chat: o Codex pode
+  // rodar o SessionStart antes de gravar a conversa no disco, e aí a escolha de frente e a continuação nascem só no
+  // `status`, que imprime o resumo inteiro. `escolha`, se a pergunta da frente já foi neste texto.
   if (id) {
     sessao.comTrava(() => {
       const e2 = estadoLib.carregar();
@@ -91,6 +97,8 @@ async function main() {
       for (const [k, m] of Object.entries(marcas)) if (!(Date.now() - Date.parse((m || {}).ts) < 86400000)) delete marcas[k];
       marcas[id] = {
         ts: new Date().toISOString(), fonte,
+        sincronizou: Boolean(sinc && !sinc.ocupada),
+        escolha: estadoLib.escolhaPendente(e),
         atualizacao: atualizacao.atualizada ? 'atualizada' : atualizacao.motivo || null,
         pendencias: texto.split('\n').filter((l) => l.startsWith('Pendência do harness')),
       };

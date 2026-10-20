@@ -13,6 +13,10 @@ const INTERVALO_ENVIO_MS = 2 * 60 * 1000;
 async function main() {
   const { lerStdin, agora } = require('../../scripts/lib/util');
   const entrada = await lerStdin();
+  // A chave de desligar (T13): com `codex.ativo: false` no config da sala, ou TRILHA_202_CODEX=0, o hook confiado não
+  // faz nada, como se não existisse. Sem isto o aluno seguiria sincronizando e recebendo o resumo do Codex. Depois de
+  // ler a entrada, para o Codex não escrever num cano já fechado.
+  if (require('../../scripts/lib/agente').atual() !== 'codex') return;
   if (!entrada.session_id) return;
   const sessao = require('../../scripts/lib/codex/sessao');
   try { sessao.sincronizar(entrada.session_id); } catch (err) { sessao.avisarErro(err); }

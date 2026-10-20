@@ -20,6 +20,16 @@ const paths = require('../paths');
 const ESQUEMAS = path.join(paths.RAIZ, '.claude', 'avaliador', 'esquemas');
 const ESFORCO = 'model_reasoning_effort="medium"';
 const MODELOS_PADRAO = ['gpt-6-luna'];
+// O avaliador só lê o prompt e responde: sem ferramenta nenhuma, como o `claude -p --disallowed-tools`. O read-only do
+// sandbox não basta: ele deixa o modelo ler o disco inteiro, e uma instrução plantada no produto da oficina poderia
+// fazê-lo ler ~/.ssh ou um .env e pôr o conteúdo na justificativa, que sobe ao CRM. Sem o shell (nem o exec unificado e
+// o modo de código, que o rodariam por outro caminho), sem imagem, web, aplicativos, plugins, navegador e subagentes.
+// Medido em 20/10 com o Codex 0.157 e o gpt-6-luna: pedido para ler um arquivo do disco, o modelo tentou, a chamada
+// voltou recusada e nenhuma ferramenta rodou. O apply_patch não tem chave que o desligue (vem do modelo), mas só
+// escreve, e o read-only não deixa. Por `-c features.<nome>` e não `--disable`: um nome que uma versão do Codex não
+// conhece é aviso no `-c` e erro no `--disable`.
+const SEM_FERRAMENTAS = ['web_search="disabled"', ...['shell_tool', 'unified_exec', 'code_mode_host', 'view_image', 'apps', 'plugins', 'multi_agent',
+  'browser_use', 'browser_use_external', 'computer_use', 'image_generation', 'tool_suggest', 'skill_search', 'goals'].map((f) => `features.${f}=false`)];
 
 // Os padrões do que o Codex responde. O limite vem com apóstrofo reto ou tipográfico ("You’ve hit your usage limit"),
 // e o padrão não depende dele.
@@ -100,10 +110,23 @@ function achar() {
   if (achadoGuardado === undefined) achadoGuardado = procurar();
   return achadoGuardado;
 }
+// O executável que não abre com as sondas limpas (o codex.exe de WindowsApps, que só roda de dentro do pacote do
+// aplicativo) não é o sandbox: aprovar o comando fora dele não muda nada, e o pedido se repetiria a cada chat. Ele fica
+// de fora como se não existisse, e a procura segue para o candidato seguinte; o último que não abriu vai no motivo.
+const pulados = new Set();
+let bloqueado = null;
+const naoAbre = (r) => Boolean(r.error && BLOQUEIO.test(`${r.error.code || ''} ${r.error.message || ''}`));
+function pular(c) {
+  pulados.add(c.bin);
+  bloqueado = c.bin;
+  achadoGuardado = undefined;
+}
 function procurar() {
   for (const c of candidatos()) {
+    if (pulados.has(c.bin)) continue;
     const r = rodar(c, ['login', 'status'], { timeout: 15000, cwd: os.tmpdir() });
     if (r.error && r.error.code === 'ENOENT') continue;
+    if (naoAbre(r) && require('./sondas').verificar().ok) { pular(c); continue; }
     if (c.shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && naoAchou(String(r.stderr || ''))) continue;
     if (c.shell && r.error && /^(EOF|EPIPE)$/.test(r.error.code || '') && naoAchou(String(r.stderr || ''))) continue;
     return { c, status: r };
@@ -160,11 +183,24 @@ function usoDe(stdout, modelo, ms) {
   };
 }
 
-const curto = (t) => String(t || '').replace(/^\uFEFF/, '').trim().slice(-200);
+// O stderr do Codex sobe no motivo, e pode trazer o token do aluno (um comando do tutor ecoado no erro). Sai antes do
+// corte, para um token partido ao meio não escapar da troca.
+function curto(t) {
+  const { semToken } = require('../transcricao');
+  const { semTokenJson } = require('./transcricao');
+  const acesso = require('../acesso');
+  let s = semTokenJson(semToken(String(t || '').replace(/^\uFEFF/, '')));
+  const tk = acesso.token();
+  if (tk && acesso.tokenValido(tk)) s = s.split(tk).join('[token omitido]');
+  return s.trim().slice(-200);
+}
 
 function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
   const achado = achar();
-  if (!achado) return { ok: false, ausente: true, motor: 'codex', motivo: 'não encontrei o Codex da linha de comando nesta máquina' };
+  if (!achado) {
+    if (bloqueado) return { ok: false, ausente: true, motor: 'codex', bloqueado, motivo: `não encontrei o Codex da linha de comando nesta máquina (o de ${bloqueado} não abre fora do aplicativo)` };
+    return { ok: false, ausente: true, motor: 'codex', motivo: 'não encontrei o Codex da linha de comando nesta máquina' };
+  }
   const { c } = achado;
   const executavel = path.isAbsolute(c.bin) ? c.bin : null;
   const st = achado.status;
@@ -190,11 +226,17 @@ function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
       try { fs.unlinkSync(arqSaida); } catch { /* ainda não existe */ }
       const inicio = Date.now();
       const r = rodar(c, ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '-s', 'read-only', '-m', modelo,
-        '-c', ESFORCO, '--output-schema', arqEsquema, '-o', arqSaida, '--json', '-'], { input: prompt, timeout: resta, cwd: vazia });
+        '-c', ESFORCO, ...SEM_FERRAMENTAS.flatMap((x) => ['-c', x]), '--output-schema', arqEsquema, '-o', arqSaida, '--json', '-'], { input: prompt, timeout: resta, cwd: vazia });
       const ms = Date.now() - inicio;
       // O estouro tem o mesmo texto do Claude: é por ele que o resumo reconhece a avaliação lenta e põe o `--longo`.
       if ((r.error && r.error.code === 'ETIMEDOUT') || r.signal) return { ok: false, limite: true, motor: 'codex', motivo: `o avaliador passou de ${Math.round(timeoutMs / 1000)} segundos e foi interrompido (API lenta ou fora do ar)` };
       if (r.error) {
+        // O `login status` abriu e o `exec` não: o mesmo executável que não abre fora do pacote. Vale o seguinte, com o
+        // que resta do prazo (o `finally` apaga esta pasta depois que ele responder).
+        if (naoAbre(r) && require('./sondas').verificar().ok) {
+          pular(c);
+          return chamar(prompt, Math.max(0, prazo - Date.now()), { esquema, criterios });
+        }
         if (BLOQUEIO.test(`${r.error.code || ''} ${r.error.message || ''}`)) return { ok: false, sandbox: 'processo', motor: 'codex', executavel, motivo: `o sandbox do Codex não deixou abrir o Codex que avalia (${r.error.code})` };
         return { ok: false, motor: 'codex', motivo: `o avaliador não rodou (${r.error.message})` };
       }

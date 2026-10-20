@@ -11,6 +11,10 @@ process.env.TRILHA_202_AGENTE = 'codex';
 async function main() {
   const { lerStdin } = require('../../scripts/lib/util');
   const entrada = await lerStdin();
+  // A chave de desligar (T13): com `codex.ativo: false` no config da sala, ou TRILHA_202_CODEX=0, o hook confiado não
+  // faz nada, como se não existisse. Sem isto o aluno seguiria sincronizando e recebendo o resumo do Codex. Depois de
+  // ler a entrada, para o Codex não escrever num cano já fechado.
+  if (require('../../scripts/lib/agente').atual() !== 'codex') return;
   const id = entrada.session_id;
   if (!id) return;
   const estadoLib = require('../../scripts/lib/estado');

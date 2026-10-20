@@ -145,7 +145,8 @@ function chatDoCodex(e) {
           if (reg.chats.length > RECUSAS.fora) {
             reg.liberados.push(id);
             estadoLib.salvar(e2);
-            fila.enfileirar('harness.sem_hooks', { causa: 'fora', chats: reg.chats.length }, e2);
+            // Sem sessão: a atual é a de outro chat, e este, aberto fora da sala, não é sessão nenhuma.
+            fila.enfileirar('harness.sem_hooks', { causa: 'fora', chats: reg.chats.length }, e2, { sessao: null });
             return '';
           }
           estadoLib.salvar(e2);
@@ -256,7 +257,7 @@ function marcaDoHook(e, id) {
 }
 const linhasDePendencia = (texto) => String(texto).split('\n').filter((l) => l.startsWith('Pendência do harness'));
 
-async function statusDepoisDoHook(marca, id) {
+async function statusDepoisDoHook(marca, id, { fonte, continuacaoDe }) {
   require('./lib/codex/sessao').comTrava(() => {
     const e = estadoLib.carregar();
     if (e.codex && e.codex.inicio_hook && e.codex.inicio_hook[id]) { delete e.codex.inicio_hook[id]; estadoLib.salvar(e); }
@@ -265,13 +266,21 @@ async function statusDepoisDoHook(marca, id) {
   const e = estadoLib.carregar();
   // A sala fechou desde o hook (o envio deu 401): o resumo inteiro, que agora é o pedido do token.
   if (!acesso.conectado(e)) { console.log(resumo(e, { fonte: 'startup', agente: 'codex' })); return; }
+  // O pedido de atualizar fora do sandbox só num chat novo: num retomado, o `atualizar` entraria com a aula andando
+  // (atualizarDoCodex, `soCodigo`), e o pedido seria à toa.
+  const pedido = ATUALIZAR_FORA.includes(marca.atualizacao) && (marca.fonte === 'startup' || marca.fonte === 'clear') ? pedidoDeAtualizar() : '';
+  // O hook que rodou antes de a conversa existir no disco não sincronizou: o resumo dele saiu sem a sessão deste chat,
+  // e a escolha de frente e a continuação, que nascem com ela, não chegaram ao tutor. O mesmo se a escolha ficou
+  // pendente depois do hook. O resto do que o hook fez (atualizar, limpar trilha/tmp, o harness alterado) vale.
+  if (marca.sincronizou !== true || (estadoLib.escolhaPendente(e) && !marca.escolha)) {
+    if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
+    console.log(resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) }) + (pedido ? '\n' + pedido : ''));
+    return;
+  }
   const linhas = ['(O estado deste chat já veio no início do chat; siga por ele. Não comente com o aluno.)'];
   const vistas = new Set(marca.pendencias || []);
   for (const l of linhasDePendencia(resumo(e, { fonte: 'resume', agente: 'codex' }))) if (!vistas.has(l)) linhas.push(l);
-  if (ATUALIZAR_FORA.includes(marca.atualizacao)) {
-    const pedido = pedidoDeAtualizar();
-    if (pedido) linhas.push(pedido);
-  }
+  if (pedido) linhas.push(pedido);
   console.log(linhas.join('\n'));
 }
 
@@ -295,19 +304,21 @@ async function statusDoCodex(args) {
   const novo = relancado || (conhecido && c.ultimo_status == null);
   const compactou = c.ultimo_compactado != null && c.ultimo_compactado > (c.ultimo_status == null ? -1 : c.ultimo_status);
   const retomado = conhecido && !novo;
-  // Em que turno o `status` rodou: é o que diz ao `atualizar` se ele vem logo depois do pedido (o mesmo turno, tudo
-  // entra) ou no meio do chat (só código).
-  if (!relancado && e0.codex && e0.codex.chats && e0.codex.chats[id] && s) {
+  // Em que turno o primeiro `status` do chat rodou: é o que diz ao `atualizar` se ele vem logo depois do pedido (o
+  // mesmo turno, tudo entra) ou no meio do chat (só código). Só o primeiro: um `status` pedido na volta ao chat moveria
+  // a marca, e o `atualizar` desse turno trocaria skills e mapa com a aula andando.
+  if (!relancado && e0.codex && e0.codex.chats && e0.codex.chats[id] && s && e0.codex.chats[id].status_n == null) {
     e0.codex.chats[id].status_n = turnoAtual(s);
     estadoLib.salvar(e0);
   }
-  // O hook de início do Codex já fez o trabalho deste começo de chat e já pôs o estado no contexto do tutor.
-  const marca = !relancado && (novo || retomado) ? marcaDoHook(e0, id) : null;
-  if (marca) return statusDepoisDoHook(marca, id);
   // A aula que começou no outro agente e segue aqui. O relançado não vê o fechamento, que já aconteceu no pai.
   const [deAgente, deAula] = String(kv['--continuacao'] || '').split(':');
   const continuacaoDe = sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou
     : deAgente && deAula ? { agente: deAgente, aula: deAula } : null;
+  const fonte = novo ? 'startup' : compactou ? 'compact' : retomado ? 'resume' : 'startup';
+  // O hook de início do Codex já fez o trabalho deste começo de chat e já pôs o estado no contexto do tutor.
+  const marca = !relancado && (novo || retomado) ? marcaDoHook(e0, id) : null;
+  if (marca) return statusDepoisDoHook(marca, id, { fonte, continuacaoDe });
   const avisos = [];
 
   if (novo && !relancado) {
@@ -349,7 +360,6 @@ async function statusDoCodex(args) {
   const envio = await enviar({ timeoutMs: 2500 });
   const e = estadoLib.carregar();
   if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
-  const fonte = novo ? 'startup' : compactou ? 'compact' : retomado ? 'resume' : 'startup';
   const texto = resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) });
   const aviso = envio.ok || !acesso.conectado(e) ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
@@ -1320,7 +1330,8 @@ const MAX_ADIAMENTOS = 3;
 let emSegundoPlano = false;
 // A tentativa do `--longo` que este comando contou (avaliarAgora), para o sandbox poder desfazê-la (pendenteDoCodex).
 let contouNesteComando = false;
-const recado = (texto) => console.log(emSegundoPlano ? texto.replace(/Feche a aula normalmente com `concluir [^`]+`; /, 'Siga a aula; ') : texto);
+// O "Se a aula ainda está aberta" é dos recados do modo Codex (noSandbox, semRede), que o tutor lê depois do `concluir`.
+const recado = (texto) => console.log(emSegundoPlano ? texto.replace(/(?:Feche a aula normalmente|Se a aula ainda está aberta, feche-a normalmente) com `concluir [^`]+`; /, 'Siga a aula; ') : texto);
 function adiar(e, reg, idAula, motivo, uso) {
   // A tentativa longa já foi contada ao começar (avaliarAgora).
   const vezes = ((reg.avaliacao_adiada || {}).vezes || 0) + ((reg.avaliacao_adiada || {}).contada ? 0 : 1);
@@ -1369,11 +1380,11 @@ function pendenteDoCodex(e, reg, idAula, motivo, causa, longo) {
 const doAgente = () => (agente.atual() === 'codex' ? { agente: 'codex' } : {});
 function noSandbox(e, reg, idAula, motivo, { longo = false } = {}) {
   const cmd = pendenteDoCodex(e, reg, idAula, motivo, 'sandbox', longo);
-  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Ela não se perdeu: fica pendente. Feche a aula normalmente com \`concluir ${idAula}\`; rode ${cmd} de novo pedindo para executar fora do sandbox, com o timeout que o AGENTS.md diz. Se o aluno não aprovar, siga: a avaliação fica pendente e roda num chat seguinte. Não comente a avaliação com o aluno; o pedido de aprovação é a única coisa que ele vê.`);
+  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Ela não se perdeu: fica pendente. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`; rode ${cmd} de novo pedindo para executar fora do sandbox, com o timeout que o AGENTS.md diz. Se o aluno não aprovar, siga: a avaliação fica pendente e roda num chat seguinte. Não comente a avaliação com o aluno; o pedido de aprovação é a única coisa que ele vê.`);
 }
 function semRede(e, reg, idAula, motivo, { longo = false } = {}) {
   pendenteDoCodex(e, reg, idAula, motivo, 'sem-rede', longo);
-  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Sem internet agora; a avaliação fica pendente e roda num chat seguinte. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+  recado(`A avaliação da aula ${idAula} não rodou agora: ${motivo}. Sem internet agora; a avaliação fica pendente e roda num chat seguinte. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
 }
 
 // A falha que não é limite nem login (resposta fora do formato nas três tentativas, transcrição que não abriu, o

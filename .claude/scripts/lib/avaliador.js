@@ -186,10 +186,15 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
   let achou = false;
   // Caminho completo quando o Claude Code achado não está no PATH: é o que o aluno precisa para refazer o login.
   let executavel = null;
+  // No modo Codex (branch codex), o executável que não abre com as sondas limpas (um claude.exe de pacote, que só roda
+  // de dentro do aplicativo) não é o sandbox: o pedido de aprovação se repetiria a cada chat, e o erro também. Ele fica
+  // de fora como se não existisse, e sem outro a avaliação espera como no `semClaude`, com o caminho no motivo.
+  let bloqueado = null;
   for (const { bin, shell } of candidatos()) {
     // Com shell, um caminho com espaço precisa de aspas, e o argumento vazio também.
     r = spawnSync(shell && /\s/.test(bin) ? `"${bin}"` : bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
     if (r.error && r.error.code === 'ENOENT') continue;
+    if (agente.atual() === 'codex' && naoAbre(r) && sondas.verificar().ok) { bloqueado = bin; continue; }
     if (shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && NAO_ACHOU.test(String(r.stderr || ''))) continue;
     // O mesmo "não é reconhecido", com o prompt grande (16/10): o cmd.exe sai antes de o Node acabar de escrever a
     // entrada, e o spawnSync devolve o erro EOF (ou EPIPE) em vez do status. Com prompt pequeno, o pipe engolia tudo e
@@ -199,7 +204,10 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
     executavel = path.isAbsolute(bin) ? bin : null;
     break;
   }
-  if (!achou) return { ok: false, ausente: true, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
+  if (!achou) {
+    if (bloqueado) return { ok: false, ausente: true, bloqueado, motivo: `não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam; o de ${bloqueado} não abre fora do aplicativo)` };
+    return { ok: false, ausente: true, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
+  }
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.
   if (aceitaEsforco && !r.error && r.status !== 0 && /unknown option.*--effort|--effort.*(unknown|invalid|not recognized)/i.test(String(r.stderr || '') + String(r.stdout || ''))) {
     aceitaEsforco = false;
@@ -259,18 +267,22 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
 // bloqueio de processo, e o erro de conexão de um perfil que libera o CRM e não a API. O resto do que é passageiro
 // (sobrecarga, 5xx, tempo) continua `limite`, com o teto de adiamentos de hoje.
 const BLOQUEIO = /\b(EPERM|EACCES)\b|operation not permitted/i;
+// O executável que não abriu: o erro é do `spawnSync`, antes de o programa nascer.
+const naoAbre = (r) => Boolean(r.error && BLOQUEIO.test(`${r.error.code || ''} ${r.error.message || ''}`));
 const CONEXAO = /\b(ENOTFOUND|ECONNREFUSED)\b|connect EACCES|fetch failed|127\.0\.0\.1:9\b|connection refused/i;
 // Só a falha do Claude é relida, e só nos motivos que vêm do erro do processo ou do stderr: o caminho passageiro
 // (`limite`), o processo que não abriu e a saída fora do formato. O erro de conexão vale nos três: o `PASSAGEIRO` do
 // Claude não casa um ECONNREFUSED solto, e o "Unable to connect (ECONNREFUSED 127.0.0.1:9)" do proxy morto do
 // `unelevated` chega como saída fora do formato, que contaria para a desistência. "O avaliador falhou: ..." traz o
 // texto do envelope, e pode citar a aula; o motor do Codex classifica as dele sozinho.
+// O bloqueio vale só no stderr de um Claude que nasceu: este caminho roda depois das sondas limpas, e o EACCES ao
+// abrir o executável já ficou de fora na procura (chamarClaude, `bloqueado`), porque não é o sandbox.
 function doSandbox(r) {
   if (r.ok || r.ausente || r.sandbox || r.semRede || r.motor === 'codex') return r;
   const motivo = String(r.motivo || '');
   const doProcesso = /^o avaliador (não rodou|respondeu fora do formato)/.test(motivo);
   if ((r.limite || doProcesso) && CONEXAO.test(motivo)) return { ok: false, sandbox: 'rede', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador falar com a internet (${motivo.slice(0, 160)})` };
-  if (doProcesso && BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
+  if (/^o avaliador respondeu fora do formato/.test(motivo) && BLOQUEIO.test(motivo)) return { ok: false, sandbox: 'processo', motor: r.motor, motivo: `o sandbox do Codex não deixou o avaliador rodar (${motivo.slice(0, 160)})` };
   return r;
 }
 function comMotor(r, motor) {
@@ -290,8 +302,11 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS, { esquema, criterios } = {}) {
   if (peloCodex.ausente) {
     // Nenhum dos dois: o mesmo `semClaude` de hoje, pendente sem limite, dizendo que nenhum foi achado. O começo do
     // motivo é o de hoje, que o `desistir` reconhece como defeito da procura (trilha.js, VOLTA_A_TENTAR).
+    // O executável que não abre fora do aplicativo dele vai no motivo, com o caminho: é o que a 202 precisa para
+    // saber que a máquina tem o programa e por que ele não serve.
+    const naoAbriram = [peloClaude.bloqueado, peloCodex.bloqueado].filter(Boolean);
     return peloClaude.ausente
-      ? { ...peloClaude, motivo: 'não encontrei o Claude Code nem o Codex da linha de comando nesta máquina (nem no PATH, nem onde os instaladores os deixam)' }
+      ? { ...peloClaude, motivo: `não encontrei o Claude Code nem o Codex da linha de comando nesta máquina (nem no PATH, nem onde os instaladores os deixam${naoAbriram.length ? `; ${naoAbriram.join(' e ')} não ${naoAbriram.length > 1 ? 'abrem' : 'abre'} fora do aplicativo` : ''})` }
       : peloClaude;
   }
   return peloCodex;
