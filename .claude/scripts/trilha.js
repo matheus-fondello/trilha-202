@@ -448,6 +448,13 @@ const comandos = {
     const destino = novoServidor || acesso.servidor();
     if (!destino) falhar(`falta o endereço da 202. Ele vem na outra linha que a 202 mandou, TRILHA_202_SERVIDOR=...: passe como servidor=<url>. ${uso}`);
 
+    // No modo Codex (branch codex) o acesso é gravado em `~/.trilha-202`, que o sandbox não deixa gravar: confere antes
+    // de qualquer efeito (nome no estado, `acesso.conexao`, envio). Pedida a aprovação fora do sandbox, o comando
+    // roda de novo do zero, uma vez só. Sem esta conferência o acesso falharia depois do envio.
+    if (agente.atual() === 'codex' && acesso.pastaTravada()) {
+      console.log('O sandbox do Codex não deixa gravar o acesso da 202 no computador do aluno, e nada foi registrado ainda. Peça ao aluno para aprovar este mesmo comando fora do sandbox; é uma vez só, para guardar o acesso no computador dele.');
+      return;
+    }
     e.aluno.nome = nome;
     estadoLib.salvar(e);
     // O evento sobe junto com o que já estava na fila, e é esse envio que confere o

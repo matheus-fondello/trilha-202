@@ -9,6 +9,7 @@
 // desmonta o harness desmonta a trava junto —, mas o que chega ao CRM só chega
 // com um token que a 202 emitiu, e essa fronteira é do servidor.
 const fs = require('fs');
+const path = require('path');
 const { CREDENCIAIS, CONFIG } = require('./paths');
 const { lerJson, gravarJson, agora } = require('./util');
 
@@ -68,6 +69,25 @@ function guardar({ token: t, servidor: url, email, turma }) {
   try { fs.chmodSync(CREDENCIAIS, 0o600); } catch { /* segue */ }
 }
 
+// No modo Codex (branch codex), antes de o `conectar` fazer qualquer efeito: a pasta das credenciais é gravável? O
+// sandbox do Codex lê `~` mas não grava nele, em modo nenhum. Cria e apaga um arquivo de sonda com o pid no nome, que
+// nunca é o `credenciais.json`. Devolve o código do erro de bloqueio (EPERM, EACCES, EROFS) ou null; outro erro (disco
+// cheio) não é sandbox, e o `conectar` que siga e diga o que for. A variável é só dos testes: força o código do erro.
+function pastaTravada() {
+  const forcado = process.env.TRILHA_202_CREDENCIAIS_TRAVADA;
+  if (forcado) return forcado;
+  const pasta = path.dirname(CREDENCIAIS);
+  const arq = path.join(pasta, `.sonda-conectar-${process.pid}`);
+  try {
+    fs.mkdirSync(pasta, { recursive: true });
+    fs.writeFileSync(arq, '');
+    fs.unlinkSync(arq);
+  } catch (err) {
+    if (['EPERM', 'EACCES', 'EROFS'].includes(err.code)) return err.code;
+  }
+  return null;
+}
+
 function apagar() {
   try { fs.unlinkSync(CREDENCIAIS); } catch { /* já não existia */ }
 }
@@ -96,4 +116,4 @@ async function quemE(t, url, timeoutMs = 4000) {
   }
 }
 
-module.exports = { leituraBloqueada, credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };
+module.exports = { pastaTravada, leituraBloqueada, credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };
