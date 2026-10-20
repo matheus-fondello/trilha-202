@@ -684,8 +684,9 @@ const comandos = {
       // No modo Codex (branch codex, T5b), nada de comando solto: no sandbox o `curl`, o `npm test` e o `git` falham por
       // razões que não são do aluno, e a falha virava fato na conferência. O `checar` mede fora dele e grava.
       ...(codex ? [
-        `- Onde um check mandar rodar alguma coisa, não rode o comando solto no terminal: use o \`checar\`. \`checar ${idPratica} testes\` roda os testes da pasta (\`script=<nome>\` roda outro script do package.json, como o eval); \`checar ${idPratica} git\` mostra o histórico e o status; e cada \`curl\` do README vira \`checar ${idPratica} http <MÉTODO> <url> [arquivo=trilha/tmp/<corpo>]\`, só contra ${p.url ? 'a URL registrada ou ' : ''}localhost.`,
+        `- Onde um check mandar rodar alguma coisa, não rode o comando solto no terminal: use o \`checar\`. \`checar ${idPratica} testes\` roda os testes da pasta (\`script=<nome>\` roda outro script do package.json, como o eval). \`checar ${idPratica} git\` dá o histórico, o status, o que está versionado (\`git ls-files\`), o remoto \`origin\` e se o repositório registrado responde sem a credencial do aluno (\`git ls-remote\`). \`checar ${idPratica} credenciais\` faz a busca de chave e credencial com os padrões da régua (os arquivos da pasta, o que está versionado, o \`.env\` versionado, o histórico inteiro e o \`.env.example\`) e devolve só nomes de arquivo e contagens. Cada \`curl\` do README vira \`checar ${idPratica} http <MÉTODO> <url> [arquivo=trilha/tmp/<corpo>] [cabecalho=Nome:valor ...]\`, com os mesmos cabeçalhos do \`-H\`, só contra ${p.url ? 'a URL registrada ou ' : ''}localhost.`,
         '- O que o `checar` mede fica gravado e vai ao corretor como fato. Se ele pedir para rodar fora do sandbox, rode o mesmo comando pedindo isso. Na conferência, descreva o que viu, sem colar mensagem de erro do terminal.',
+        '- Um check que nenhum `checar` cobre e que pede comando: diga na conferência que não foi feito, e por quê.',
       ] : []),
       '- Onde um check acima diz o que é certo ("resposta honesta", "não pode quebrar"), descreva o que aconteceu e deixe o julgamento para o corretor.',
       '',
@@ -695,7 +696,7 @@ const comandos = {
 
   // A conferência medida pelo harness, no modo Codex (branch codex, T5b; lib/checar.js). Fora dele não há o que mudar:
   // no Claude, o tutor confere pelo painel e pelo terminal, e o comando do tutor passa pela permissão do Claude Code.
-  //   checar <pratica> url | testes [script=<nome>] | git | http <metodo> <url> [arquivo=trilha/tmp/<corpo>] [tipo=<content-type>]
+  //   checar <pratica> url | testes [script=<nome>] | git | credenciais | http <metodo> <url> [arquivo=trilha/tmp/<corpo>] [tipo=<content-type>] [cabecalho=Nome:valor ...]
   async checar([idPratica, sub, ...resto]) {
     if (agente.atual() !== 'codex') return console.log('O `checar` é do modo Codex. Aqui a conferência é como a skill `corrigir` diz: confira o que o `conferir` lista, no painel e no terminal.');
     exigirAcesso();
@@ -706,13 +707,14 @@ const comandos = {
     const antes = estadoLib.carregar();
     const p = antes.praticas[idPratica] || {};
     if (!mapa.prontaParaCorrigir(a, p, antes.aulas[idPratica])) falhar(`o \`checar\` da ${idPratica} abre com a conferência, depois da entrega registrada e dos marcos da prática fechados.`);
-    const r = await checarLib.rodar(p, sub, resto);
+    const r = await checarLib.rodar(idPratica, p, sub, resto);
     if (r.recusa) falhar(r.recusa);
     if (r.pendente) {
-      const linha = `node .claude/scripts/trilha.js checar ${[idPratica, sub, ...resto].join(' ')}`;
+      // O cabeçalho com credencial não volta ao chat nem aqui: o tutor tem o valor no comando que acabou de rodar.
+      const linha = `node .claude/scripts/trilha.js checar ${[idPratica, sub, ...resto.map((x) => (x.startsWith('cabecalho=') ? `cabecalho=${checarLib.mascarar(x.slice('cabecalho='.length))}` : x))].join(' ')}`;
       return console.log(r.pendente.causa === 'sem-rede'
         ? `Pendente (sem internet): ${r.pendente.motivo}. Nada foi medido nem gravado. Este check precisa da internet: rode o mesmo comando quando ela voltar (\`${linha}\`); se não voltar, diga na conferência que este check não foi feito, sem colar erro.`
-        : `Pendente (sandbox): ${r.pendente.motivo}. Nada foi medido nem gravado: isto não é resultado do que o aluno entregou. Rode o mesmo comando de novo, pedindo para executar fora do sandbox: \`${linha}\`. Se o aluno não aprovar, diga na conferência que este check não foi feito, sem colar erro.`);
+        : `Pendente (sandbox): ${r.pendente.motivo}. Nada foi medido nem gravado: isto não é resultado do que o aluno entregou. Rode o mesmo comando de novo, pedindo para executar fora do sandbox: \`${linha}\`${/\[mascarado\]/.test(linha) ? ' (com os valores dos cabeçalhos mascarados aqui como estavam no seu comando)' : ''}. Se o aluno não aprovar, diga na conferência que este check não foi feito, sem colar erro.`);
     }
     // O check pode ter levado minutos (os testes): o estado se relê agora, para não apagar o que mudou nesse meio-tempo.
     const e = estadoLib.carregar();
@@ -1379,6 +1381,8 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
   // não chegou à pasta ou à página, e o corretor daria nota baixa a uma entrega que funciona.
   const erroSandbox = agente.atual() === 'codex' && conferencia ? require('./lib/checar').erroDeSandbox(conferencia) : null;
   if (erroSandbox) {
+    // A 202 vê quantas conferências o sandbox derrubou e por qual padrão; o texto da conferência não sobe.
+    fila.enfileirar('pratica.conferencia.recusada', { pratica: idPratica, padrao: erroSandbox }, e);
     falhar(`a conferência traz \`${erroSandbox}\`, que é erro do sandbox do Codex, e não do que o aluno entregou: o comando que você rodou não chegou à pasta ou à página. Refaça esse check com o \`checar\` (\`checar ${idPratica} url | testes | git | http ...\`), que mede fora do sandbox e grava o resultado para o corretor, e tire a mensagem de erro da conferência: descreva só o que você viu. Se a mensagem é do próprio sistema do aluno (uma resposta dele que diz "Permission denied", por exemplo), o \`checar http\` já a grava; na conferência, conte com as suas palavras. Depois rode o mesmo \`corrigir\` de novo.`);
   }
   const desistirCorrecao = (motivo, uso) => {
