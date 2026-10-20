@@ -8,7 +8,7 @@
 // Três sondas, nesta ordem (T0, codex/MODOS-SANDBOX.md). A de rede espera o CRM até 3 s: um CRM em cold start não pode
 // passar por máquina sem internet.
 //   1. processo: abrir um programa (o próprio Node). O `unelevated` não deixa;
-//   2. pasta pessoal: criar e apagar um arquivo na pasta da trilha em `~`;
+//   2. pasta pessoal: criar e apagar um arquivo em `~/.trilha-202`, a pasta pessoal de verdade;
 //   3. rede: um pedido ao endereço do CRM.
 //
 // Uma rodada por comando: o resultado fica guardado no processo, e as tentativas do avaliador não repetem as sondas.
@@ -17,8 +17,8 @@
 // `elevated` não marca nada, então a decisão é pelo que a sonda viu.
 const { spawnSync } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const paths = require('../paths');
 
 const MOTIVOS = {
   processo: 'o sandbox do Codex não deixa este comando abrir outro programa, e quem avalia é um programa à parte',
@@ -42,9 +42,13 @@ function processo() {
   return null;
 }
 
-// A pasta da trilha na pasta pessoal: a das credenciais (os testes a trocam pela variável).
+// A pasta da trilha na pasta pessoal de verdade, sempre, e não a das credenciais: esta a variável
+// TRILHA_202_CREDENCIAIS troca, e o avaliador grava o login dele em `~` (o `~/.claude`, o `auth.json` do Codex) de
+// qualquer jeito. Com as credenciais numa pasta que o sandbox deixa gravar, a sonda passava e o avaliador ficava preso
+// no sandbox até o teto de tempo (D4 do teste W4, 20/10). Os testes que precisam de outro resultado usam
+// TRILHA_202_SONDAS.
 function pessoal() {
-  const pasta = path.dirname(paths.CREDENCIAIS);
+  const pasta = path.join(os.homedir(), '.trilha-202');
   const arq = path.join(pasta, `.sonda-${process.pid}`);
   try {
     fs.mkdirSync(pasta, { recursive: true });
