@@ -571,7 +571,8 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
     const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }), undefined, { esquema: 'correcao', criterios });
     if (r.motor) quem = { motor: r.motor };
-    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso, ...doCodex(r) };
+    // Sem o Claude Code na máquina (20/10), tentar de novo agora não acha outro: a correção espera o aluno instalá-lo.
+    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede || r.ausente)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso, ...doCodex(r) };
     if (!r.ok) { ultimo = r.motivo.replace(/avaliador/g, 'corretor'); erros = null; continue; }
     uso = r.uso;
     const extraido = extrairJson(r.texto);

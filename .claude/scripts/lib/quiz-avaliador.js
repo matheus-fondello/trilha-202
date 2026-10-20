@@ -75,8 +75,10 @@ function avaliar(idQuiz, questao, resposta) {
     if (r.motor) quem = { motor: r.motor };
     // Limite, API fora do ar e login nao se resolvem tentando de novo agora; o resto ganha as tentativas que restam.
     // O sandbox do Codex tambem nao: a resposta fica guardada, e o comando roda de novo fora dele.
-    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede)) {
-      return fora({ motivo: r.motivo, limite: Boolean(r.limite), login: Boolean(r.login), ...(r.sandbox ? { sandbox: r.sandbox } : {}), ...(r.semRede ? { semRede: true } : {}), ...(r.motor ? { executavel: r.executavel || null } : {}) });
+    // Sem o Claude Code na maquina (20/10), tambem nao: a resposta espera o aluno instala-lo. O executavel achado vai
+    // tambem no modo Claude: com o do aplicativo, o passo a passo e a instalacao, e nao um `claude` que o aluno nao tem.
+    if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede || r.ausente)) {
+      return fora({ motivo: r.motivo, limite: Boolean(r.limite), login: Boolean(r.login), ...(r.ausente ? { ausente: true } : {}), ...(r.sandbox ? { sandbox: r.sandbox } : {}), ...(r.semRede ? { semRede: true } : {}), ...(r.motor ? { executavel: r.executavel || null } : r.executavel ? { executavel: r.executavel } : {}) });
     }
     if (!r.ok) { ultimo = r.motivo; erros = []; continue; }
     uso = r.uso;

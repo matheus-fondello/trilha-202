@@ -36,7 +36,7 @@ const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
 const { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio } = require('./lib/enviar');
-const { resumo, passosLogin } = require('./lib/resumo');
+const { resumo, passosLogin, passosInstalar, ehDoAplicativo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
@@ -1350,11 +1350,26 @@ function adiar(e, reg, idAula, motivo, uso) {
 const SEM_CLAUDE = /não encontrei o (Claude Code|comando `claude`)/;
 function semClaude(e, reg, idAula, motivo) {
   delete reg.avaliacao_falhou;
+  // O executável do aplicativo que estava sem login pode ter sumido depois: a pendência agora é esta, e a aula não
+  // aparece em dois blocos de "Antes de tudo" no resumo.
+  delete reg.avaliacao_login;
   reg.avaliacao_adiada = { em: agora(), motivo, vezes: 1 };
   reg.avaliacao_pendente = true;
   estadoLib.salvar(e);
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: 1, causa: 'sem-claude', avaliador: null }, e);
-  recado(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+  if (agente.atual() === 'codex') {
+    recado(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente e roda de novo, sozinha, no começo do próximo chat. Feche a aula normalmente com \`concluir ${idAula}\`; não há nada que você possa fazer daqui, e não é assunto para o aluno.`);
+    return;
+  }
+  // No Claude a pendência não se resolvia sozinha, e o "não é assunto para o aluno" a deixava parada até alguém da 202
+  // aparecer (20/10: Renata, Joel, João Vitor, Pedro Lucas). O conserto é do aluno, uma vez só: instalar o Claude Code
+  // da linha de comando (resumo.js, passosInstalar). Os chats seguintes rodam o `avaliar` de novo e chegam aqui de novo
+  // enquanto ele não instalar.
+  // Em segundo plano (`--longo`) o recado chega no meio da aula seguinte: a instalação espera o fechamento dela.
+  const quando = emSegundoPlano
+    ? 'Siga a aula; no fechamento dela, antes da despedida,'
+    : `Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat,`;
+  console.log(`A avaliação da aula ${idAula} não rodou agora (${motivo}). Ela não se perdeu: fica pendente. A conversa aqui funciona porque o aplicativo tem o Claude dele; quem avalia as aulas é o Claude Code da linha de comando, que esta máquina não tem, e só o aluno resolve isso, uma vez só. ${quando} diga isso ao aluno em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosInstalar()} Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
 }
 
 // O sandbox do Codex não deixou a avaliação rodar (branch codex, lib/codex/sondas.js): não abrir programa, não gravar
@@ -1449,7 +1464,7 @@ function pedirLogin(e, reg, idAula, motivo, uso, executavel, motor) {
     return;
   }
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa refazer o login do Claude da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
-  console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que ${executavel ? 'faça' : 'refaça'} o login, com o passo a passo: ${passosLogin(executavel)} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
+  console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que ${ehDoAplicativo(executavel) ? 'instale o Claude Code da linha de comando e faça o login nele (o que veio dentro do aplicativo muda de lugar quando o aplicativo se atualiza)' : executavel ? 'faça o login' : 'refaça o login'}, com o passo a passo: ${passosLogin(executavel)} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
 }
 
 // O instante da entrega, gravado uma vez só: quando o registro e os marcos da
@@ -1696,7 +1711,16 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     p.correcao_adiada = { em: agora(), motivo: r.motivo, causa: 'login' };
     estadoLib.salvar(e);
     fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, causa: 'login', corretor: r.uso || null }, e);
-    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. ${r.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem corrige, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${r.motor ? passosLogin(r.executavel, r.motor) : passosLogin(r.executavel)} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. ${r.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem corrige, está sem login${r.motor !== 'codex' && ehDoAplicativo(r.executavel) ? ' (o que esta máquina tem é o Claude Code que veio dentro do aplicativo, que muda de lugar quando ele se atualiza: o certo é instalar o da linha de comando)' : ''}, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${r.motor ? passosLogin(r.executavel, r.motor) : passosLogin(r.executavel)} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
+    return;
+  }
+  // Sem o Claude Code na máquina (20/10): antes, a correção gastava as três tentativas e desistia sem dizer nada ao
+  // aluno. Como no login, ela espera no mesmo chat que ele o instale, uma vez só. No modo Codex fica como era.
+  if (!r.ok && r.ausente && agente.atual() !== 'codex') {
+    p.correcao_adiada = { em: agora(), motivo: r.motivo, causa: 'sem-claude' };
+    estadoLib.salvar(e);
+    fila.enfileirar('pratica.correcao.adiada', { aula: idPratica, motivo: r.motivo, causa: 'sem-claude', corretor: null }, e);
+    console.log(`A correção da ${idPratica} não rodou: ${r.motivo}. Ela não falhou nem se perdeu: não conclua a prática e não dê feedback ainda. Quem corrige é o Claude Code da linha de comando, que esta máquina não tem, e só o aluno resolve isso, uma vez só. Diga isso a ele em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosInstalar()} Quando ele disser que funcionou, rode o mesmo comando de novo, com a mesma conferência. Se ele abrir um chat novo, a correção recomeça sozinha.`);
     return;
   }
   if (!r.ok) return desistirCorrecao(r.motivo, r.uso);
@@ -1798,16 +1822,22 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
       // A resposta fica guardada e a avaliação é tentada de novo a cada chat, então o que sobe é "adiada". Só vira
       // "falhou" quando a causa não passa sozinha (nem limite, nem API, nem login) e já se tentou em três chats.
       gravada.avaliacao_tentativas = (gravada.avaliacao_tentativas || 0) + 1;
-      const passageira = Boolean(resultado.limite || resultado.login);
+      // Sem o Claude Code (20/10, só no modo Claude) também não passa tentando: espera o aluno instalá-lo.
+      const semClaudeAqui = Boolean(resultado.ausente) && agente.atual() !== 'codex';
+      const passageira = Boolean(resultado.limite || resultado.login || semClaudeAqui);
       const desistiu = !passageira && gravada.avaliacao_tentativas >= 3;
       estadoLib.salvar(e);
       fila.enfileirar(desistiu ? 'quiz.avaliacao.falhou' : 'quiz.avaliacao.adiada', {
         aula: idQuiz, questao: questao.n, motivo: resultado.motivo, vezes: gravada.avaliacao_tentativas,
-        ...(resultado.login ? { causa: 'login' } : {}),
+        ...(resultado.login ? { causa: 'login' } : semClaudeAqui ? { causa: 'sem-claude' } : {}),
         avaliador,
       }, e);
+      if (semClaudeAqui && !resultado.login) {
+        console.log(`A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. Quem avalia é o Claude Code da linha de comando, que esta máquina não tem, e só o aluno resolve isso, uma vez só. Diga isso a ele em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosInstalar()} Siga o quiz: a avaliação roda de novo no próximo chat.`);
+        continue;
+      }
       console.log(resultado.login
-        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. ${resultado.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem avalia, está sem login, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${resultado.motor ? passosLogin(resultado.executavel, resultado.motor) : passosLogin(resultado.executavel)} A avaliação roda de novo no próximo chat.`
+        ? `A avaliação separada da pergunta ${questao.n} não rodou: ${resultado.motivo}. A resposta está salva. ${resultado.motor === 'codex' ? 'O Codex' : 'O Claude'} da linha de comando desta máquina, que é quem avalia, está sem login${resultado.motor !== 'codex' && ehDoAplicativo(resultado.executavel) ? ' (o que esta máquina tem é o Claude Code que veio dentro do aplicativo, que muda de lugar quando ele se atualiza: o certo é instalar o da linha de comando)' : ''}, e só o aluno resolve isso. Peça a ele, com o passo a passo: ${resultado.motor ? passosLogin(resultado.executavel, resultado.motor) : passosLogin(resultado.executavel)} A avaliação roda de novo no próximo chat.`
         : `A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
   }

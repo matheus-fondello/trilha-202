@@ -76,6 +76,8 @@ function pendencias(e, linhas, codex) {
       // (Menos a que desistiu por não achar o Claude Code, ou pelo EOF/EPIPE do cmd.exe: era defeito da procura, e ela volta
       // a tentar. A mesma regra está em trilha.js, VOLTA_A_TENTAR.)
       && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3 && !/não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)/.test(r.avaliacao_falhou.motivo || ''))
+      // No Claude, a que espera o Claude Code ser instalado fica com o bloco dela (semClaude), antes de tudo.
+      && !(!codex && esperaClaude(r))
       // `avaliacao_pendente` é a aula que fechou e cuja avaliação não rodou ou foi interrompida (o aluno parou o
       // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
       && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
@@ -108,10 +110,25 @@ function pendencias(e, linhas, codex) {
 // login antigo para sair dele.
 function passosLogin(executavel, motor = 'claude') {
   if (motor === 'codex') return passosLoginCodex(executavel);
+  if (ehDoAplicativo(executavel)) return passosInstalar();
   if (!executavel) return '(1) abrir um terminal, pode ser o do próprio aplicativo; (2) digitar `claude` e Enter; (3) lá dentro, digitar `/logout` e Enter, depois `/login` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar `/exit`; (5) para conferir, rodar `claude -p "oi"`, que tem de responder sem erro.';
   const chamada = process.platform === 'win32' ? `& "${executavel}"` : `"${executavel}"`;
   const onde = process.platform === 'win32' ? 'abrir o PowerShell do Windows (menu Iniciar, digitar PowerShell)' : 'abrir um terminal, pode ser o do próprio aplicativo';
   return `(1) ${onde}; (2) colar esta linha inteira, com as aspas, e dar Enter: \`${chamada}\` (entregue a linha num bloco de código, para ele copiar sem erro; é o Claude Code que veio com o aplicativo dele); (3) se aparecerem perguntas de primeira vez (tema, confiar na pasta), aceitar o padrão com Enter; lá dentro, digitar \`/login\` e Enter, e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (4) digitar \`/exit\`; (5) para conferir, colar \`${chamada} -p "oi"\`, que tem de responder sem erro. É uma vez só: o login fica guardado nesta máquina.`;
+}
+
+// O Claude Code que veio dentro do aplicativo de desktop (lib/avaliador.js, doAplicativo) muda de pasta quando o
+// aplicativo se atualiza, e some (20/10: quatro alunos avaliaram com ele, fizeram o login por ele, e dias depois voltaram
+// a "não encontrei o Claude Code"). O login vale para qualquer Claude da máquina; o executável, não. Por isso, para quem
+// só tem esse, o passo a passo é instalar o Claude Code da linha de comando, uma vez, em ~/.local/bin, que o aplicativo
+// não mexe e onde o avaliador procura. O `claude` pode não entrar no PATH do terminal aberto (18/10): o caminho completo
+// é o que funciona sempre.
+const DO_APLICATIVO = /[\\/]Claude[\\/]claude-code[\\/]/i;
+const ehDoAplicativo = (executavel) => Boolean(executavel) && DO_APLICATIVO.test(executavel);
+function passosInstalar() {
+  const final = '(4) se aparecerem perguntas de primeira vez (tema, confiar na pasta), aceitar o padrão com Enter; mandar `oi`, e se ele pedir login, digitar `/login` e Enter e entrar no navegador com a mesma conta do Claude que ele usa no aplicativo; (5) quando o `oi` tiver resposta, digitar `/exit`. É uma vez só: fica instalado, com o login guardado nesta máquina, e a atualização do aplicativo não mexe nele.';
+  if (process.platform === 'win32') return `(1) abrir o PowerShell do Windows (menu Iniciar, digitar PowerShell); (2) colar esta linha e dar Enter: \`irm https://claude.ai/install.ps1 | iex\` (entregue cada linha num bloco de código, para ele copiar sem erro), e esperar terminar; se aparecer um aviso de que \`claude\` não está no PATH, ou se depois \`claude\` não for reconhecido, não importa; (3) colar esta linha inteira, com as aspas, e dar Enter: \`& "$env:USERPROFILE\\.local\\bin\\claude.exe"\`; ${final}`;
+  return `(1) abrir um terminal, pode ser o do próprio aplicativo; (2) colar esta linha e dar Enter: \`curl -fsSL https://claude.ai/install.sh | bash\` (entregue cada linha num bloco de código, para ele copiar sem erro), e esperar terminar; se aparecer um aviso de que \`claude\` não está no PATH, não importa; (3) colar \`~/.local/bin/claude\` e dar Enter; ${final}`;
 }
 
 // O do Codex (branch codex): quem avalia é o `codex` da linha de comando. Quem só tem o aplicativo não tem `codex` no
@@ -138,7 +155,24 @@ function semLogin(e, linhas) {
     linhas.push('');
     return;
   }
-  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} falhou porque o Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login válido (a conversa aqui funciona porque o aplicativo tem login próprio). Só ele resolve. No seu primeiro turno, cumprimente e diga isso em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosLogin(ids.map((id) => (e.aulas[id].avaliacao_login || {}).executavel).find(Boolean))} Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')} e só então siga com o que vem abaixo. Se ele não puder agora, siga normalmente: o próximo chat volta a pedir.`);
+  const executavel = ids.map((id) => (e.aulas[id].avaliacao_login || {}).executavel).find(Boolean);
+  const porque = ehDoAplicativo(executavel)
+    ? 'esta máquina só tem o Claude Code que veio dentro do aplicativo, que é quem avalia as aulas, e ele está sem login; esse muda de lugar quando o aplicativo se atualiza, e o certo é instalar o Claude Code da linha de comando, uma vez só (a conversa aqui funciona porque o aplicativo tem login próprio)'
+    : 'o Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login válido (a conversa aqui funciona porque o aplicativo tem login próprio)';
+  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} falhou porque ${porque}. Só ele resolve. No seu primeiro turno, cumprimente e diga isso em duas linhas, sem jargão e sem culpa, e passe o passo a passo: ${passosLogin(executavel)} Acompanhe pelo que ele contar da tela. Quando ele disser que funcionou, rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')} e só então siga com o que vem abaixo. Se ele não puder agora, siga normalmente: o próximo chat volta a pedir.`);
+  linhas.push('');
+}
+
+// Aulas cuja avaliação espera porque o avaliador não achou o Claude Code (trilha.js, semClaude). Como o login, só o
+// aluno resolve, e vem antes de tudo (20/10): na linha de pendência comum o tutor abria a aula primeiro e só depois
+// recebia a instalação. Primeiro o `avaliar`, porque ele pode já ter instalado entre um chat e outro.
+const esperaClaude = (r) => !r.avaliada_em && Boolean(r.avaliacao_adiada) && /não encontrei o (Claude Code|comando `claude`)/.test(r.avaliacao_adiada.motivo || '');
+function semClaude(e, linhas, codex) {
+  if (codex) return;
+  // A aula da vez ainda aberta fica para o fechamento dela, como na linha de pendência comum.
+  const ids = Object.entries(e.aulas || {}).filter(([id, r]) => esperaClaude(r) && (r.status === 'concluida' || id !== e.aula_atual)).map(([id]) => id);
+  if (!ids.length) return;
+  linhas.push(`Antes de tudo, inclusive da escolha de aula: a avaliação ${ids.length > 1 ? 'das aulas' : 'da aula'} ${ids.join(', ')} espera porque esta máquina não tinha o Claude Code da linha de comando, que é quem avalia as aulas. No seu primeiro turno, cumprimente em uma linha e rode ${ids.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}\``).join(' e ')}. Se registrar, siga sem comentar. Se disser de novo que não encontrou o Claude Code, faça o que ele disser antes de abrir a aula: é a instalação, uma vez só, com o aluno.`);
   linhas.push('');
 }
 
@@ -207,6 +241,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
   semLogin(e, linhas);
+  semClaude(e, linhas, codex);
   if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas, codex);
 
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo} [${reg.status.replace('_', ' ')}]`);
@@ -375,4 +410,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, passosLogin, continuacaoRecente };
+module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente };
