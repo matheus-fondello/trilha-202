@@ -23,6 +23,16 @@ Seu progresso fica em `trilha/estado.json`, fora do controle de versão. O conte
 - **Prática vale nota.** Ao fim de cada módulo você entrega um trabalho de verdade, feito na oficina. Quem corrige é um chat novo, que não acompanhou o trabalho: você registra a entrega, fecha o chat e abre outro para receber a correção. A régua de cada prática abre depois da entrega, com `criterios`.
 - **A 202 acompanha.** Sobem metadados e avaliações estruturadas, nunca a conversa inteira. Do módulo 4 em diante, também a sua ideia de negócio em três linhas e as hipóteses; os nomes de quem você vai entrevistar ficam na sua máquina. O que você entrega nas práticas também sobe: o link e o repositório, e, na P4 e na P5, o documento (a síntese, o plano), com os nomes da sua lista de entrevistas trocados por `[nome]`. Você recebe o feedback; a nota fica com a 202.
 
+## No Codex
+
+A trilha também roda no Codex, o modo de programar do aplicativo do ChatGPT. O professor é o mesmo e as aulas são as mesmas; muda só o caminho de abrir.
+
+- **Abrir.** Abra a pasta desta sala no aplicativo do ChatGPT, no modo Codex. O aplicativo pede para confiar na pasta; confie, senão ele não lê as instruções do professor. Depois é como no Claude: a primeira coisa que o professor pede é o seu nome e o token de acesso.
+- **O primeiro chat pede uma aprovação.** Guardar o seu acesso é escrever fora desta pasta, e o aplicativo não deixa isso por conta própria. O professor te pede para aprovar o comando de conectar fora do sandbox, uma vez. Depois disso o acesso fica guardado e não pergunta mais.
+- **Outras aprovações podem aparecer.** Algumas avaliações e a atualização da sala também precisam sair do sandbox, e o aplicativo pergunta antes. Você pode aprovar: o professor só pede o que a trilha precisa. Se você não aprovar, nada se perde, a avaliação espera e roda no próximo chat.
+- **Um agente por vez.** Se você usa o Claude e o Codex, use um em cada aula. Com os dois abertos na mesma aula, o tempo de estudo é contado errado.
+- **A conversa é avaliada fora do aplicativo.** Quando a avaliação roda pelo Claude Code, a conversa do Codex vai à Anthropic para ser avaliada; se você não tem o Claude Code, a avaliação roda pelo próprio Codex. Em qualquer caso, a 202 recebe só a avaliação, nunca a conversa inteira.
+
 ## Estado do protótipo
 
 Em construção. Escritos do módulo 0 ao módulo 6: as aulas, as práticas P0 a P6 (da P1 em diante com correção) e os quizzes dos módulos 1 a 6. O quiz do módulo 6 é a última unidade: depois dele a trilha acabou.
