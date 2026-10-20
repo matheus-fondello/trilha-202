@@ -176,9 +176,18 @@ function rotuloDe(a) {
   return a.tipo === 'pratica' ? 'Prática atual' : a.tipo === 'quiz' ? 'Quiz atual' : 'Aula atual';
 }
 
+// A linha de continuação só vale para o chat do outro agente que fechou há menos de 12 horas (20/10): passado
+// disso, o aluno volta noutro dia, e o tutor de agora apresenta a aula como em qualquer retomada. `fim` é o último
+// sinal daquela sessão (ISO). Quem chama confere aqui antes de passar o `continuacaoDe`.
+const CONTINUACAO_MS = 12 * 3600000;
+function continuacaoRecente(fim) {
+  const t = Date.parse(fim);
+  return Number.isFinite(t) && Date.now() - t < CONTINUACAO_MS;
+}
+
 // `agente` e `continuacaoDe` são do modo Codex (branch codex). Com o padrão, o texto é o de hoje, letra a letra.
-// `continuacaoDe` é a sessão de outro agente que o comando acabou de fechar ({ agente, aula }, de
-// lib/codex/sessao.js): a aula que começou no Claude Code e segue no Codex ganha a linha com os marcos já feitos.
+// `continuacaoDe` é a sessão de outro agente que veio antes deste chat ({ agente, aula }, de lib/codex/sessao.js e
+// do hooks/inicio.js): a aula que começou num agente e segue no outro ganha a linha com os marcos já feitos.
 function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null } = {}) {
   const codex = agente === 'codex';
   const a = mapa.aula(e.aula_atual);
@@ -231,7 +240,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
     // A troca de agente no meio da aula (o limite do Claude acabou na 1.7): o tutor de agora não viu o chat de antes.
     if (continuacaoDe && continuacaoDe.aula === a.id && continuacaoDe.agente !== agente && reg.status !== 'concluida' && !emCorrecao) {
       const onde = continuacaoDe.agente === 'codex' ? 'no Codex' : 'no Claude Code';
-      linhas.push(`Continuação: ${a.tipo === 'pratica' ? 'esta prática' : 'esta aula'} começou ${onde}, num chat que acabou de fechar; marcos feitos: ${fechados.length ? fechados.map((m) => m.id).join(', ') : 'nenhum ainda'}. Siga do primeiro pendente, sem refazer o que já foi fechado e sem apresentar a aula de novo.`);
+      linhas.push(`Continuação: ${a.tipo === 'pratica' ? 'esta prática' : 'esta aula'} começou ${onde}, num chat que fechou antes deste; marcos feitos: ${fechados.length ? fechados.map((m) => m.id).join(', ') : 'nenhum ainda'}. Siga do primeiro pendente, sem refazer o que já foi fechado e sem apresentar a aula de novo.`);
     }
     if (a.tipo === 'pratica') {
       if (!a.correcao) {
@@ -366,4 +375,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, passosLogin };
+module.exports = { resumo, passosLogin, continuacaoRecente };

@@ -73,8 +73,9 @@ async function main() {
   const envio = await enviar({ timeoutMs: 2500 });
   const e = estadoLib.carregar();
   if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
-  // A aula que começou no Claude e segue aqui.
-  const continuacaoDe = sinc && sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou : null;
+  // A aula que começou no Claude e segue aqui: a sessão do Claude que esta sincronização fechou, ou a última do
+  // histórico, que o aplicativo do Claude já fechou quando o aluno saiu do chat (D2, 20/10).
+  const continuacaoDe = sessao.continuacaoDe(sinc);
   const texto = resumo(e, { fonte: fonte === 'compact' ? 'compact' : fonte === 'startup' || fonte === 'clear' ? 'startup' : 'resume', agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) });
   const aviso = envio.ok || !acesso.conectado(e) ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';

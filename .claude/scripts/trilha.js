@@ -311,10 +311,11 @@ async function statusDoCodex(args) {
     e0.codex.chats[id].status_n = turnoAtual(s);
     estadoLib.salvar(e0);
   }
-  // A aula que começou no outro agente e segue aqui. O relançado não vê o fechamento, que já aconteceu no pai.
+  // A aula que começou no outro agente e segue aqui (lib/codex/sessao.js, continuacaoDe). O relançado não vê o
+  // fechamento, que já aconteceu no pai.
   const [deAgente, deAula] = String(kv['--continuacao'] || '').split(':');
-  const continuacaoDe = sinc.fechou && sinc.fechou.agente !== 'codex' ? sinc.fechou
-    : deAgente && deAula ? { agente: deAgente, aula: deAula } : null;
+  const continuacaoDe = require('./lib/codex/sessao').continuacaoDe(sinc)
+    || (deAgente && deAula ? { agente: deAgente, aula: deAula } : null);
   const fonte = novo ? 'startup' : compactou ? 'compact' : retomado ? 'resume' : 'startup';
   // O hook de início do Codex já fez o trabalho deste começo de chat e já pôs o estado no contexto do tutor.
   const marca = !relancado && (novo || retomado) ? marcaDoHook(e0, id) : null;

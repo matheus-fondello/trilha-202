@@ -23,7 +23,11 @@ function vindaDoCodex(e, idChat) {
     const anterior = s || (Array.isArray(e.sessoes) ? e.sessoes[e.sessoes.length - 1] : null);
     if (!anterior || !anterior.id || !anterior.aula) return null;
     const doCodex = anterior.agente === 'codex' || Object.prototype.hasOwnProperty.call(chats, anterior.id);
-    return doCodex ? { agente: 'codex', aula: anterior.aula } : null;
+    if (!doCodex) return null;
+    // Só se ela fechou há menos de 12 horas (lib/resumo.js, continuacaoRecente): a aberta, pelo último sinal dela.
+    const sinais = s ? [s.ultimo_turno_fim, s.ultima_atividade, s.inicio].filter(Boolean).sort() : [anterior.fim];
+    if (!require('../scripts/lib/resumo').continuacaoRecente(sinais[sinais.length - 1])) return null;
+    return { agente: 'codex', aula: anterior.aula };
   } catch { return null; }
 }
 

@@ -278,14 +278,26 @@ function sobTrava(idChat, arquivo, meta, fonte) {
   // Outro chat é a sessão atual. Se é do Codex, os turnos que faltavam dele entram antes, para o `sessao.fim` sair
   // com o trabalho inteiro; depois ele fecha pelo caminho de hoje.
   let fechou = null;
+  let anterior = null;
   const s0 = e.sessao_atual;
   if (s0 && s0.id !== idChat) {
     const c0 = s0.agente === 'codex' && s0.id ? cx.chats[s0.id] : null;
     if (c0) { importar(ctx, s0.id, c0, lerDoChat(c0)); feitos.add(s0.id); }
     fechou = { agente: s0.agente || 'claude', aula: s0.aula || null };
+    const sinais = [s0.ultimo_turno_fim, s0.ultima_atividade, s0.inicio].filter(Boolean).sort();
+    anterior = { ...fechou, fim: sinais[sinais.length - 1] || null };
     turnosLib.fechar(e, { interrompido: true, tarde: true });
     estadoLib.fecharSessao(e, s0.ultima_atividade || s0.inicio, 'outra-sessao');
     if (c0) c0.aberto = Object.values(c0.turnos).some((r) => !r.fim);
+  } else if (!s0 && Array.isArray(e.sessoes) && e.sessoes.length) {
+    // Sem sessão aberta, a anterior é a última do histórico. No aplicativo do Claude, sair do chat já fecha a sessão
+    // dele (SessionEnd), então este é o caso comum da aula que começou no Claude (D2, 20/10), como o `vindaDoCodex`
+    // do hooks/inicio.js. O histórico não guarda o agente: é do Codex a que está em `e.codex.chats`.
+    const u = e.sessoes[e.sessoes.length - 1];
+    if (u && u.id && u.id !== idChat) {
+      const doCodex = u.agente === 'codex' || Object.prototype.hasOwnProperty.call(cx.chats, u.id);
+      anterior = { agente: doCodex ? 'codex' : 'claude', aula: u.aula || null, fim: u.fim || null };
+    }
   }
 
   // A conversa deste chat, do ponto em que parou (do começo, na primeira vez).
@@ -368,7 +380,16 @@ function sobTrava(idChat, arquivo, meta, fonte) {
   const pedirStatus = Boolean(ctx.primeiraVolta) || compactou;
 
   estadoLib.salvar(e);
-  return { nova, importados: ctx.importados, fechou, ...(pedirStatus ? { pedirStatus: true } : {}) };
+  return { nova, importados: ctx.importados, fechou, ...(anterior ? { anterior } : {}), ...(pedirStatus ? { pedirStatus: true } : {}) };
+}
+
+// A aula que começou no Claude Code e segue neste chat: a sessão anterior, se foi do Claude, é da mesma aula e fechou há
+// menos de 12 horas (lib/resumo.js, continuacaoRecente). A aula conferida contra a da vez fica com o resumo.
+function continuacaoDe(sinc) {
+  const a = sinc && sinc.anterior;
+  if (!a || a.agente === 'codex' || !a.aula) return null;
+  if (!require('../resumo').continuacaoRecente(a.fim)) return null;
+  return { agente: a.agente, aula: a.aula };
 }
 
 // Avisos à 202 que não são de versão (a trava presa, um erro da sincronização): uma vez cada, guardados em
@@ -404,4 +425,4 @@ function pasta(arquivo) {
   return cwds.length || (meta && meta.cwd) ? 'fora' : null;
 }
 
-module.exports = { idTurno, idInicio, comTrava, sincronizar, pasta, avisarErro, TRAVA };
+module.exports = { idTurno, idInicio, comTrava, sincronizar, continuacaoDe, pasta, avisarErro, TRAVA };
