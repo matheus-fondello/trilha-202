@@ -401,6 +401,9 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
       // limite de uso bateu, a janela fechou). Não se refaz a aula: só se fecha.
       // A fluência que não passou e já fecha a aula (duas tentativas, ou a escolha de seguir, 21/10) também conta.
       linhas.push('Retomada no fechamento: os marcos' + (a.fluencia ? ' e a fluência' : '') + ' já estão registrados, e o chat anterior parou antes de fechar a aula. Cumprimente em uma linha, diga que falta só fechar a aula e feche como a `tutor` manda, sem reabrir a matéria' + (a.avaliacao === false ? '' : reg.avaliada_em ? ' (a avaliação já está registrada: não rode o `avaliar` de novo)' : ': o `avaliar` lê também o chat anterior') + '.');
+    } else if (reg.status === 'em_andamento' && a.tipo === 'aula' && a.fluencia && reg.fluencia && !reg.fluencia.passou && Array.isArray(a.milestones) && a.milestones.every((m) => reg.milestones[m.id])) {
+      // A primeira fluência não passou e o chat parou antes da escolha (21/10): não há marco pendente para continuar.
+      linhas.push('Retomada na fluência: os marcos e a primeira tentativa já estão registrados. Cumprimente em uma linha e siga a linha da fluência acima, sem reabrir a matéria.');
     } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
     }
