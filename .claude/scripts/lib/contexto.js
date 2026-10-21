@@ -53,10 +53,13 @@ function trechosDaSkill(idAula) {
 // Em que agente o aluno fez a unidade (21/10): o das sessões dela, no histórico e
 // a aberta. A do Codex leva `agente` enquanto está aberta, e o chat dela fica em
 // `e.codex.chats`; o histórico não guarda o agente. 'ambos' é a aula que trocou
-// de agente no meio. Sem sessão nenhuma, o agente deste processo.
+// de agente no meio. Sem sessão nenhuma, o agente deste processo. A aberta que
+// ainda não teve turno (o chat que o aluno só abriu) não conta: sem fala nenhuma,
+// ela faria da aula 'ambos' sem ter havido aula no outro agente.
 function agenteDaUnidade(e, idUnidade) {
   const chats = (e && e.codex && e.codex.chats) || {};
-  const sessoes = [...((e && e.sessoes) || []), ...(e && e.sessao_atual ? [e.sessao_atual] : [])]
+  const aberta = e && e.sessao_atual && e.sessao_atual.contada !== false ? [e.sessao_atual] : [];
+  const sessoes = [...((e && e.sessoes) || []), ...aberta]
     .filter((s) => s && (s.aula === idUnidade || (s.aulas || []).includes(idUnidade)));
   const doCodex = (s) => s.agente === 'codex' || Boolean(s.id && Object.prototype.hasOwnProperty.call(chats, s.id));
   const vistos = new Set(sessoes.map((s) => (doCodex(s) ? 'codex' : 'claude')));
@@ -100,7 +103,7 @@ function semCodex(texto) {
 // Codex saíram do plano.
 const SOBRE_O_AGENTE = {
   codex: '- Agente: o aluno fez esta aula no Codex. Onde o plano traz um trecho *no Codex:*, é ele que vale, no lugar do que o plano diz do Claude Code naquele ponto, e a forma só do Claude Code não vale (um `CLAUDE.md`, que o Codex não lê, no lugar do `AGENTS.md`). No resto, o plano foi escrito com os nomes do Claude Code, e o equivalente do Codex vale igual (`/new` no lugar de `/clear`, `/status` no lugar de `/context`).',
-  ambos: '- Agente: o aluno fez esta aula em parte no Claude Code e em parte no Codex. Onde o plano traz um trecho *no Codex:*, vale a forma do agente em que ele fez aquela parte.',
+  ambos: '- Agente: o aluno fez esta aula em parte no Claude Code e em parte no Codex, e a transcrição diz no começo de cada chat em qual dos dois ele foi. Onde o plano traz um trecho *no Codex:*, ele vale só para o que foi feito nos chats do Codex; nos do Claude Code vale a forma do Claude Code, e a do Codex não a substitui. A fluência vale pela forma do agente do chat em que ela foi feita.',
 };
 
 // O contexto que o avaliador não tem como deduzir da transcrição: qual unidade

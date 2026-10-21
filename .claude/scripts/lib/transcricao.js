@@ -459,15 +459,22 @@ function ler(e, idAula, opcoes = {}) {
     // agentes junta as duas formas, cada uma lida com o seu. O teste barato vem antes, para o Claude não carregar nada.
     const nl = bruto.indexOf('\n');
     const codex = (nl === -1 ? bruto : bruto.slice(0, nl)).includes('"session_meta"') ? require('./codex/transcricao') : null;
-    const convertido = codex && codex.eDoCodex(bruto)
+    const doCodex = Boolean(codex && codex.eDoCodex(bruto));
+    const convertido = doCodex
       ? codex.converter(bruto, tirar, { trecho, aula: idAula, ultimo: fechamento && i === fontes.length - 1 })
       : converter(bruto, tirar);
-    if (convertido.trim()) partes.push(convertido);
+    if (convertido.trim()) partes.push({ texto: convertido, codex: doCodex });
   });
   if (bloqueada) return { ok: false, sandbox: 'leitura', motivo: require('./codex/leitura').motivo('a conversa desta aula') };
   if (!partes.length) return { ok: false, motivo: 'não consegui ler a transcrição desta sessão' };
-  const separador = '\n\n[--- chat seguinte, mesma aula ---]\n\n';
-  const texto = cortar(partes.join(separador), limite);
+  // A aula que passou pelos dois agentes (21/10): cada chat diz em qual foi, porque o plano dela vale com a forma do
+  // agente de cada parte, e sem a marca o avaliador aceitava as duas em toda parte. Num agente só, o texto de sempre.
+  const misto = new Set(partes.map((p) => p.codex)).size > 1
+    || (e.codex && require('./contexto').agenteDaUnidade(e, idAula) === 'ambos');
+  const agente = (p) => (p.codex ? 'Codex' : 'Claude Code');
+  const texto = cortar(misto
+    ? partes.map((p, i) => `[--- ${i ? 'chat seguinte, mesma aula' : 'primeiro chat da aula'}, no ${agente(p)} ---]\n\n${p.texto}`).join('\n\n')
+    : partes.map((p) => p.texto).join('\n\n[--- chat seguinte, mesma aula ---]\n\n'), limite);
   // Aula de verdade não cabe em duas linhas. Transcrição curta demais é sessão
   // trocada ou arquivo pela metade, e avaliar isso daria nota baixa por engano.
   if (texto.length < 500) return { ok: false, motivo: 'a transcrição desta sessão está vazia ou curta demais para sustentar uma avaliação' };
@@ -477,7 +484,7 @@ function ler(e, idAula, opcoes = {}) {
 // O que o aluno disse, digitou, colou ou anexou, tirado do texto que o avaliador
 // leu. Uma fala começa numa linha `ALUNO...:` e vai até a próxima fala de
 // qualquer um; o texto de uma fala pode ter várias linhas.
-const INICIO_DE_FALA = /^(ALUNO(?: \([^)]*\))?:|TUTOR:| {2}\[tutor rodou:| {2}\[resposta:|\[--- chat seguinte|\[\.\.\.trecho do meio)/;
+const INICIO_DE_FALA = /^(ALUNO(?: \([^)]*\))?:|TUTOR:| {2}\[tutor rodou:| {2}\[resposta:|\[--- (?:chat seguinte|primeiro chat)|\[\.\.\.trecho do meio)/;
 
 // Cada fala com a origem: `digitou` (ALUNO:), `colou`, `anexou`, `longo`
 // (texto longo, talvez colado) ou `imagem`. A marca de continuação sai.
