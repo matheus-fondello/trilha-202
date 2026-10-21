@@ -87,11 +87,15 @@ discussão de confiança e do vídeo. Aluno que só quer operar não precisa.
 
 ## No Codex
 
-Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `auto-mode` e no `manual-e-allowlist`, a primeira e a segunda; no `modelo-e-custo`, a terceira.
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `auto-mode`, a primeira e a segunda; no `manual-e-allowlist`, a terceira; no `modelo-e-custo`, a quarta.
 
 - **OpenAI, *Permissions*** — documentação do Codex
   https://learn.chatgpt.com/docs/permission-modes
   Os modos de permissão, o que cada um deixa fazer sem perguntar, e a revisão automática.
+
+- **OpenAI, *Auto-review*** — documentação do Codex
+  https://learn.chatgpt.com/docs/sandboxing/auto-review
+  O que a revisão automática barra, o que acontece quando ela nega, e o disjuntor que interrompe o turno.
 
 - **OpenAI, *Sandboxing*** — documentação do Codex
   https://learn.chatgpt.com/docs/sandboxing

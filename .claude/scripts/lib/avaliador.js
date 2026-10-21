@@ -529,7 +529,15 @@ function avaliar(entrada) {
 // que ninguém aqui consegue garantir em Windows, Mac e Linux. O que só um
 // navegador faz chega pela conferência que o tutor escreveu antes, como fato e
 // sem nota; o resto, o harness juntou (lib/entrega.js).
-function montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }) {
+// O agente em que ele fez a prática (21/10, contexto.agenteDaUnidade): a régua da P1 aceita o AGENTS.md "se ele fez no
+// Codex", e sem isto o corretor não tinha como saber, e o aceitava de qualquer um.
+const AGENTE_DA_PRATICA = {
+  claude: 'O aluno fez esta prática no Claude Code: onde a régua aceita a forma do Codex (o `AGENTS.md` no lugar do `CLAUDE.md`), ela não vale para ele, porque o Claude Code não lê o `AGENTS.md`.',
+  codex: 'O aluno fez esta prática no Codex: onde a régua fala do `CLAUDE.md`, vale o `AGENTS.md`, que é o arquivo que o Codex lê, e o equivalente do Codex de um recurso do Claude Code vale igual.',
+  ambos: 'O aluno fez esta prática em parte no Claude Code e em parte no Codex: vale o arquivo de instruções de qualquer um dos dois.',
+};
+
+function montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros, agente = 'claude' }) {
   const correcao = erros && erros.length
     ? `\n## Corrija e responda de novo\n\nA resposta anterior foi recusada pela validação do harness:\n  - ${erros.join('\n  - ')}\nMantenha o julgamento; conserte a forma.\n`
     : '';
@@ -537,6 +545,8 @@ function montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferenc
   return `Você corrige a prática ${idPratica} da trilha da 202. Não conduziu a prática, não vai conversar com ninguém e não tem nada a entregar além de um objeto JSON. Ninguém lê a sua resposta a não ser o harness: o aluno recebe, do tutor, só o feedback em palavras.
 
 Você não tem navegador nem ferramentas. Onde a régua abaixo manda abrir a página, usar o sistema, ver no celular ou rodar testes, use a **conferência** que o tutor escreveu depois de fazer isso no navegador; ela é fato observado, sem juízo. Onde nem a conferência nem o material cobrem um check, não suponha: diga na justificativa que não deu para verificar e dê a nota que a evidência que existe sustenta. Onde a régua manda "registrar suspeita", use o campo \`suspeita\`.
+
+${AGENTE_DA_PRATICA[agente] || AGENTE_DA_PRATICA.claude}
 
 ## A régua
 
@@ -571,13 +581,13 @@ Responda **apenas** com um objeto JSON nesta forma, sem cerca de código e sem c
 }`;
 }
 
-function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar, sanear, criterios }) {
+function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material, validar, sanear, criterios, agente }) {
   let ultimo = 'o corretor não produziu nada';
   let erros = null;
   let uso = null;
   let quem = {};
   for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
-    const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros }), undefined, { esquema: 'correcao', criterios });
+    const r = chamar(montarPromptCorrecao({ idPratica, regua: reguaPratica, brief, conferencia, material, erros, agente }), undefined, { esquema: 'correcao', criterios });
     if (r.motor) quem = { motor: r.motor };
     // Sem o Claude Code na máquina (20/10), tentar de novo agora não acha outro: a correção espera o aluno instalá-lo.
     if (!r.ok && (r.limite || r.login || r.sandbox || r.semRede || r.ausente)) return { ok: false, limite: Boolean(r.limite), login: Boolean(r.login), ausente: Boolean(r.ausente), executavel: r.executavel || null, motivo: r.motivo.replace(/avaliador/g, 'corretor'), tentativas: tentativa, uso, ...doCodex(r) };

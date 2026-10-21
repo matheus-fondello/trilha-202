@@ -50,6 +50,59 @@ function trechosDaSkill(idAula) {
   };
 }
 
+// Em que agente o aluno fez a unidade (21/10): o das sessões dela, no histórico e
+// a aberta. A do Codex leva `agente` enquanto está aberta, e o chat dela fica em
+// `e.codex.chats`; o histórico não guarda o agente. 'ambos' é a aula que trocou
+// de agente no meio. Sem sessão nenhuma, o agente deste processo.
+function agenteDaUnidade(e, idUnidade) {
+  const chats = (e && e.codex && e.codex.chats) || {};
+  const sessoes = [...((e && e.sessoes) || []), ...(e && e.sessao_atual ? [e.sessao_atual] : [])]
+    .filter((s) => s && (s.aula === idUnidade || (s.aulas || []).includes(idUnidade)));
+  const doCodex = (s) => s.agente === 'codex' || Boolean(s.id && Object.prototype.hasOwnProperty.call(chats, s.id));
+  const vistos = new Set(sessoes.map((s) => (doCodex(s) ? 'codex' : 'claude')));
+  if (vistos.size > 1) return 'ambos';
+  if (vistos.size === 1) return [...vistos][0];
+  return require('./agente').atual() === 'codex' ? 'codex' : 'claude';
+}
+
+// O plano traz a forma do Codex em trechos *no Codex:* (21/10), entre parênteses
+// no meio da frase ou até o fim da linha. Para quem fez no Claude Code eles saem:
+// lidos pelo avaliador, deixavam passar o aluno do Claude com a forma do Codex
+// (o revisor só instruído a não escrever na 1.11, o plano corrigido por pedido em
+// vez de editado na 1.6, um AGENTS.md que o Claude Code não lê na 1.2).
+function semCodex(texto) {
+  if (!texto) return texto;
+  const s = String(texto);
+  const abre = /[ \t]?\(\*[Nn]o Codex:\*/g;
+  let saida = '';
+  let desde = 0;
+  let m;
+  while ((m = abre.exec(s))) {
+    let nivel = 0;
+    let fim = -1;
+    for (let i = s.indexOf('(', m.index); i < s.length && s[i] !== '\n'; i++) {
+      if (s[i] === '(') nivel++;
+      else if (s[i] === ')' && --nivel === 0) { fim = i; break; }
+    }
+    if (fim < 0) continue;
+    saida += s.slice(desde, m.index);
+    desde = fim + 1;
+    abre.lastIndex = desde;
+  }
+  return (saida + s.slice(desde))
+    .replace(/[ \t]*\*[Nn]o Codex:\*[^\n]*/g, '')
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// O que o avaliador ouve sobre o agente. No Claude Code, nada: os trechos do
+// Codex saíram do plano.
+const SOBRE_O_AGENTE = {
+  codex: '- Agente: o aluno fez esta aula no Codex. Onde o plano traz um trecho *no Codex:*, é ele que vale, no lugar do que o plano diz do Claude Code naquele ponto, e a forma só do Claude Code não vale (um `CLAUDE.md`, que o Codex não lê, no lugar do `AGENTS.md`). No resto, o plano foi escrito com os nomes do Claude Code, e o equivalente do Codex vale igual (`/new` no lugar de `/clear`, `/status` no lugar de `/context`).',
+  ambos: '- Agente: o aluno fez esta aula em parte no Claude Code e em parte no Codex. Onde o plano traz um trecho *no Codex:*, vale a forma do agente em que ele fez aquela parte.',
+};
+
 // O contexto que o avaliador não tem como deduzir da transcrição: qual unidade
 // é esta, o que ela se propunha a ensinar e o que ficou registrado como fato.
 function contextoDaAula(e, a, reg) {
@@ -62,13 +115,18 @@ function contextoDaAula(e, a, reg) {
       // critério escrito. A comparação entre os dois é feita no CRM.
       ? 'A fluência foi registrada pelo tutor. O resultado dele não vem aqui de propósito: o juízo é seu, contra o critério escrito no plano da aula.'
       : 'Esta aula tem teste de fluência, mas ele não chegou a ser registrado.';
-  const skill = trechosDaSkill(a.id);
+  const agente = agenteDaUnidade(e, a.id);
+  const bruto = trechosDaSkill(a.id);
+  const skill = bruto && agente === 'claude'
+    ? { ...bruto, goal: semCodex(bruto.goal), marcos: semCodex(bruto.marcos), fluencia: semCodex(bruto.fluencia) }
+    : bruto;
   const blocos = [
     [
       `- Unidade: ${a.id} — ${a.titulo}`,
       `- Marcos registrados:\n    ${fechados.join('\n    ')}`,
       `- ${fluencia}`,
       `- Sessões que o aluno já gastou nesta unidade: ${reg.sessoes || 1} (é contexto, não critério: aula longa ou dividida em chats não abaixa nota).`,
+      ...(SOBRE_O_AGENTE[agente] ? [SOBRE_O_AGENTE[agente]] : []),
     ].join('\n'),
   ];
   if (!skill) {
@@ -83,4 +141,4 @@ function contextoDaAula(e, a, reg) {
   return blocos.join('\n\n');
 }
 
-module.exports = { contextoDaAula, trechosDaSkill, arquivoDaSkill };
+module.exports = { contextoDaAula, trechosDaSkill, arquivoDaSkill, agenteDaUnidade, semCodex };

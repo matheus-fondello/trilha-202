@@ -41,7 +41,7 @@ const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
-const { contextoDaAula, trechosDaSkill } = require('./lib/contexto');
+const { contextoDaAula, trechosDaSkill, agenteDaUnidade } = require('./lib/contexto');
 const produto = require('./lib/produto');
 const entregaLib = require('./lib/entrega');
 const documentos = require('./lib/documentos');
@@ -1717,6 +1717,7 @@ async function corrigirFora(e, p, idPratica, arqConferencia) {
     sanear: (c, ultima) => sanearCorrecao(c, conferido, ultima),
     // O esquema estrito do Codex precisa das chaves da prática; o Claude não usa.
     criterios: mapa.aula(idPratica).criterios,
+    agente: agenteDaUnidade(e, idPratica),
   });
   if (!r.ok && (r.sandbox || r.semRede)) return correcaoNoSandbox(e, p, idPratica, r.motivo, r.semRede ? 'sem-rede' : 'sandbox', r.uso);
   // No limite de uso a correção não falhou: espera a cota voltar, no mesmo chat
