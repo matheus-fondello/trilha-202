@@ -7,7 +7,7 @@
 // ferramenta nenhuma (lib/avaliador.js), e este módulo junta o que ele precisa
 // ler, na ordem que a régua de cada prática pede:
 //
-//   - os arquivos da entrega, na pasta registrada, com a spec, o CLAUDE.md, o
+//   - os arquivos da entrega, na pasta registrada, com a spec, o CLAUDE.md (ou o AGENTS.md), o
 //     README, o design e os testes na frente do resto;
 //   - o histórico de commits, pela pasta local (a régua pergunta se o trabalho
 //     aparece pronto num commit só);
@@ -43,7 +43,7 @@ const IGNORAR = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out'
 // `spec` não casa arquivo de teste (`calc.spec.ts`): um teste passava na frente
 // do README, e com o teto o README ficava de fora e a régua lia ausência.
 const PRIORIDADE = [
-  /^plano\.md$/i, /^(?!.*\.spec\.[cm]?[jt]sx?$).*spec/i, /^claude\.md$/i, /^readme/i, /design|estilo|style-guide/i,
+  /^plano\.md$/i, /^(?!.*\.spec\.[cm]?[jt]sx?$).*spec/i, /^(claude|agents)\.md$/i, /^readme/i, /design|estilo|style-guide/i,
   /verifica|evidenc|checklist|screenshot/i, /test|spec\.(js|ts)$/i,
   /^index\.html?$/i,
 ];
@@ -84,7 +84,7 @@ function arquivos(pasta) {
     try { bruto = fs.readFileSync(path.join(pasta, rel)); } catch (err) { if (leitura.bloqueada(err)) bloqueio = 'leitura'; continue; }
     if (bruto.includes(0)) continue;
     let texto = bruto.toString('utf8');
-    // Só o plano, a spec, o CLAUDE.md e o README: testes ficam no teto comum.
+    // Só o plano, a spec, o CLAUDE.md (ou o AGENTS.md) e o README: testes ficam no teto comum.
     const teto = prioridade(rel) <= 3 ? POR_ARQUIVO_PRIORITARIO : POR_ARQUIVO;
     if (texto.length > teto) texto = texto.slice(0, teto) + `\n[...cortado: ${texto.length} caracteres no total...]`;
     // Um arquivo que não cabe é pulado e nomeado, e não encerra a coleta: os

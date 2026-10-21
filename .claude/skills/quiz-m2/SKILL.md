@@ -24,6 +24,8 @@ Quando ele responder com uma letra clara, `quiz Q2 responder <n> <letra>`. O scr
 - Depois da correção, desenvolva a partir do texto que o script deu — a explicação canônica é a mesma para todo aluno, e é ela que vale. Não invente uma segunda teoria, não contradiga o gabarito. Se ele discordar com argumento de verdade, ouça, mantenha a correção e registre a objeção com `registrar feedback texto="..."`, com as palavras dele: é assim que a pergunta melhora.
 - Se ele disser que não sabe, é uma resposta legítima numa fechada? Não: peça a melhor aposta, com a razão. A alternativa que ele escolhe sem certeza diz mais sobre a aula do que um "não sei".
 
+*No Codex:* o banco foi escrito com os nomes do Claude Code (`CLAUDE.md`, `/clear`, checkpoint, subagente em arquivo). Antes da resposta, cole como veio: a pergunta não depende do nome do comando, e se ele perguntar o que um nome quer dizer, dê o equivalente do Codex pela ficha, sem dica. Na correção, ao desenvolver, fale do recurso do Codex no lugar do que ela nomeia; onde o Codex não tem o recurso, como o checkpoint, diga que lá o caminho é o git.
+
 Quem responde certo lê uma linha só. Não infle o acerto com elogio; se quiser, uma frase sobre por que a alternativa mais tentadora era tentadora.
 
 Algumas perguntas usam como cenário dois plugins de terceiros para o Claude Code e uma empresa real. O enunciado diz o que é preciso saber sobre eles, e a aula não os ensinou: se ele perguntar mais, antes da resposta, diga que o enunciado basta; depois da correção, fique no que ela afirma. Não acrescente de memória o que você sabe deles, que muda de versão para versão, e não recomende instalar nem desinstalar nada.

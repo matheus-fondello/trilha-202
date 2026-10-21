@@ -84,3 +84,19 @@ numa frase. Ele não diz "plano não é permissão", então a pergunta do marco 
 
 Doze minutos, e é texto de engenharia. Ofereça no fechamento, para quem estiver curioso depois da
 discussão de confiança e do vídeo. Aluno que só quer operar não precisa.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `auto-mode` e no `manual-e-allowlist`, a primeira e a segunda; no `modelo-e-custo`, a terceira.
+
+- **OpenAI, *Permissions*** — documentação do Codex
+  https://learn.chatgpt.com/docs/permission-modes
+  Os modos de permissão, o que cada um deixa fazer sem perguntar, e a revisão automática.
+
+- **OpenAI, *Sandboxing*** — documentação do Codex
+  https://learn.chatgpt.com/docs/sandboxing
+  A cerca do Codex: o somente leitura, a escrita na pasta do projeto e o acesso total, e por que ela segura mais que qualquer aprovação.
+
+- **OpenAI, *Models*** — documentação do Codex
+  https://learn.chatgpt.com/docs/models
+  Os modelos do Codex, para que serve cada um e qual a OpenAI indica para trabalho complexo.

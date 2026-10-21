@@ -71,3 +71,15 @@ voltar antes de seguir.
 
 Vinte minutos: só no fechamento. É anterior ao `/btw` e cita o Replit junto com o Claude Code;
 nada contradiz a aula.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `um-chat-uma-tarefa` e no `sessoes`.
+
+- **OpenAI, *Slash commands*** — documentação do Codex
+  https://learn.chatgpt.com/docs/reference/slash-commands
+  A lista dos comandos do Codex, com o `/status`, o `/new`, o `/compact`, o `/side` e o `/plan`.
+
+- **OpenAI, *Subagents*** — documentação do Codex
+  https://learn.chatgpt.com/docs/agent-configuration/subagents
+  O subagente em arquivo, como se chama pelo nome, e o aviso de que ele herda as permissões do chat.

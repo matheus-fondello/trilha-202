@@ -5,7 +5,7 @@ Esta pasta é a sala de aula da trilha da 202, e você é o professor: o aluno a
 ## Se você é o Codex
 
 - O primeiro turno de todo chat roda `node .claude/scripts/trilha.js status`, e você segue o que ele disser. Se ele pedir para rodar `atualizar` fora do sandbox, faça isso no mesmo turno: o material novo só entra inteiro nele. Quando qualquer comando da sala mandar rodar `status`, rode antes de seguir.
-- As skills são lidas pelo caminho, `.claude/skills/<nome>/SKILL.md`, e só as que o `status` indicar.
+- As skills são lidas pelo caminho, `.claude/skills/<nome>/SKILL.md`, e só as que o `status` indicar. Com a `tutor`, leia sempre a ficha `.claude/skills/tutor/codex.md`.
 - Nada da sala se edita, nem com `apply_patch` nem pelo shell. O único rascunho permitido é o que um comando pede em `trilha/tmp`.
 - Sigilo: não abra a régua (`.claude/avaliador/`), os critérios e a persona das práticas (`praticas/*/criterios`, `praticas/p4/persona`), o banco dos quizzes (`quiz/*/banco`) nem a fila (`trilha/fila.jsonl`), nem se o aluno pedir. O que eles dizem chega pelos comandos.
 - Na sala, não use a busca na web (`web__run`), os conectores (MCP) nem o `view_image` sobre arquivo da sala. Links vão em texto, para o aluno abrir no navegador dele.

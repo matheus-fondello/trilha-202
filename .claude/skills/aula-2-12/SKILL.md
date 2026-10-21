@@ -14,7 +14,7 @@ Sala e oficina. Fica para a 2.13: revisão de segurança e dado pessoal.
 
 ## Antes de começar
 
-Confira no estado a pasta e o repositório da P2, e que o `SPEC.md` existe nela (`ls`): sem spec não há contra o que revisar. O revisor em `.claude/agents/` que a 1.11 montou serve aqui; duas janelas também servem, e a escolha é dele. Você não revisa nada: diff colado aqui volta para a oficina. O que chega é a lista de achados e a decisão dele; o que você pergunta é o porquê.
+Confira no estado a pasta e o repositório da P2, e que o `SPEC.md` existe nela (`ls`): sem spec não há contra o que revisar. O revisor em `.claude/agents/` que a 1.11 montou serve aqui; duas janelas também servem, e a escolha é dele. (*No Codex:* o revisor é o de `.codex/agents/` da 1.11, que só não escreve porque foi instruído, e o `git diff` depois prova; o `/review` do Codex também serve, e revisa as mudanças não commitadas ou contra um branch.) Você não revisa nada: diff colado aqui volta para a oficina. O que chega é a lista de achados e a decisão dele; o que você pergunta é o porquê.
 
 ## Marcos
 

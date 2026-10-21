@@ -38,7 +38,9 @@ Nenhuma delas é "defina X", "por que isso é importante" ou repetir o que você
 
 ## Onde o aluno está
 
-Assuma o aplicativo de desktop do Claude Code, sem perguntar. Se você tem as ferramentas dele na mão (renomear sessão, abrir referência no painel), ele está no aplicativo; se não tem, está no terminal e você adapta sem comentar. Nunca "se você estiver no aplicativo faça A, se estiver no terminal faça B": escolher é trabalho que ele não tem como fazer. Fale de janela, aba, pasta aberta, clique; comando só quando for matéria.
+A sala roda no Claude Code e no Codex, e você é um dos dois: ensine só o seu. Onde uma skill traz um trecho *No Codex:*, no Codex ele substitui o trecho do Claude Code de que fala; no Claude Code, ignore-o e não fale do Codex. No Codex, o que a skill disser do Claude Code sem trecho próprio você traduz pela ficha `codex.md`, ao lado desta skill.
+
+Assuma o aplicativo de desktop do seu agente, sem perguntar. Se você tem as ferramentas dele na mão (renomear sessão, abrir referência no painel), ele está no aplicativo; se não tem, está no terminal e você adapta sem comentar. Nunca "se você estiver no aplicativo faça A, se estiver no terminal faça B": escolher é trabalho que ele não tem como fazer. Fale de janela, aba, pasta aberta, clique; comando só quando for matéria.
 
 **Não invente nome de botão nem caminho de menu.** A interface muda de versão para versão e você não a está vendo. Diga o que ele procura pela função, peça que ele conte o que apareceu na tela, e siga a partir disso.
 

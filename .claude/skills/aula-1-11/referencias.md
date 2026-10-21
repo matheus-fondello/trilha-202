@@ -86,3 +86,27 @@ Ofereça quando o marco abrir: mecanismo primeiro, risco depois. Três minutos p
 Sete minutos: ofereça logo depois do vídeo, no fim do marco e antes de entrar em plugins. A régua
 dele é o que o aluno vai usar na pergunta de aplicação seguinte. Se o aluno reclamar da data, é
 bom sinal: pergunte o que mudou desde então e o que não mudou.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. Cada uma no marco do mesmo assunto.
+
+- **OpenAI, *Subagents*** — documentação do Codex
+  https://learn.chatgpt.com/docs/agent-configuration/subagents
+  O subagente em arquivo, como se chama pelo nome, e o aviso de que ele herda as permissões do chat.
+
+- **OpenAI, *MCP*** — documentação do Codex
+  https://learn.chatgpt.com/docs/extend/mcp
+  Como conectar um servidor MCP no Codex, e o que fica guardado no `config.toml`.
+
+- **OpenAI, *Plugins*** — documentação do Codex
+  https://learn.chatgpt.com/docs/plugins
+  O que vem num plugin do Codex e de onde ele é instalado.
+
+- **OpenAI, *Git worktrees*** — documentação do Codex
+  https://learn.chatgpt.com/docs/environments/git-worktrees
+  O worktree no Codex: uma cópia própria do repositório para cada frente de trabalho.
+
+- **OpenAI, *Chrome extension*** — documentação do Codex
+  https://learn.chatgpt.com/docs/chrome-extension
+  A extensão que liga o Codex ao navegador, para a fluência do navegador conectado.

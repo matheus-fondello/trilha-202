@@ -77,3 +77,15 @@ Ofereça no fim do marco, quando ele já sabe o que uma skill é.
 
 Cinco minutos, então cabe no meio da aula. Ofereça depois de fechar o marco `hooks`,
 quando a distinção entre skill e hook estiver fresca e ele ainda tiver a dúvida na mão.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `skills` e no `hooks`.
+
+- **OpenAI, *Build skills*** — documentação do Codex
+  https://learn.chatgpt.com/docs/build-skills
+  A anatomia da skill do Codex, onde ela mora no projeto e por que a descrição é o que dispara.
+
+- **OpenAI, *Hooks*** — documentação do Codex
+  https://learn.chatgpt.com/docs/hooks
+  Os eventos, como um hook bloqueia uma ferramenta, e por que o Codex só roda hook revisado e confiado.

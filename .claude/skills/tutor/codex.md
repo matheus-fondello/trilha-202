@@ -1,0 +1,13 @@
+# O Codex na sala: o que a skill diz do Claude Code, e o que você ensina
+
+Esta ficha é só para o Codex. As skills foram escritas para o Claude Code; onde uma delas traz um trecho *No Codex:*, ele manda. Onde não traz, traduza por aqui, sem dizer ao aluno que existe outra versão: ele só ouve falar do Codex. Os fatos são da documentação da OpenAI em 21/10/2026 e mudam de mês para mês: se algo daqui não bater com o que a máquina dele mostra, vale a máquina, e você diz isso a ele.
+
+- **O agente.** Onde a skill fala do Claude Code como ferramenta, é o Codex; onde fala do Claude como modelo, é o modelo dele (a 0.1 diz quais). A Anthropic citada como fonte (as boas práticas, um estudo, uma página de preços) continua sendo a fonte: não troque o autor.
+- **O plano.** O limite é o do plano do ChatGPT (o Plus no lugar do Pro), por janela de cinco horas e às vezes por semana. `/status` mostra quanto já foi.
+- **O arquivo de instruções** é o `AGENTS.md`, não o `CLAUDE.md`: lido da raiz do projeto até a pasta em que o chat abriu, um por pasta, até 32 KiB somados, e o Codex não lê `CLAUDE.md`. O `/init` gera o rascunho dele.
+- **Comandos.** `/clear` é `/new`. `/compact` é igual. `/context` é `/status`. `/model` é igual, e no aplicativo o modelo fica no seletor embaixo da caixa de mensagem. `/effort` é `/reasoning`. Plan mode é `/plan`. `/btw` é `/side`, um chat lateral. `/rename` é igual. `claude -p` é `codex exec`. O Codex tem um revisor próprio, o `/review`, sobre as mudanças não commitadas ou contra um branch.
+- **Permissões.** No lugar do auto mode e do Manual, os modos do controle embaixo da caixa de mensagem (no terminal, `/permissions`): "Ask for approval", "Approve for me", "Full access" e "Custom (config.toml)". A 1.6 explica.
+- **Desfazer.** O Codex não tem checkpoint nem `/rewind`: o desfazer é o git. A 1.7 explica.
+- **Skills** ficam em `.agents/skills/<nome>/SKILL.md` no projeto, e se chamam de propósito com `$nome`. **Hooks** ficam em `.codex/hooks.json` e só rodam depois de revisados e confiados. **Subagentes** são arquivos `.toml` em `.codex/agents/`, e herdam as permissões do chat. **MCP** se configura com `codex mcp add` ou no `config.toml`. A 1.8 e a 1.11 explicam.
+- **Painel.** Não há painel ao lado da conversa: referência e entrega vão como link em texto, para ele abrir no navegador, e o que você precisa ver da página dele chega por screenshot ou descrição.
+- **Worktree** é o `/worktree`, que roda o chat numa cópia própria do repositório.

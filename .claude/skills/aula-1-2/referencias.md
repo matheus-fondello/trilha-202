@@ -68,3 +68,15 @@ A dissecação a sério fica para a 1.8; aqui é só um olhar de reconhecimento.
 
 Três minutos pausam a aula sem custo. Ofereça cedo, depois do marco `agente`: o vídeo
 faz o trabalho visual que a sua explicação não faz, e o resto da aula rende mais.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. No marco `disco-como-memoria` e no `superficies`.
+
+- **OpenAI, *AGENTS.md*** — documentação do Codex
+  https://learn.chatgpt.com/docs/agent-configuration/agents-md
+  Onde o Codex procura o AGENTS.md, em que ordem junta os arquivos e o limite de tamanho.
+
+- **OpenAI, *Slash commands*** — documentação do Codex
+  https://learn.chatgpt.com/docs/reference/slash-commands
+  A lista dos comandos do Codex, com o `/status`, o `/new`, o `/compact`, o `/side` e o `/plan`.

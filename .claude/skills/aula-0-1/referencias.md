@@ -49,3 +49,15 @@ Esta aula é curta e o vídeo tem menos de quatro minutos. Não pause no meio: o
 fechamento, junto com a despedida. Uns quarenta segundos do meio falam de configurar modelo
 padrão para a organização; diga que aquele trecho é para quem gerencia equipe e siga. O texto
 da Lydia Hallie, citado acima, diz o mesmo em cinco minutos de leitura para quem preferir ler.
+
+## No Codex
+
+Só no Codex: no lugar das páginas do Claude Code acima, estas, como link em texto, porque lá não há painel. Ficam fora da bibliografia da sala. Para a recomendação de modelo, se ele quiser ver a fonte.
+
+- **OpenAI, *Models*** — documentação do Codex
+  https://learn.chatgpt.com/docs/models
+  Os modelos do Codex, para que serve cada um e qual a OpenAI indica para trabalho complexo.
+
+- **OpenAI, *Pricing*** — documentação do Codex
+  https://learn.chatgpt.com/docs/pricing
+  Quantas mensagens cada modelo rende por janela de cinco horas em cada plano: é aqui que o Luna mostra por que economiza.
