@@ -7,7 +7,8 @@ process.env.TRILHA_202_AGENTE = 'codex';
 // evento, pelo id determinístico, e a trava não deixa os dois importarem juntos.
 //
 // A fila sobe de vez em quando, como no `atividade.js`: só no Stop, porque o UserPromptSubmit segura a mensagem do
-// aluno até o hook sair. Sai sempre com 0, e a única saída é o aviso ao chat retomado cuja aula já fechou (21/10).
+// aluno até o hook sair. Sai sempre com 0. As saídas são duas (21/10): no envio, o aviso ao chat retomado cuja aula já
+// fechou; no Stop, a cobrança de lib/codex/cobranca.js, que faz o Codex continuar o turno.
 //
 // O Stop não fecha o turno em andamento, e não adianta esperar por isso: o Codex roda o Stop dentro do turno (ele pode
 // pedir que o turno continue) e só grava o `task_complete` depois que o hook sai (codex-rs, session/turn.rs e
@@ -29,18 +30,38 @@ async function main() {
   if (entrada.hook_event_name === 'UserPromptSubmit') {
     // O chat antigo retomado depois de a aula dele fechar (21/10), como no `turno.js` do Claude: o tutor daqui só vê
     // a conversa velha. Uma vez por chat, marcado sob a trava.
+    // O começo do turno fica marcado para o Stop saber o que este turno tentou (lib/codex/cobranca.js).
     const aviso = sessao.comTrava(() => {
       const e = estadoLib.carregar();
       const s = e.sessao_atual;
       if (!s || s.id !== entrada.session_id) return null;
+      s.envio_em = agora();
       const fechada = estadoLib.aulaFechadaDoChat(e);
-      if (!fechada) return null;
-      s.aviso_fechada = fechada;
+      if (fechada) s.aviso_fechada = fechada;
       estadoLib.salvar(e);
-      return require('../../scripts/lib/resumo').avisoAulaFechada(e, fechada);
+      return fechada ? require('../../scripts/lib/resumo').avisoAulaFechada(e, fechada) : null;
     });
     if (aviso) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: aviso } }));
     return;
+  }
+
+  // A cobrança do fim do turno (21/10): o registro desmente o que o tutor acabou de fazer, e o Codex continua o turno
+  // com o motivo. Só na primeira parada do turno (`stop_hook_active`), para não prender o tutor num laço.
+  if (!entrada.stop_hook_active) {
+    const cobranca = require('../../scripts/lib/codex/cobranca');
+    const motivo = sessao.comTrava(() => {
+      const e = estadoLib.carregar();
+      const s = e.sessao_atual;
+      if (!s || s.id !== entrada.session_id) return null;
+      const fechou = cobranca.fechamento(e, s, entrada.last_assistant_message);
+      if (fechou) return fechou;
+      const pendente = cobranca.avaliacao(e, s);
+      if (!pendente) return null;
+      s.cobrou_avaliacao = [...(Array.isArray(s.cobrou_avaliacao) ? s.cobrou_avaliacao : []), ...pendente.ids];
+      estadoLib.salvar(e);
+      return pendente.texto;
+    });
+    if (motivo) process.stdout.write(JSON.stringify({ decision: 'block', reason: motivo }));
   }
 
   const fila = require('../../scripts/lib/fila');

@@ -66,8 +66,10 @@ function portaFechada(e, a, linhas, codex) {
 // fecha, porque o fechamento dela já roda o `avaliar`.
 // Desde 11/10 também a que falhou por outro motivo é tentada de novo, até a terceira (trilha.js, MAX_FALHAS), e a que falhou uma vez por falta de
 // login no `claude` da máquina; a que já falhou duas por login fica com o bloco de login (avaliacoesSemLogin).
-function pendencias(e, linhas, codex) {
-  const adiadas = Object.entries(e.aulas || {})
+// A lista das aulas com avaliação por rodar: o resumo a pede ao tutor no começo do chat, e no Codex o fim do turno
+// confere que ela foi tentada (lib/codex/cobranca.js).
+function avaliacoesPendentes(e, codex) {
+  return Object.entries(e.aulas || {})
     .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
       // Um processo à parte da versão anterior ainda vivo não é pendência: rodar de novo daria duas avaliações.
       && !avaliacaoRodando(r)
@@ -82,14 +84,19 @@ function pendencias(e, linhas, codex) {
       // comando, fechou o chat): o `concluir` marca, e só a nota registrada desmarca.
       && (r.avaliacao_pendente || r.avaliacao_em_andamento || r.avaliacao_adiada || r.avaliacao_login || r.avaliacao_falhou))
     .map(([id]) => id);
-  // A que estourou o tempo (19/10) roda de novo com prazo longo: nesta máquina a leitura é lenta, e o mesmo teto
-  // estouraria de novo. Em segundo plano, para o aluno não esperar minutos pela primeira resposta; o terminal do
-  // tutor corta em dois minutos o comando que roda na frente.
-  const lenta = (id) => {
-    const r = e.aulas[id] || {};
-    return /passou de \d+ segundos|não terminou a tempo/.test([(r.avaliacao_adiada || {}).motivo, (r.avaliacao_falhou || {}).motivo].filter(Boolean).join(' '));
-  };
-  const lentas = adiadas.filter(lenta);
+}
+// A que estourou o tempo (19/10) roda de novo com prazo longo: nesta máquina a leitura é lenta, e o mesmo teto
+// estouraria de novo. Em segundo plano, para o aluno não esperar minutos pela primeira resposta; o terminal do
+// tutor corta em dois minutos o comando que roda na frente.
+function avaliacaoLenta(e, id) {
+  const r = (e.aulas || {})[id] || {};
+  return /passou de \d+ segundos|não terminou a tempo/.test([(r.avaliacao_adiada || {}).motivo, (r.avaliacao_falhou || {}).motivo].filter(Boolean).join(' '));
+}
+const comandoAvaliar = (e, id) => `\`node .claude/scripts/trilha.js avaliar ${id}${avaliacaoLenta(e, id) ? ' --longo' : ''}\``;
+
+function pendencias(e, linhas, codex) {
+  const adiadas = avaliacoesPendentes(e, codex);
+  const lentas = adiadas.filter((id) => avaliacaoLenta(e, id));
   // No Codex (branch codex, T0.9) o shell não corta o comando longo: depois de uns 10 a 30 s ele devolve um
   // `session_id` com o comando ainda rodando, e o agente pode seguir a conversa. Esperar por ele custa uma volta do
   // modelo a cada 30 s, na cota do aluno: por isso o texto manda deixar rodando.
@@ -98,7 +105,7 @@ function pendencias(e, linhas, codex) {
     : lentas.length
     ? `Nesta máquina a avaliação é lenta e pode levar alguns minutos: rode ${lentas.length > 1 ? 'esses comandos' : 'o comando'} em segundo plano (run_in_background), sem esperar o resultado, e siga a aula; se a sua ferramenta de terminal não tiver essa opção, rode com o tempo máximo dela (timeout de 600000 ms), senão ela o corta em dois minutos.`
     : 'O comando leva uns vinte segundos.';
-  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => `\`node .claude/scripts/trilha.js avaliar ${id}${lenta(id) ? ' --longo' : ''}\``).join(' e ')}. ${tempo} Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
+  if (adiadas.length) linhas.push(`Pendência do harness: a avaliação ${adiadas.length > 1 ? 'das aulas' : 'da aula'} ${adiadas.join(', ')} não terminou no fim da aula (o chat fechou antes, limite de uso, API fora do ar ou outro erro). No seu primeiro turno, escreva primeiro o que o aluno vai ler e, por último, rode ${adiadas.map((id) => comandoAvaliar(e, id)).join(' e ')}. ${tempo} Não comente com o aluno; se o comando pedir alguma coisa, faça o que ele disser, e siga a aula.`);
   const quizzes = Object.entries(e.aulas || {})
     .filter(([, r]) => Object.values((r.quiz || {}).respostas || {}).some((x) => x && typeof x.texto_pendente === 'string'))
     .map(([id]) => id);
@@ -405,7 +412,9 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
     if (codex && !fimDoMapa) linhas.push(`Se as instruções das skills não estão mais com você, ${lerSkill('tutor')}, e depois ${lerSkill(skillDaVez)}${mapa.escrita(a) ? '' : ', se ele existir'}.`);
   } else {
     if (fimDoMapa) linhas.push(codex ? `Antes de responder ao aluno, ${lerSkill('tutor')}, e só ela. Não leia skill de aula.` : 'Antes de responder ao aluno, invoque só a skill `tutor`. Não carregue skill de aula.');
-    else if (codex) linhas.push(`Antes de responder ao aluno, ${lerSkill('tutor')}, e depois ${lerSkill(skillDaVez)}${mapa.escrita(a) ? '' : ', se ele existir'}. Não leia skills de outras aulas.`);
+    // Na volta a um chat (21/10), a leitura costuma já estar na conversa: ler de novo a cada volta gasta o limite do
+    // plano do aluno, que no gratuito é pequeno.
+    else if (codex) linhas.push(`Antes de responder ao aluno, ${lerSkill('tutor')}, e depois ${lerSkill(skillDaVez)}${mapa.escrita(a) ? '' : ', se ele existir'}. Não leia skills de outras aulas.${fonte === 'resume' ? ' Se esta conversa já tem as duas lidas, não leia de novo: siga por elas.' : ''}`);
     else linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
     if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
       linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
@@ -427,4 +436,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada };
+module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada, avaliacoesPendentes, comandoAvaliar };

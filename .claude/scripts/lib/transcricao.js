@@ -132,9 +132,12 @@ function fontesDaAula(e, idAula, { semFallback = false } = {}) {
   // `aulas`: o chat em que o aluno emendou a aula seguinte é das duas (estado.emendar).
   const atende = (s) => s.aula === idAula || (s.aulas || []).includes(idAula);
   const daSessao = (s) => ({ arquivo: localizar(s), trecho: trechoDe(e, s, idAula) });
-  const anteriores = (e.sessoes || []).filter(atende).map(daSessao);
-  const atual = e.sessao_atual && atende(e.sessao_atual) ? daSessao(e.sessao_atual) : null;
-  const lista = [...anteriores, atual].filter((f) => f && f.arquivo);
+  // Na ordem em que cada chat começou (21/10): quem volta a um chat antigo da aula tira a sessão dele do histórico, e
+  // ela volta no fim quando fecha de novo. Registro antigo sem o início fica na ordem do histórico.
+  const sessoes = [...(e.sessoes || []), e.sessao_atual].filter((s) => s && atende(s));
+  const comInicio = sessoes.every((s) => s.inicio && !Number.isNaN(Date.parse(s.inicio)));
+  const ordenadas = comInicio ? sessoes.map((s, i) => [s, i]).sort((a, b) => (Date.parse(a[0].inicio) - Date.parse(b[0].inicio)) || (a[1] - b[1])).map(([s]) => s) : sessoes;
+  const lista = ordenadas.map(daSessao).filter((f) => f && f.arquivo);
   const vistos = new Set();
   const unicos = lista.filter((f) => {
     const chave = f.arquivo + '\u0000' + JSON.stringify(f.trecho);

@@ -28,9 +28,9 @@ const TRAVA_VELHA_MS = 15000;
 // Turno sem fim com a conversa parada há mais que isto: o aplicativo foi fechado no meio da resposta.
 const ORFAO_MS = 30 * 60 * 1000;
 const VIVA_MS = estadoLib.MINUTOS_VIVA * 60 * 1000;
-// A versão do Codex da fixture mais nova (testes/fixtures/codex/app-0162.jsonl). Uma conversa de versão maior pode
-// ter mudado de formato: a 202 fica sabendo uma vez, e a aula segue.
-const VERSAO_CONHECIDA = [0, 162, 0];
+// A versão do Codex da fixture mais nova (testes/fixtures/codex/app-0163.jsonl, medida em 21/10 com o aplicativo e o
+// `codex exec`). Uma conversa de versão maior pode ter mudado de formato: a 202 fica sabendo uma vez, e a aula segue.
+const VERSAO_CONHECIDA = [0, 163, 0];
 
 // --- ids ---
 //
