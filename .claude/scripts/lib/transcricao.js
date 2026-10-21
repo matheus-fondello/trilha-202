@@ -312,6 +312,40 @@ function resumoDeFerramenta(bloco, tirar = (t) => t) {
 
 const AVALIAR = /trilha\.js\s+avaliar\b/;
 
+// A pergunta com opções (AskUserQuestion, que o aplicativo mostra como botões) entra desde 21/10: depois da primeira
+// fluência sem passar, o tutor pergunta por ela se o aluno quer tentar de novo ou seguir. Como comando e resposta de
+// ferramenta, a escolha dele chegava ao avaliador como "[tutor rodou: AskUserQuestion]", sem a pergunta nem a escolha.
+// A pergunta vira linha do tutor, com as opções; a resposta vira do aluno: "ALUNO (escolheu):" quando é uma das
+// opções (um clique, que não é fala: falasDoAluno a deixa de fora), e "ALUNO:" quando ele digitou em "Outro".
+function perguntasDe(bloco) {
+  const qs = bloco.input && Array.isArray(bloco.input.questions) ? bloco.input.questions : [];
+  return qs.filter((q) => q && typeof q.question === 'string')
+    .map((q) => ({ texto: q.question, opcoes: (Array.isArray(q.options) ? q.options : []).map((o) => String((o && o.label) || '')).filter(Boolean) }));
+}
+
+// A resposta de cada pergunta: do registro estruturado do Claude Code (`toolUseResult.answers`, pergunta → resposta)
+// ou, sem ele, do texto do resultado ('... "<pergunta>"="<resposta>", ...'). Pergunta recusada ou sem resposta: nada,
+// e o resultado segue o caminho de qualquer ferramenta.
+function respostasDe(ev, bloco, perguntas) {
+  const estruturadas = ev.toolUseResult && ev.toolUseResult.answers && typeof ev.toolUseResult.answers === 'object' ? ev.toolUseResult.answers : null;
+  const c = typeof bloco.content === 'string' ? bloco.content : blocos(bloco.content).map((x) => x.text || '').join(' ');
+  const out = [];
+  for (const q of perguntas) {
+    let r = estruturadas && typeof estruturadas[q.texto] === 'string' ? estruturadas[q.texto] : null;
+    if (r === null) {
+      const marca = `"${q.texto}"="`;
+      const i = c.indexOf(marca);
+      const m = i < 0 ? null : c.slice(i + marca.length).match(/^([\s\S]*?)"(?=, "|\.\s|\.?$)/);
+      if (m) r = m[1];
+    }
+    if (r === null || !r.trim()) continue;
+    // Com várias marcadas, o Claude Code junta as opções com vírgula.
+    const escolheu = q.opcoes.includes(r) || r.split(', ').every((x) => q.opcoes.includes(x));
+    out.push({ texto: r.trim(), escolheu });
+  }
+  return out;
+}
+
 function blocos(conteudo) {
   if (typeof conteudo === 'string') return [{ type: 'text', text: conteudo }];
   return Array.isArray(conteudo) ? conteudo : [];
@@ -329,6 +363,8 @@ function blocos(conteudo) {
 // porque são o contexto das respostas.
 function converter(bruto, tirar = (t) => t) {
   const itens = [];
+  // As perguntas com opções, pelo id da chamada, para achar a resposta de cada uma.
+  const perguntas = new Map();
   for (const linha of bruto.split('\n')) {
     if (!linha.trim()) continue;
     let ev;
@@ -355,8 +391,21 @@ function converter(bruto, tirar = (t) => t) {
         // o screenshot é a evidência pedida, e sumir com ele sem marca pesava
         // contra o aluno em esforço (achado 06).
         itens.push({ quem: 'ALUNO', linha: 'ALUNO: [anexou uma imagem, que não chega a esta transcrição]' });
+      } else if (b.type === 'tool_use' && b.name === 'AskUserQuestion' && perguntasDe(b).length) {
+        if (b.id) perguntas.set(b.id, perguntasDe(b));
+        // Fora do fechamento que o corte omite: a pergunta é neutra, e é o contexto da escolha.
+        for (const q of perguntasDe(b)) {
+          itens.push({ quem: 'pergunta', linha: `TUTOR: [perguntou com opções: ${q.opcoes.map((o) => umaLinha(tirar(o), 80)).join(' | ')}] ${continuacoes(tirar(semToken(q.texto)))}` });
+        }
       } else if (b.type === 'tool_use') {
         itens.push({ quem: 'cmd', avaliar: AVALIAR.test(comandoDe(b)), linha: `  [tutor rodou: ${resumoDeFerramenta(b, tirar)}]` });
+      } else if (b.type === 'tool_result' && perguntas.has(b.tool_use_id) && respostasDe(ev, b, perguntas.get(b.tool_use_id)).length) {
+        // A escolha conta como uma fala do aluno para o corte do fechamento, como a resposta digitada contaria: o que o
+        // tutor disse antes dela (o que faltou na fluência) fica, e só o que vem depois é fechamento.
+        for (const r of respostasDe(ev, b, perguntas.get(b.tool_use_id))) {
+          const texto = tirar(semToken(r.texto));
+          itens.push({ quem: 'ALUNO', linha: `${r.escolheu ? 'ALUNO (escolheu)' : rotulo(texto.length > LONGO ? 'longo' : 'digitou')}: ${continuacoes(texto)}` });
+        }
       } else if (b.type === 'tool_result') {
         const c = typeof b.content === 'string' ? b.content : blocos(b.content).map((x) => x.text || '').join(' ');
         const texto = tirar(semVeredito(semToken(limpar(c))));
@@ -442,7 +491,9 @@ function falasDoAluno(texto) {
       const m = linha.match(/^ALUNO(?: \(([^)]*)\))?: ?(.*)$/);
       if (!m) { atual = null; continue; }
       const r = m[1] || '';
-      const tipo = !r ? (m[2].startsWith('[anexou uma imagem') ? 'imagem' : 'digitou')
+      // A escolha numa pergunta com opções é um clique, não fala: não serve de evidência nem de trecho de resposta.
+      if (r === 'escolheu') { atual = null; continue; }
+      const tipo = !r ?(m[2].startsWith('[anexou uma imagem') ? 'imagem' : 'digitou')
         : r === 'colou' ? 'colou' : r.startsWith('anexou') ? 'anexou' : 'longo';
       atual = { tipo, linhas: [m[2]] };
     } else if (atual) atual.linhas.push(linha.startsWith(CONTINUACAO) ? linha.slice(CONTINUACAO.length) : linha);

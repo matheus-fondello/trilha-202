@@ -9,7 +9,8 @@
 //   node .claude/scripts/trilha.js oficina <caminho>
 //   node .claude/scripts/trilha.js seguir <aula>                                     (frentes: a escolha do começo do chat)
 //   node .claude/scripts/trilha.js milestone <aula> <id-do-milestone>
-//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas> [arquivos=<a>,<b>] [url=<endereço>]
+//   node .claude/scripts/trilha.js fluencia <aula> passou|nao-passou <tentativas> motivo='...' [arquivos=<a>,<b>] [url=<endereço>]
+//   node .claude/scripts/trilha.js fluencia <aula> seguir                            (o aluno não quis a segunda tentativa)
 //   node .claude/scripts/trilha.js avaliar <aula>
 //   node .claude/scripts/trilha.js concluir <aula>
 //   node .claude/scripts/trilha.js pratica <id> pasta=<caminho> [url=...] [repo=...]
@@ -552,7 +553,8 @@ const comandos = {
 
   fluencia([idAula, resultado, tentativas, ...resto]) {
     exigirAcesso();
-    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> motivo="<cada parte da condição: cumpriu ou não, com o quê, e a ajuda que você deu>" [arquivos=<a>,<b>] [url=<endereço>]');
+    if (idAula && resultado === 'seguir') return fluenciaSeguir(idAula);
+    if (!idAula || !['passou', 'nao-passou'].includes(resultado)) falhar('Uso: fluencia <aula> passou|nao-passou <tentativas> motivo="<cada parte da condição: cumpriu ou não, com o quê, e a ajuda que você deu>" [arquivos=<a>,<b>] [url=<endereço>], ou fluencia <aula> seguir, quando ele não quis a segunda tentativa');
     const a = mapa.aula(idAula);
     if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
     const n = parseInt(tentativas, 10);
@@ -654,9 +656,10 @@ const comandos = {
     }
     if (a.fluencia && !reg.fluencia) problemas.push('fluência não registrada');
     // Fluência que não passou não segura a trilha (11/10): depois da segunda chance a aula fecha assim mesmo, e o
-    // resultado fica registrado (sobe à 202 e vira sinal no Acompanhamento). Antes da segunda, ainda não fecha.
+    // resultado fica registrado (sobe à 202 e vira sinal no Acompanhamento). A segunda chance é opcional (21/10):
+    // depois da primeira sem passar o aluno escolhe tentar de novo ou seguir, e sem a escolha ainda não fecha.
     if (a.fluencia && reg.fluencia && !reg.fluencia.passou) {
-      if (reg.fluencia.tentativas < 2) problemas.push('fluência não passou na primeira tentativa: dê a segunda chance, com material ou enunciado novo, e registre de novo');
+      if (reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em) problemas.push(`fluência não passou na primeira tentativa: explique o que faltou, se ainda não explicou, e pergunte se ele quer tentar de novo ou seguir. Se seguir, \`fluencia ${idAula} seguir\`; se tentar, a segunda chance, com material ou enunciado novo, e registre de novo`);
       else avisos.push('a fluência não passou: a aula fecha assim mesmo e o resultado fica registrado para a 202');
     }
     if (a.tipo === 'pratica') {
@@ -702,7 +705,7 @@ const comandos = {
     const prox = mapa.seguinte(e, idAula);
     if (e.aula_atual === idAula && prox) e.aula_atual = prox.id;
     estadoLib.salvar(e);
-    fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula) }, e);
+    fila.enfileirar('aula.conclusao', { aula: idAula, proxima: prox ? prox.id : null, minutos_em_aula: minutosNaAula(e, idAula), ...(a.fluencia && reg.fluencia && reg.fluencia.seguiu_em ? { seguiu: true } : {}) }, e);
     const outras = mapa.abertas(e).filter((x) => !prox || x.id !== prox.id);
     const frentes = prox && outras.length
       ? ` Há outra frente aberta (${outras.map((x) => `${x.id} ${x.titulo}`).join('; ')}): no próximo chat ele escolhe por qual seguir.`
@@ -1301,7 +1304,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
       ...r.avaliacao,
       versao: 3,
       rubrica_sha: crypto.createHash('sha256').update(avaliador.regua(), 'utf8').digest('hex').slice(0, 12),
-      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}) } : null,
+      fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}), ...(reg.fluencia.seguiu_em ? { seguiu: true } : {}) } : null,
     };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
     const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
@@ -1465,6 +1468,26 @@ function pedirLogin(e, reg, idAula, motivo, uso, executavel, motor) {
   }
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo: `${motivo}; o aluno precisa refazer o login do Claude da linha de comando`, vezes, causa: 'login', avaliador: uso || null }, e);
   console.log(`A avaliação da aula ${idAula} não rodou de novo: ${motivo}. Ela segue pendente e a 202 foi avisada. O Claude da linha de comando desta máquina, que é quem avalia as aulas, está sem login, e só o aluno resolve isso. Se a aula ainda está aberta, feche-a normalmente com \`concluir ${idAula}\`. Depois, ou agora se este é o começo do chat, peça ao aluno que ${ehDoAplicativo(executavel) ? 'instale o Claude Code da linha de comando e faça o login nele (o que veio dentro do aplicativo muda de lugar quando o aplicativo se atualiza)' : executavel ? 'faça o login' : 'refaça o login'}, com o passo a passo: ${passosLogin(executavel)} Quando ele disser que funcionou, rode \`avaliar ${idAula}\` de novo. Se ele não puder agora, siga: o próximo chat volta a pedir.`);
+}
+
+// A segunda chance da fluência é opcional (21/10): alunos reclamavam de ser obrigados a refazer. Depois da primeira
+// tentativa sem passar, o tutor explica o que faltou e pergunta se ele quer tentar de novo ou seguir; esta é a escolha
+// de seguir, e com ela o `concluir` fecha a aula. Fica no registro da fluência (`seguiu_em`, como `registrada_em`), e
+// não vira evento próprio: o CRM não tem rótulo para um, e ela sobe como campo na conclusão e ao lado da avaliação.
+// Se ele mudar de ideia, a segunda tentativa registrada substitui o registro inteiro, e a escolha some junto.
+function fluenciaSeguir(idAula) {
+  const a = mapa.aula(idAula);
+  if (!a.fluencia) falhar(`aula ${idAula} não tem teste de fluência.`);
+  const e = estadoLib.carregar();
+  const reg = estadoLib.registroAula(e, idAula);
+  if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
+  const f = reg.fluencia;
+  if (!f) falhar(`a fluência da ${idAula} não foi registrada: seguir é a escolha dele depois de uma tentativa sem passar, registrada antes com \`fluencia ${idAula} nao-passou 1 motivo='...'\`.`);
+  if (f.passou) falhar(`a fluência da ${idAula} passou: não há o que escolher. Feche a aula.`);
+  if (f.tentativas !== 1) falhar(`a fluência da ${idAula} já tem ${f.tentativas} tentativas sem passar: a aula fecha assim mesmo, sem escolha. Feche a aula.`);
+  f.seguiu_em = agora();
+  estadoLib.salvar(e);
+  console.log(`Escolha registrada: a ${idAula} segue sem a segunda tentativa. Feche a aula agora: a \`nota\`, se a sessão rendeu alguma, \`concluir ${idAula}\` e, por último, \`avaliar ${idAula}\`.`);
 }
 
 // O instante da entrega, gravado uma vez só: quando o registro e os marcos da

@@ -294,7 +294,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
       }
     } else {
       if (a.fluencia) {
-        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)` : `ainda não passou (1 tentativa); falta a segunda chance, com material ou enunciado novo`)) : 'não feita'}.`);
+        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)' : `não passou em 1 tentativa e ele ainda não escolheu: pergunte se ele quer tentar de novo ou seguir (seguir é \`fluencia ${a.id} seguir\` e fecha a aula; tentar de novo é a segunda chance, com material ou enunciado novo)`)) : 'não feita'}.`);
       } else {
         linhas.push('Fluência: esta aula não tem.');
       }
