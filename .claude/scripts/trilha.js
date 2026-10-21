@@ -1951,7 +1951,12 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     const v = av.criterios[c];
     if ((c === 'esforco' || c === 'autonomia') && semTarefa && v === null) continue;
     if (!Number.isInteger(v) || v < 1 || v > 5 || ((c === 'esforco' || c === 'autonomia') && semTarefa)) {
-      erros.push(`criterios.${c} deve ser ${semTarefa && (c === 'esforco' || c === 'autonomia') ? 'null nesta aula sem tarefa' : 'inteiro de 1 a 5'}`);
+      // O `null` numa aula com tarefa (21/10): o avaliador lia "só conversa" como aula sem tarefa e repetia o `null` a
+      // cada volta, porque "inteiro de 1 a 5" não dizia o porquê. A volta diz.
+      const comTarefa = !semTarefa && v === null && (c === 'esforco' || c === 'autonomia')
+        ? ': esta aula tem tarefa observável (a fluência ou a oficina), e null só vale na aula marcada como sem tarefa'
+        : '';
+      erros.push(`criterios.${c} deve ser ${semTarefa && (c === 'esforco' || c === 'autonomia') ? 'null nesta aula sem tarefa' : 'inteiro de 1 a 5'}${comTarefa}`);
     }
   }
   if (av.criterios && typeof av.criterios === 'object') {
