@@ -72,4 +72,4 @@ Na pasta `material/` estão a nossa logo e o site atual com o código dele. As c
 
 ## O que você entrega
 
-Uma página no ar e o repositório público no GitHub. Dentro dele: uma spec curta com o que você decidiu e por quê, o arquivo de instruções do seu agente (o CLAUDE.md; no Codex, o AGENTS.md), o design escrito no disco e a evidência de que você verificou o resultado.
+Uma página no ar e o repositório público no GitHub. Dentro dele: uma spec curta com o que você decidiu e por quê, o arquivo de instruções que o seu agente lê toda vez que abre ali, o design escrito no disco e a evidência de que você verificou o resultado.
