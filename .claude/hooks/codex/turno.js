@@ -7,7 +7,7 @@ process.env.TRILHA_202_AGENTE = 'codex';
 // evento, pelo id determinístico, e a trava não deixa os dois importarem juntos.
 //
 // A fila sobe de vez em quando, como no `atividade.js`: só no Stop, porque o UserPromptSubmit segura a mensagem do
-// aluno até o hook sair. Sem saída, e sempre com 0.
+// aluno até o hook sair. Sai sempre com 0, e a única saída é o aviso ao chat retomado cuja aula já fechou (21/10).
 //
 // O Stop não fecha o turno em andamento, e não adianta esperar por isso: o Codex roda o Stop dentro do turno (ele pode
 // pedir que o turno continue) e só grava o `task_complete` depois que o hook sai (codex-rs, session/turn.rs e
@@ -25,9 +25,24 @@ async function main() {
   if (!entrada.session_id) return;
   const sessao = require('../../scripts/lib/codex/sessao');
   try { sessao.sincronizar(entrada.session_id); } catch (err) { sessao.avisarErro(err); }
-  if (entrada.hook_event_name === 'UserPromptSubmit') return;
-
   const estadoLib = require('../../scripts/lib/estado');
+  if (entrada.hook_event_name === 'UserPromptSubmit') {
+    // O chat antigo retomado depois de a aula dele fechar (21/10), como no `turno.js` do Claude: o tutor daqui só vê
+    // a conversa velha. Uma vez por chat, marcado sob a trava.
+    const aviso = sessao.comTrava(() => {
+      const e = estadoLib.carregar();
+      const s = e.sessao_atual;
+      if (!s || s.id !== entrada.session_id) return null;
+      const fechada = estadoLib.aulaFechadaDoChat(e);
+      if (!fechada) return null;
+      s.aviso_fechada = fechada;
+      estadoLib.salvar(e);
+      return require('../../scripts/lib/resumo').avisoAulaFechada(e, fechada);
+    });
+    if (aviso) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: aviso } }));
+    return;
+  }
+
   const fila = require('../../scripts/lib/fila');
   // A marca do último envio é gravada sob a trava: um estado gravado fora dela apagaria o que um comando do mesmo
   // turno acabou de importar.

@@ -219,6 +219,18 @@ function continuacaoRecente(fim) {
   return Number.isFinite(t) && Date.now() - t < CONTINUACAO_MS;
 }
 
+// O chat retomado de uma aula que já fechou, em outro chat ou no outro agente (21/10). Na retomada o aplicativo só
+// roda o hook de envio, e o tutor desse chat vê a conversa antiga com a aula aberta: sem esta linha ele seguia nela,
+// e disse ao aluno que a aula não tinha terminado. Null quando não há o que avisar.
+function avisoAulaFechada(e, idAula) {
+  const reg = idAula && e.aulas ? e.aulas[idAula] : null;
+  if (!reg || reg.status !== 'concluida' || idAula === e.aula_atual) return null;
+  let titulo = '';
+  try { titulo = mapa.aula(idAula).titulo ? ` (${mapa.aula(idAula).titulo})` : ''; } catch { /* sem título */ }
+  const quando = reg.concluida_em ? ` em ${new Date(reg.concluida_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}` : '';
+  return `(Sala: a aula ${idAula}${titulo} deste chat já foi concluída${quando}, talvez em outro chat ou no Codex; a conversa acima é de antes disso. Diga ao aluno, em uma frase, que ela está fechada e que a próxima começa num chat novo na pasta da sala. Aqui não retome a matéria dela nem registre nada nela; dúvida sobre ela, pode responder.)`;
+}
+
 // `agente` e `continuacaoDe` são do modo Codex (branch codex). Com o padrão, o texto é o de hoje, letra a letra.
 // `continuacaoDe` é a sessão de outro agente que veio antes deste chat ({ agente, aula }, de lib/codex/sessao.js e
 // do hooks/inicio.js): a aula que começou num agente e segue no outro ganha a linha com os marcos já feitos.
@@ -414,4 +426,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente };
+module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada };
