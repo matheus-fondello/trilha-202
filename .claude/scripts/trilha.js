@@ -1257,6 +1257,13 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     if (!s.ok) return s.semRede ? semRede(e, reg, idAula, s.motivo, { longo }) : noSandbox(e, reg, idAula, s.motivo, { longo });
     const b = acesso.leituraBloqueada();
     if (b) return noSandbox(e, reg, idAula, b.motivo, { longo });
+    // No Codex o shell devolve o comando que demora com ele ainda rodando, e o turno pode acabar no meio (21/10): a
+    // marca faz o `avaliar` repetido e a cobrança do fim do turno (lib/codex/cobranca.js) esperarem por este, em vez de
+    // subir uma segunda avaliação junto. O `reler` a apaga no fim, como no `--longo`.
+    if (!longo) {
+      reg.avaliacao_em_andamento = { em: agora(), pid: process.pid };
+      estadoLib.salvar(e);
+    }
   }
   // A tentativa longa conta antes de começar (19/10): cortada no meio (o terminal sem o tempo máximo, o aluno parou o
   // comando, o aplicativo fechou), ela não chegaria ao `adiar`, e o chat seguinte mandaria a mesma tentativa sem fim.

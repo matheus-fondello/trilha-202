@@ -53,13 +53,11 @@ async function main() {
       const e = estadoLib.carregar();
       const s = e.sessao_atual;
       if (!s || s.id !== entrada.session_id) return null;
-      const fechou = cobranca.fechamento(e, s, entrada.last_assistant_message);
-      if (fechou) return fechou;
-      const pendente = cobranca.avaliacao(e, s);
-      if (!pendente) return null;
-      s.cobrou_avaliacao = [...(Array.isArray(s.cobrou_avaliacao) ? s.cobrou_avaliacao : []), ...pendente.ids];
+      const cobrar = cobranca.fechamento(e, s, entrada.last_assistant_message) || cobranca.avaliacao(e, s);
+      if (!cobrar) return null;
+      cobrar.marcar();
       estadoLib.salvar(e);
-      return pendente.texto;
+      return cobrar.texto;
     });
     if (motivo) process.stdout.write(JSON.stringify({ decision: 'block', reason: motivo }));
   }
