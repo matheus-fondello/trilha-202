@@ -302,6 +302,23 @@ function retomarSessao(e, entrada) {
   return true;
 }
 
+// A aula de um chat retomado quando ela fechou depois do último sinal dele, em outro chat ou no outro agente, e o tutor
+// deste chat ainda não foi avisado (21/10). Só chat retomado: o que fecha a aula e segue para a seguinte no mesmo chat
+// (`emendar`, e o `avaliar` que vem por último) viu o fechamento. O registro que o envio retoma traz a aula e o fim do
+// chat; o que o início cria num `--resume` leva a aula da vez, e os dois vêm do último pedaço dele no histórico. Os
+// hooks de envio do Claude e do Codex marcam `aviso_fechada` ao avisar, e o texto é o `avisoAulaFechada` do resumo.
+function aulaFechadaDoChat(e) {
+  const s = e.sessao_atual;
+  if (!s || (s.fonte !== 'retomada' && s.fonte !== 'resume')) return null;
+  const antes = s.fonte === 'resume' ? (e.sessoes || []).filter((x) => x.id === s.id).pop() : null;
+  const aula = antes ? antes.aula : s.aula;
+  const desde = antes ? antes.fim : s.ultimo_turno_fim;
+  const reg = aula && e.aulas ? e.aulas[aula] : null;
+  if (!reg || reg.status !== 'concluida' || aula === e.aula_atual || s.aviso_fechada === aula) return null;
+  if (!desde || !reg.concluida_em || reg.concluida_em <= desde) return null;
+  return aula;
+}
+
 // A avaliação de uma aula roda num processo à parte (trilha.js, avaliar), e o registro guarda quando começou e o
 // pid. Ela está rodando enquanto esse processo vive, até vinte minutos: passou disso, ou o processo sumiu sem
 // deixar nota (máquina desligada, processo morto), não está mais, e o chat seguinte a refaz.
@@ -313,4 +330,4 @@ function avaliacaoRodando(reg) {
   try { process.kill(m.pid, 0); return true; } catch (err) { return err.code === 'EPERM'; }
 }
 
-module.exports = { avaliacaoRodando, carregar, salvar, registroAula, padrao, contarSessao, abrirAula, emendar, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
+module.exports = { avaliacaoRodando, carregar, salvar, registroAula, padrao, contarSessao, abrirAula, emendar, oferecerEscolha, escolhaPendente, escolher, fecharSessao, retomarSessao, aulaFechadaDoChat, fimEfetivo, avancarSeConcluida, MINUTOS_VIVA };
