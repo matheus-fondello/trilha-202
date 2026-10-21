@@ -659,7 +659,7 @@ const comandos = {
     // resultado fica registrado (sobe à 202 e vira sinal no Acompanhamento). A segunda chance é opcional (21/10):
     // depois da primeira sem passar o aluno escolhe tentar de novo ou seguir, e sem a escolha ainda não fecha.
     if (a.fluencia && reg.fluencia && !reg.fluencia.passou) {
-      if (reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em) problemas.push(`fluência não passou na primeira tentativa: explique o que faltou, se ainda não explicou, e pergunte se ele quer tentar de novo ou seguir. Se seguir, \`fluencia ${idAula} seguir\`; se tentar, a segunda chance, com material ou enunciado novo, e registre de novo`);
+      if (reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em) problemas.push(`fluência não passou na primeira e ele ainda não escolheu: explique o que faltou, se ainda não explicou, e pergunte se quer tentar de novo ou seguir (\`fluencia ${idAula} seguir\`)`);
       else avisos.push('a fluência não passou: a aula fecha assim mesmo e o resultado fica registrado para a 202');
     }
     if (a.tipo === 'pratica') {
@@ -1487,7 +1487,7 @@ function fluenciaSeguir(idAula) {
   if (f.tentativas !== 1) falhar(`a fluência da ${idAula} já tem ${f.tentativas} tentativas sem passar: a aula fecha assim mesmo, sem escolha. Feche a aula.`);
   f.seguiu_em = agora();
   estadoLib.salvar(e);
-  console.log(`Escolha registrada: a ${idAula} segue sem a segunda tentativa. Feche a aula agora: a \`nota\`, se a sessão rendeu alguma, \`concluir ${idAula}\` e, por último, \`avaliar ${idAula}\`.`);
+  console.log(`Escolha registrada: a ${idAula} fecha sem a segunda tentativa. Se ainda não fechou, feche como toda aula: despedida, \`nota\` se houver, \`concluir ${idAula}\` e, por último, \`avaliar ${idAula}\`.`);
 }
 
 // O instante da entrega, gravado uma vez só: quando o registro e os marcos da

@@ -294,7 +294,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
       }
     } else {
       if (a.fluencia) {
-        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, avaliação, nota, concluir)' : `não passou em 1 tentativa e ele ainda não escolheu: pergunte se ele quer tentar de novo ou seguir (seguir é \`fluencia ${a.id} seguir\` e fecha a aula; tentar de novo é a segunda chance, com material ou enunciado novo)`)) : 'não feita'}.`);
+        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)' : `não passou em 1 tentativa, o que faltou já foi explicado, e ele ainda não escolheu: pergunte se quer tentar de novo ou seguir (\`fluencia ${a.id} seguir\`)`)) : 'não feita'}.`);
       } else {
         linhas.push('Fluência: esta aula não tem.');
       }
@@ -396,9 +396,10 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
     else linhas.push('Antes de responder ao aluno, invoque a skill `tutor` e depois a skill `' + (emCorrecao ? 'corrigir' : (a.skill || 'tutor')) + '`' + (mapa.escrita(a) ? '' : ' se ela existir') + '. Não carregue skills de outras aulas.');
     if (a.tipo === 'quiz' && reg.status === 'em_andamento' && quiz.respondidas(reg)) {
       linhas.push('Retomada: cumprimente em uma linha e imprima a pergunta da vez. Não repita as já respondidas nem a correção delas.');
-    } else if (reg.status === 'em_andamento' && a.tipo === 'aula' && Array.isArray(a.milestones) && a.milestones.every((m) => reg.milestones[m.id]) && (!a.fluencia || (reg.fluencia && reg.fluencia.passou))) {
+    } else if (reg.status === 'em_andamento' && a.tipo === 'aula' && Array.isArray(a.milestones) && a.milestones.every((m) => reg.milestones[m.id]) && (!a.fluencia || (reg.fluencia && (reg.fluencia.passou || reg.fluencia.tentativas >= 2 || reg.fluencia.seguiu_em)))) {
       // Tudo registrado e a aula aberta: o chat anterior parou no fechamento (o
       // limite de uso bateu, a janela fechou). Não se refaz a aula: só se fecha.
+      // A fluência que não passou e já fecha a aula (duas tentativas, ou a escolha de seguir, 21/10) também conta.
       linhas.push('Retomada no fechamento: os marcos' + (a.fluencia ? ' e a fluência' : '') + ' já estão registrados, e o chat anterior parou antes de fechar a aula. Cumprimente em uma linha, diga que falta só fechar a aula e feche como a `tutor` manda, sem reabrir a matéria' + (a.avaliacao === false ? '' : reg.avaliada_em ? ' (a avaliação já está registrada: não rode o `avaliar` de novo)' : ': o `avaliar` lê também o chat anterior') + '.');
     } else if (reg.status === 'em_andamento' && Object.keys(reg.milestones).length) {
       linhas.push('Retomada: cumprimente em uma linha, diga onde parou e continue do primeiro milestone pendente. Não repita o que já foi fechado.');
