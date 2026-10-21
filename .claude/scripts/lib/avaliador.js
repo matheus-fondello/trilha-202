@@ -296,7 +296,7 @@ function doSandbox(r) {
 function comMotor(r, motor) {
   return r.uso ? { ...r, motor, uso: { ...r.uso, motor } } : { ...r, motor };
 }
-function chamar(prompt, timeoutMs = TIMEOUT_MS, { esquema, criterios } = {}) {
+function chamar(prompt, timeoutMs = TIMEOUT_MS, { esquema, criterios, semTarefa } = {}) {
   if (agente.atual() !== 'codex') return chamarClaude(prompt, timeoutMs);
   const s = sondas.verificar();
   if (!s.ok) return s.semRede ? { ok: false, semRede: true, motivo: s.motivo } : { ok: false, sandbox: s.sandbox, motivo: s.motivo };
@@ -305,7 +305,7 @@ function chamar(prompt, timeoutMs = TIMEOUT_MS, { esquema, criterios } = {}) {
   if (bloqueio) return { ok: false, sandbox: 'leitura', motivo: bloqueio.motivo };
   const peloClaude = doSandbox(comMotor(chamarClaude(prompt, timeoutMs), 'claude'));
   if (peloClaude.ok || !(peloClaude.ausente || peloClaude.login)) return peloClaude;
-  const peloCodex = doSandbox(motor.chamar(prompt, timeoutMs, { esquema, criterios }));
+  const peloCodex = doSandbox(motor.chamar(prompt, timeoutMs, { esquema, criterios, semTarefa }));
   if (peloCodex.ok) return peloCodex;
   if (peloCodex.ausente) {
     // Nenhum dos dois: o mesmo `semClaude` de hoje, pendente sem limite, dizendo que nenhum foi achado. O começo do
@@ -395,7 +395,8 @@ Responda **apenas** com o objeto JSON, sem cerca de código, sem comentário ant
 // Até três tentativas: a segunda e a terceira levam a lista de erros da validação. Forma errada é o que mais
 // acontece, e perder a avaliação de uma aula inteira por uma vírgula seria pior que a chamada extra. `prazo` é o
 // instante em que a avaliação inteira tem de ter acabado: uma tentativa só começa se couber.
-function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = false }, limite = TENTATIVAS, prazo = Date.now() + orcamento(false)) {
+// `semTarefa`: a aula sem tarefa observável, que só o esquema estrito do Codex usa (esforço e autonomia nulos).
+function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = false, semTarefa = false }, limite = TENTATIVAS, prazo = Date.now() + orcamento(false)) {
   let ultimo = 'o avaliador não produziu nada';
   let erros = null;
   let uso = null;
@@ -408,7 +409,7 @@ function avaliarUma({ contexto, transcricao, produto, validar, sanear, longo = f
     if (tentativa > 1 && resta < MINIMO_PARA_TENTAR_MS) {
       return { ok: false, limite: true, motivo: `o avaliador não terminou a tempo (${ultimo})`, tentativas: tentativa - 1, uso };
     }
-    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(longo ? orcamento(true) : timeoutAula(), resta)), { esquema: 'aula' });
+    const r = chamar(montarPrompt({ contexto, transcricao, produto, erros }), Math.max(1000, Math.min(longo ? orcamento(true) : timeoutAula(), resta)), { esquema: 'aula', semTarefa });
     if (r.motor) quem = { motor: r.motor };
     // Limite, API fora do ar e login não se resolvem tentando de novo agora: saem na hora, e quem chama decide
     // (adiar, pedir o login); o Claude Code que não foi achado também não aparece na tentativa seguinte. Qualquer outra falha da chamada ganha as tentativas que restam.

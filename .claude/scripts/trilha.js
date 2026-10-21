@@ -1278,13 +1278,16 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     // O produto da oficina que o sandbox do Codex não deixou ler: sem ele, a nota de domínio e a fluência sairiam sobre
     // um produto que parece não existir.
     if (anexo.sandbox) { ({ e, reg } = reler()); return noSandbox(e, reg, idAula, anexo.motivo, { longo }); }
+    // A aula sem tarefa observável: a validação e o esquema do Codex aceitam esforço e autonomia nulos só nela.
+    const semTarefa = trechosDaSkill(idAula)?.tarefaObservavel === false;
     const r = avaliador.avaliar({
       contexto: contextoDaAula(e, aulaAv, reg),
       transcricao: t.texto,
       produto: anexo.texto,
-      validar: (av) => validarAvaliacao(av, idAula, t.texto, trechosDaSkill(idAula)?.tarefaObservavel === false),
+      validar: (av) => validarAvaliacao(av, idAula, t.texto, semTarefa),
       sanear: (av, ultima) => sanearAvaliacao(av, t.texto, ultima),
       longo,
+      semTarefa,
     });
     ({ e, reg } = reler());
     // `sandbox` e `semRede` só vêm do modo Codex (lib/avaliador.js, chamar).

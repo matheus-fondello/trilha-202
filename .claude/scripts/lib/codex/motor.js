@@ -150,11 +150,17 @@ function modelos() {
 }
 
 // O esquema do chamador. O da correção tem os critérios da prática, que só se sabem na hora.
-function esquemaDe(nome, criterios) {
+// O da aula (21/10): `esforco` e `autonomia` aceitam `null` só na aula sem tarefa observável, como a validação. Com o
+// `null` aberto em toda aula, o Codex o mandou nas três tentativas de uma 1.4 ("só conversa na sala", e a fluência é a
+// tarefa), a validação recusou as três, e a avaliação ficou pendente sem ter como sair.
+function esquemaDe(nome, criterios, { semTarefa = false } = {}) {
   const e = JSON.parse(fs.readFileSync(path.join(ESQUEMAS, `${nome}.json`), 'utf8'));
   if (nome === 'correcao' && Array.isArray(criterios)) {
     e.properties.criterios.properties = Object.fromEntries(criterios.map((k) => [k, { type: 'integer' }]));
     e.properties.criterios.required = [...criterios];
+  }
+  if (nome === 'aula' && !semTarefa) {
+    for (const k of ['esforco', 'autonomia']) e.properties.criterios.properties[k] = { type: 'integer' };
   }
   return e;
 }
@@ -202,7 +208,7 @@ function curto(t) {
   return s.trim().slice(-200);
 }
 
-function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
+function chamar(prompt, timeoutMs, { esquema = 'aula', criterios, semTarefa = false } = {}) {
   const achado = achar();
   if (!achado) {
     if (bloqueado) return { ok: false, ausente: true, motor: 'codex', bloqueado, motivo: `não encontrei o Codex da linha de comando nesta máquina (o de ${bloqueado} não abre fora do aplicativo)` };
@@ -224,7 +230,7 @@ function chamar(prompt, timeoutMs, { esquema = 'aula', criterios } = {}) {
   const vazia = path.join(pasta, 'vazia');
   try {
     fs.mkdirSync(vazia);
-    fs.writeFileSync(arqEsquema, JSON.stringify(esquemaDe(esquema, criterios)));
+    fs.writeFileSync(arqEsquema, JSON.stringify(esquemaDe(esquema, criterios, { semTarefa })));
     const prazo = Date.now() + timeoutMs;
     let ultimo = null;
     for (const modelo of modelos()) {
