@@ -29,7 +29,6 @@
 //   node .claude/scripts/trilha.js dev reset [--forcar] | dev ir <aula> | dev fila | dev avaliacoes | dev referencias | dev fechar-tudo <aula> | dev desconectar
 
 const fs = require('fs');
-const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 const paths = require('./lib/paths');
@@ -1303,7 +1302,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     const payload = {
       ...r.avaliacao,
       versao: 3,
-      rubrica_sha: crypto.createHash('sha256').update(avaliador.regua(), 'utf8').digest('hex').slice(0, 12),
+      rubrica_sha: avaliador.reguaSha(),
       fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}), ...(reg.fluencia.seguiu_em ? { seguiu: true } : {}) } : null,
     };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.

@@ -146,6 +146,14 @@ function regua() {
   return fs.readFileSync(REGUA, 'utf8');
 }
 
+// A assinatura da régua que vai no payload (`rubrica_sha`), e que o CRM usa para só comparar notas da mesma régua.
+// No Windows o Git entrega o `regua.md` com CRLF: o texto é o mesmo, mas o hash cru mudava, e a turma de outubro se
+// dividiu em duas "réguas" pelo sistema operacional de quem fez a aula (21/10). A quebra de linha sai antes da conta,
+// e a assinatura é a do texto como está no repositório (LF), igual em qualquer máquina.
+function reguaSha(texto = regua()) {
+  return crypto.createHash('sha256').update(String(texto).replace(/\r\n?/g, '\n'), 'utf8').digest('hex').slice(0, 12);
+}
+
 // O modelo às vezes embrulha o JSON em cerca ou em uma linha de conversa. Isso
 // não é motivo para perder uma avaliação: pega-se o objeto de dentro.
 function extrairJson(texto) {
@@ -586,4 +594,4 @@ function corrigir({ idPratica, regua: reguaPratica, brief, conferencia, material
   return { ok: false, motivo: ultimo, tentativas: TENTATIVAS, uso, ...quem };
 }
 
-module.exports = { candidatos, lerEnvelope, TENTATIVAS, chamarClaude, orcamento, doMotor, iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, MODELO, REGUA };
+module.exports = { candidatos, lerEnvelope, TENTATIVAS, chamarClaude, orcamento, doMotor, iniciativaDoEmpenho, aplicarIniciativa, NIVEIS_RESPOSTA, TIPOS_SINAL, avaliar, corrigir, chamar, extrairJson, montarPrompt, montarPromptCorrecao, regua, reguaSha, MODELO, REGUA };
