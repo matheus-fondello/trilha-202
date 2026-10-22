@@ -73,15 +73,18 @@ function portaFechada(e, a, linhas, codex) {
 // A lista das aulas com avaliação por rodar: o resumo a pede ao tutor no começo do chat, e no Codex o fim do turno
 // confere que ela foi tentada (lib/codex/cobranca.js).
 function avaliacoesPendentes(e, codex) {
+  const falhas = require('./falhas');
+  let lida;
+  const versao = () => (lida === undefined ? (lida = falhas.versao()) : lida);
   return Object.entries(e.aulas || {})
     .filter(([id, r]) => !r.avaliada_em && (r.status === 'concluida' || id !== e.aula_atual)
       // Um processo à parte da versão anterior ainda vivo não é pendência: rodar de novo daria duas avaliações.
       && !avaliacaoRodando(r)
       // A que já falhou duas vezes por login fica com o bloco de login (semLogin); a que falhou três vezes, acabou.
       && !(r.avaliacao_login && r.avaliacao_login.vezes >= 2)
-      // (Menos a que desistiu por não achar o Claude Code, ou pelo EOF/EPIPE do cmd.exe: era defeito da procura, e ela volta
-      // a tentar. A mesma regra está em trilha.js, VOLTA_A_TENTAR.)
-      && !(r.avaliacao_falhou && (r.avaliacao_falhou.vezes || 1) >= 3 && !/não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)/.test(r.avaliacao_falhou.motivo || ''))
+      // (Menos a que desistiu por não achar o Claude Code, ou pelo EOF/EPIPE do cmd.exe, que volta a tentar sempre, e a que
+      // não achou a transcrição, que volta uma vez a cada versão nova da sala. A regra mora em lib/falhas.js.)
+      && !falhas.definitiva(r, versao)
       // No Claude, a que espera o Claude Code ser instalado fica com o bloco dela (semClaude), antes de tudo.
       && !(!codex && esperaClaude(r))
       // `avaliacao_pendente` é a aula que fechou e cuja avaliação não rodou ou foi interrompida (o aluno parou o

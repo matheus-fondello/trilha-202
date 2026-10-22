@@ -1427,18 +1427,26 @@ function semRede(e, reg, idAula, motivo, { longo = false } = {}) {
 // As tentativas contam por chat (16/10): rodar o `avaliar` de novo no mesmo chat não gasta tentativa, senão um tutor
 // que repete o comando duas vezes desiste em sete minutos, como na 1.2 de um aluno em 16/10.
 // A falha que vinha de defeito do harness (o Claude Code não achado; o EOF do cmd.exe, ver lib/avaliador.js) não é
-// desistência: ela volta a tentar no chat seguinte (resumo.js, pendencias, usa a mesma regra).
-const MAX_FALHAS = 3;
-const VOLTA_A_TENTAR = /não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)/;
-const falhaDefinitiva = (reg) => Boolean(reg.avaliacao_falhou && (reg.avaliacao_falhou.vezes || 1) >= MAX_FALHAS && !VOLTA_A_TENTAR.test(reg.avaliacao_falhou.motivo || ''));
+// desistência: ela volta a tentar no chat seguinte. A que não achou a transcrição volta uma vez a cada versão nova da
+// sala (22/10). A regra mora em lib/falhas.js, e o resumo usa a mesma.
+const { MAX_FALHAS, VOLTA_A_TENTAR, definitiva: falhaDefinitiva, reincidente, versao: versaoDaSala } = require('./lib/falhas');
 function desistir(e, reg, idAula, motivo, uso) {
   delete reg.avaliacao_adiada;
   delete reg.avaliacao_login;
   const sessao = (e.sessao_atual && e.sessao_atual.id) || null;
   const antes = reg.avaliacao_falhou || {};
+  // A nova tentativa de uma versão nova, que falhou de novo pelo mesmo motivo (lib/falhas.js): só a versão muda.
+  if (reincidente(antes, motivo)) {
+    reg.avaliacao_falhou = { ...antes, em: agora(), commit: versaoDaSala() };
+    delete reg.avaliacao_pendente;
+    estadoLib.salvar(e);
+    recado(`A avaliação da aula ${idAula} continua sem conseguir rodar (${motivo}), como antes desta versão da sala. Isso já está registrado e a 202 já sabe; não há nada a fazer daqui, e não é assunto para o aluno.`);
+    return;
+  }
   const mesmoChat = Boolean(sessao && antes.sessao === sessao && !VOLTA_A_TENTAR.test(antes.motivo || ''));
   const vezes = VOLTA_A_TENTAR.test(antes.motivo || '') ? 1 : (antes.vezes || 0) + (mesmoChat ? 0 : 1);
-  reg.avaliacao_falhou = { em: agora(), motivo, vezes, ...(sessao ? { sessao } : {}) };
+  // O commit da sala em que a falha aconteceu: a que não achou a transcrição volta a tentar numa versão nova (lib/falhas.js).
+  reg.avaliacao_falhou = { em: agora(), motivo, vezes, ...(sessao ? { sessao } : {}), commit: versaoDaSala() };
   if (vezes >= MAX_FALHAS) delete reg.avaliacao_pendente;
   estadoLib.salvar(e);
   if (vezes < MAX_FALHAS) {
