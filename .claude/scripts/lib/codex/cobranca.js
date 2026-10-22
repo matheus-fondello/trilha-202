@@ -17,7 +17,9 @@ const resumo = require('../resumo');
 // cada aula começa num chat novo, que termina pedindo passagem.
 const CHAT_NOVO = /\b(chat novo|novo chat)\b/i;
 const NA_OFICINA = /\b(chat novo|novo chat)\b[^.!?]{0,40}\boficina\b|\boficina\b[^.!?]{0,40}\b(chat novo|novo chat)\b/i;
-const ENCERRA = /\b(fechamos|encerramos|terminamos|conclu[ií]mos|finalizamos)\s+((a|esta|nossa|essa)\s+)?(aula|os combinados)\b|\baula(\s+\S+){0,3}\s+(est[aá]|foi|ficou)\s+(fechada|conclu[ií]da|encerrada|terminada)\b/i;
+const ENCERRA = /\b(fechamos|encerramos|terminamos|conclu[ií]mos|finalizamos)\s+((a|esta|nossa|essa)\s+)?(aula|os combinados)\b|\bencerramos\s*[.!]|\baula(\s+\S+){0,3}\s+(est[aá]|foi|ficou)\s+(fechada|conclu[ií]da|encerrada|terminada)\b|\baula\s+(fechada|conclu[ií]da|encerrada|terminada)\b/i;
+// A despedida com a seguinte citada ("Próxima aula: 1.3. Até lá!", a forma que as skills dão ao fechamento).
+const DESPEDIDA = /\bat[eé]\s+(l[aá]|mais|a\s+pr[oó]xima(?!\s+(parte|etapa|pergunta|se[cç][aã]o|bloco|assunto)))\b|\bpor hoje\s+[eé]\s+(isso|tudo)\b|\bboa aula\b/i;
 const PROXIMA = /\bpr[oó]xima\s+(aula|unidade)\b/i;
 
 const normal = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -46,7 +48,7 @@ function daComoEncerrada(e, idAula, mensagem) {
   const m = String(mensagem || '');
   if (!m || terminaPerguntando(m)) return false;
   if (!(PROXIMA.test(m) || citaSeguinte(e, idAula, m))) return false;
-  return ENCERRA.test(m) || (CHAT_NOVO.test(m) && !NA_OFICINA.test(m));
+  return ENCERRA.test(m) || DESPEDIDA.test(m) || (CHAT_NOVO.test(m) && !NA_OFICINA.test(m));
 }
 
 // Onde fica a marca do que já foi cobrado: no registro do chat (`e.codex.chats`), que dura enquanto o chat existe. A
@@ -68,14 +70,17 @@ function fechamento(e, s, mensagem) {
   const reg = (e.aulas || {})[idAula] || {};
   if (reg.status === 'concluida') return null;
   const chat = registroDoChat(e, s);
-  if (marcado(chat, 'cobrou_fechamento', idAula)) return null;
+  // Uma vez por chat enquanto a aula não anda: a marca leva o que estava registrado, e a cobrança que errou num ponto
+  // da aula não gasta a de um fechamento falso mais adiante (revisão de 21/10; a 0.1 fala de "chat novo" a aula toda).
+  const chave = `${idAula}@${Object.keys(reg.milestones || {}).length}${reg.fluencia ? '+f' : ''}`;
+  if (marcado(chat, 'cobrou_fechamento', chave)) return null;
   if (!daComoEncerrada(e, idAula, mensagem)) return null;
   const engano = 'Se a aula ainda não terminou, este aviso foi engano: não escreva mais nada ao aluno. Não comente este aviso.';
   // A fluência que não passou na primeira espera a escolha do aluno (21/10): fechar antes dela é o que o `concluir`
   // recusa, e a `tutor` manda perguntar.
   const f = reg.fluencia;
   if (a.fluencia && f && !f.passou && (f.tentativas || 0) < 2 && !f.seguiu_em) {
-    return { texto: `(Sala: a sua resposta dá a aula ${idAula} como encerrada, mas a fluência não passou na primeira e ele ainda não escolheu: pergunte agora se ele quer tentar de novo ou seguir, sem recomendar, e só feche depois da resposta. ${engano})`, marcar: marcar(chat, 'cobrou_fechamento', [idAula]) };
+    return { texto: `(Sala: a sua resposta dá a aula ${idAula} como encerrada, mas a fluência não passou na primeira e ele ainda não escolheu: pergunte agora se ele quer tentar de novo ou seguir, sem recomendar, e só feche depois da resposta. ${engano})`, marcar: marcar(chat, 'cobrou_fechamento', [chave]) };
   }
   const marcos = a.milestones.filter((m) => !(reg.milestones || {})[m.id]).map((m) => m.id);
   const semFluencia = Boolean(a.fluencia) && !f;
@@ -93,7 +98,7 @@ function fechamento(e, s, mensagem) {
   ];
   return {
     texto: `(Sala: a sua resposta dá a aula ${idAula} como encerrada, mas no registro ela continua aberta: ${faltam.length > 1 ? 'faltam' : 'falta'} ${faltam.slice(0, -1).join(', ')}${faltam.length > 1 ? ' e ' : ''}${faltam[faltam.length - 1]}. Se você já deu ao aluno o que falta, registre agora, numa chamada só e nesta ordem: ${passos.join('; ')}; não registre marco que não deu. Só depois diga a ele, em uma frase, que a aula fechou. ${engano})`,
-    marcar: marcar(chat, 'cobrou_fechamento', [idAula]),
+    marcar: marcar(chat, 'cobrou_fechamento', [chave]),
   };
 }
 
