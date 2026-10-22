@@ -173,8 +173,9 @@ const passageiro = (status, texto) => Number(status) >= 500 || PASSAGEIRO.test(t
 // O `claude` da linha de comando sem login válido nesta máquina ("Failed to authenticate: OAuth session expired and
 // could not be refreshed"). A conversa no aplicativo segue funcionando, porque o aplicativo tem login próprio; o que
 // resolve é o aluno sair e entrar de novo nesse `claude` (trilha.js, pedirLogin). Não passa sozinho, nem é falha
-// do aluno.
-const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b/i;
+// do aluno. A conta sem o Claude Code no plano (22/10: o gratuito, inclusive quem já foi pago e voltou, com o login
+// antigo guardado) é o mesmo caso: no modo Codex, o Codex avalia; no Claude, o aluno refaz o login.
+const LOGIN = /failed to authenticate|oauth|not logged in|please run \/login|invalid api key|authentication[_ ]error|\b401\b|does not have access to claude|please log ?in again|permission[_ ]error|\b403\b/i;
 
 function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
   const base = ['-p', '--model', MODELO, '--output-format', 'json', '--max-turns', '1',
@@ -245,7 +246,7 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
     // O avaliador usa a cota do aluno. No limite ("You've hit your session limit
     // · resets 10:20pm"), a avaliação não falhou: ela espera a cota voltar.
     if (envelope.api_error_status === 429 || LIMITE.test(texto)) return { ok: false, limite: true, motivo: `limite de uso da conta (${texto.slice(0, 120)})` };
-    if (envelope.api_error_status === 401 || LOGIN.test(texto)) return { ok: false, login: true, executavel, motivo: `o Claude desta máquina está sem login válido (${texto.slice(0, 120)})` };
+    if (envelope.api_error_status === 401 || envelope.api_error_status === 403 || LOGIN.test(texto)) return { ok: false, login: true, executavel, motivo: `o Claude desta máquina está sem login válido (${texto.slice(0, 120)})` };
     if (passageiro(envelope.api_error_status, texto)) return { ok: false, limite: true, motivo: `a API do Claude não respondeu agora (${texto.slice(0, 120)})` };
     return { ok: false, motivo: `o avaliador falhou: ${texto.slice(0, 200)}` };
   }
