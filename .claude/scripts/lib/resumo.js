@@ -14,6 +14,10 @@ const { avaliacaoRodando } = require('./estado');
 // skill (T8, passo 5), mesmo que o tutor esqueça o AGENTS.md.
 const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\`${process.platform === 'win32' ? ' com `Get-Content -Encoding UTF8`' : ''} e siga`;
 
+// A fluência dos módulos de negócio e de produto se julga pelo conjunto (22/10): substitui, só nestas aulas, o "passou
+// é toda parte cumprida" da `tutor`. O texto mora em lib/fluencia-conjunto.js, igual ao que o avaliador ouve.
+const FLUENCIA_PELO_CONJUNTO = require('./fluencia-conjunto').linhaTutor();
+
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
 // e nada da aula aparece: o tutor não tem o que começar antes do `conectar`.
 function portaFechada(e, a, linhas, codex) {
@@ -315,6 +319,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
     } else {
       if (a.fluencia) {
         linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)' : `não passou em 1 tentativa, o que faltou já foi explicado, e ele ainda não escolheu: pergunte se quer tentar de novo ou seguir (\`fluencia ${a.id} seguir\`)`)) : 'não feita'}.`);
+        if (mapa.fluenciaPeloConjunto(a.id) && (!reg.fluencia || (!reg.fluencia.passou && reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em))) linhas.push(FLUENCIA_PELO_CONJUNTO);
       } else {
         linhas.push('Fluência: esta aula não tem.');
       }

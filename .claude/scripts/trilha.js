@@ -532,11 +532,12 @@ const comandos = {
     // Marco de uma das opções com a escolha pendente: o tutor seguiu sem rodar
     // `seguir`, e o marco diz qual foi. Registra a escolha antes, para a sessão
     // e o `aula.inicio` irem para a aula certa.
-    if (estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idAula)) estadoLib.escolher(e, idAula);
+    const escolheu = estadoLib.escolhaPendente(e) && e.sessao_atual.escolha.opcoes.includes(idAula);
+    if (escolheu) estadoLib.escolher(e, idAula);
     const reg = estadoLib.registroAula(e, idAula);
     if (reg.status === 'concluida') falhar(`aula ${idAula} já está concluída.`);
     // A aula emendada no chat da que acabou de fechar passa a ser a do chat.
-    estadoLib.emendar(e, idAula);
+    const emendou = estadoLib.emendar(e, idAula);
     if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
     if (reg.milestones[idMilestone]) {
       console.log(`Milestone ${idMilestone} já estava fechado (${reg.milestones[idMilestone]}). Nada a fazer.`);
@@ -548,6 +549,9 @@ const comandos = {
     fila.enfileirar('milestone', { aula: idAula, milestone: idMilestone, titulo: m.titulo }, e);
     const faltam = a.milestones.filter((x) => !reg.milestones[x.id]).map((x) => x.id);
     console.log(`Milestone fechado: ${idAula} / ${idMilestone} (${m.titulo}). Faltam: ${faltam.length ? faltam.join(', ') : 'nenhum'}.`);
+    // A aula que começou neste chat sem o resumo dela (emendada na que fechou, ou escolhida pelo marco) não ouviu a
+    // regra da fluência pelo conjunto (22/10): ela vai aqui, no marco que abriu a aula no chat.
+    if ((emendou || escolheu) && mapa.fluenciaPeloConjunto(idAula) && !reg.fluencia) console.log(`Para a fluência desta aula: ${require('./lib/fluencia-conjunto').linhaTutor()}`);
   },
 
   fluencia([idAula, resultado, tentativas, ...resto]) {

@@ -27,6 +27,6 @@ Leia o `material.md`, ao lado desta skill, junto com ela e com o `referencias.md
 
 ## Fluência
 
-Em texto, aqui na sala: as dez perguntas do material. Ele marca as que não levaria, diz que resposta cada uma traria e reescreve essas; as que deixa, diz por quê. Há boas, ruins e discutíveis, e não há gabarito escrito; julgue pelas regras da aula. Passa se as reescritas pedirem um episódio passado da vida do entrevistado sem pôr a solução na mesa, se ele não condenar as boas por reflexo, e se nas discutíveis o argumento vier de uma regra. Segunda tentativa: o segundo bloco do material. Registre com `fluencia 4.1 passou|nao-passou <tentativas>`.
+Em texto, aqui na sala: as dez perguntas do material. Ele marca as que não levaria, diz que resposta cada uma traria e reescreve essas; as que deixa, diz por quê. Há boas, ruins e discutíveis, e não há gabarito escrito; julgue pelas regras da aula. Passa se as reescritas pedirem um fato da vida do entrevistado (um episódio passado, ou o que ele faz hoje para resolver e já tentou, contado como o que fez e não como o "normalmente") sem pôr a solução na mesa, se ele não condenar as boas por reflexo, e se nas discutíveis o argumento vier de uma regra. Segunda tentativa: o segundo bloco do material. Registre com `fluencia 4.1 passou|nao-passou <tentativas>`.
 
 Fechamento da `tutor`. Próxima aula: 4.2, Conduzir discovery. Gancho: hoje ele escreveu as perguntas com calma; na próxima faz a conversa inteira ao vivo, com você no papel de um dono de negócio, onde não induzir é bem mais difícil.

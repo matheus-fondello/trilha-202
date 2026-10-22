@@ -15,6 +15,14 @@
 const fs = require('fs');
 const path = require('path');
 const paths = require('./paths');
+const mapa = require('./mapa');
+
+// A fluência dos módulos 4 a 6 se julga pelo conjunto (22/10): a régua manda "passou é toda parte cumprida", e ali isso
+// reprovava uma resposta inteira por dois itens de dez. Só estas aulas, e só com a fluência registrada, recebem o bloco;
+// nas outras o contexto é o de antes, letra a letra. O texto mora em lib/fluencia-conjunto.js, igual ao do tutor.
+const FLUENCIA_PELO_CONJUNTO = `#### Esta fluência se julga pelo conjunto
+
+${require('./fluencia-conjunto').regra('avaliador')}`;
 
 function arquivoDaSkill(idAula) {
   return path.join(paths.SKILLS, `aula-${String(idAula).replace(/\./g, '-')}`, 'SKILL.md');
@@ -140,6 +148,7 @@ function contextoDaAula(e, a, reg) {
     if (skill.tarefaObservavel !== null) blocos.push(`Tarefa observável: ${skill.tarefaObservavel ? 'sim' : 'não'}.`);
     if (skill.marcos) blocos.push(`#### Marcos, com a pergunta de cada um e a confusão que ela caça\n\n${skill.marcos}`);
     if (skill.fluencia && a.fluencia) blocos.push(`#### Fluência: a tarefa e o critério de passar\n\n${skill.fluencia}`);
+    if (skill.fluencia && reg.fluencia && mapa.fluenciaPeloConjunto(a.id)) blocos.push(FLUENCIA_PELO_CONJUNTO);
   }
   return blocos.join('\n\n');
 }

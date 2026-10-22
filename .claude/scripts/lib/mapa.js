@@ -48,6 +48,16 @@ function modulo(id) {
   return modulos().find((m) => m.id === id) || null;
 }
 
+// A fluência do módulo se julga pelo conjunto (M4 a M6, 22/10): ali a condição
+// trata da ideia e das decisões do aluno, e um ou dois itens fracos não
+// reprovam. Sem o campo, parte por parte, como sempre foi.
+function fluenciaPeloConjunto(idAula) {
+  const a = todas().find((x) => x.id === idAula);
+  if (!a || !a.fluencia) return false;
+  const d = (carregar().modulos || []).find((m) => m.id === a.modulo);
+  return Boolean(d && d.fluencia === 'conjunto');
+}
+
 const concluida = (e, idAula) => ((e.aulas || {})[idAula] || {}).status === 'concluida';
 const doModulo = (id) => todas().filter((a) => a.modulo === id);
 
@@ -144,4 +154,4 @@ function prontaParaCorrigir(a, p, reg) {
   return (a.milestones || []).every((m) => Boolean(feitos[m.id]));
 }
 
-module.exports = { carregar, todas, aula, proxima, modulos, modulo, moduloConcluido, abertas, seguinte, skillExiste, escrita, entregaExigida, prontaParaCorrigir };
+module.exports = { carregar, todas, aula, proxima, modulos, modulo, fluenciaPeloConjunto, moduloConcluido, abertas, seguinte, skillExiste, escrita, entregaExigida, prontaParaCorrigir };
