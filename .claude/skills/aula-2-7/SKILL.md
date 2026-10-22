@@ -18,7 +18,7 @@ Sala e oficina. Fica para depois: pedido que vira spec, que é a 2.8.
 
 ## Antes de começar
 
-Ele **não faz fork e não abre PR na 202**: clona, cria um repositório vazio na conta dele, troca o remoto e sobe (o histórico vem junto). Push e remoto ele viu na 2.5; clonar e trocar remoto é novo, e é a oficina que faz. O PR é de branch para `main` na própria cópia. Não há comando para registrar isso, e não invente um: ele cola a URL do PR aqui. A issue abre no painel pelo link do `referencias.md`.
+Ele **não faz fork e não abre PR na 202**: clona, cria um repositório vazio na conta dele, troca o remoto e sobe (o histórico vem junto). Push e remoto ele viu na 2.5; clonar e trocar remoto é novo, e é a oficina que faz. O PR é de branch para `main` na própria cópia. Não há comando para registrar isso, e não invente um: ele cola a URL do PR aqui. A issue abre no painel pelo link do `referencias.md`. Issue não vem no clone: na cópia dele não há nenhuma, e o agente da oficina, olhando o remoto novo, diz que não achou. É esperado; o texto mora no repositório da 202, e se o agente precisar dele, o aluno cola.
 
 ## Marcos
 
