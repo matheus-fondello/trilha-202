@@ -208,7 +208,7 @@ function eDoCodex(bruto) {
 // --- achar a conversa da aula pelo horário ---
 //
 // As conversas do Codex que o `porHorario` considera, com `e.codex` no estado: as do registro e as de
-// `<CODEX_HOME>/sessions` abertas na sala. A janela é a do arquivo (o primeiro `timestamp` até a última escrita).
+// `<CODEX_HOME>/sessions` e `<CODEX_HOME>/archived_sessions` abertas na sala. A janela é a do arquivo (o primeiro `timestamp` até a última escrita).
 // De cada conversa da pasta só a primeira linha é lida para filtrar, e só depois de a hora da última escrita dizer
 // que ela pode cobrir a aula: um aluno pode ter centenas de conversas, de outros projetos. Conversa de subagente
 // nunca é o chat da aula.
@@ -252,7 +252,11 @@ function doHorario(e, cobre, janelaDoArquivo, jaAchados) {
   const cx = objeto(e.codex) || {};
   for (const c of Object.values(objeto(cx.chats) || {})) considerar(objeto(c) && c.arquivo, false);
   const lista = [];
-  try { conversasDaPasta(path.join(paths.codexHome(), 'sessions'), 3, lista); } catch { /* sem pasta */ }
+  // As arquivadas também (22/10): o Codex tira do `sessions` a conversa que o aluno arquiva, e a aula feita nela
+  // ficava sem transcrição. A busca pelo id do chat (rollout.achar) já olhava as duas pastas.
+  for (const pasta of ['sessions', 'archived_sessions']) {
+    try { conversasDaPasta(path.join(paths.codexHome(), pasta), 3, lista); } catch { /* sem pasta */ }
+  }
   for (const f of lista) considerar(f, true);
   return achados;
 }
