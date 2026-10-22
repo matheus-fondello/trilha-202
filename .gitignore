@@ -26,3 +26,7 @@ trilha/sem-atualizar
 # A trava da sincronização do modo Codex (lib/codex/sessao.js), e a trava velha renomeada antes de apagada.
 trilha/codex.lock
 trilha/codex.lock.*
+
+# A cópia da conversa de cada chat (lib/conversas.js): o fechar pelo X do aplicativo apaga o original, e a avaliação
+# pendente lê daqui. É do aluno e da máquina dele.
+trilha/conversas/

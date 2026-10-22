@@ -90,6 +90,8 @@ async function main() {
     // ficou para trás (validação falhou, terminal fechou), não pode ser lido por
     // uma sessão seguinte: some no início de todo chat.
     try { fs.rmSync(paths.TMP, { recursive: true, force: true }); } catch { /* segue */ }
+    // A cópia de cada conversa (lib/conversas.js) sai quando a unidade do chat já não precisa dela.
+    try { require('../scripts/lib/conversas').podar(e); } catch { /* segue */ }
   }
 
   // Sobe com o commit de antes e o de depois; o `commit` de todo evento seguinte

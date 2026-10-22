@@ -52,7 +52,8 @@ function codex() {
 }
 const protegido = (seg) => NOMES_PROTEGIDOS.test(seg) || (NOMES_DO_CODEX.test(seg) && codex());
 // O que não se lê do chat por caminho nenhum, nem com cat: a fila guarda a
-// avaliação; scripts e hooks são o código do harness, e o tutor não é
+// avaliação; trilha/conversas guarda as conversas dos outros chats, que é ler
+// transcrição de outra sessão (lib/conversas.js); scripts e hooks são o código do harness, e o tutor não é
 // engenheiro dele; a régua do avaliador é de quem avalia, e quem avalia não é
 // ele — com os critérios no contexto, ele voltaria a formar a nota de cabeça; e o
 // acesso à 202 é do aluno, e depois de colado não volta ao chat; e o banco do
@@ -61,7 +62,7 @@ const protegido = (seg) => NOMES_PROTEGIDOS.test(seg) || (NOMES_DO_CODEX.test(se
 // `praticas\P4\PERSONA` é o mesmo arquivo. O nome do arquivo codificado é o
 // nome inteiro (`persona`, não `persona-notas.md`): uma anotação do aluno numa
 // pasta parecida com a da sala é dele, e se lê.
-const SIGILO = /fila\.jsonl\b|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\\s]+[/\\](criterios|persona)(?![\w.-])|quiz[/\\][^/\\\s]+[/\\]banco(?![\w.-])|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/i;
+const SIGILO = /fila\.jsonl\b|trilha[/\\]conversas(?![\w.-])|\.claude[/\\](scripts|hooks|avaliador)[/\\]|praticas[/\\][^/\\\s]+[/\\](criterios|persona)(?![\w.-])|quiz[/\\][^/\\\s]+[/\\]banco(?![\w.-])|credenciais\.json\b|\.trilha-202[/\\]|TRILHA_202_TOKEN/i;
 // `.\` e `./`: no Windows o tutor usa a ferramenta PowerShell, que escreve o
 // caminho com barra invertida.
 const CLI = /^node\s+(\.[/\\])?\.claude[/\\]scripts[/\\]trilha\.js\b/;

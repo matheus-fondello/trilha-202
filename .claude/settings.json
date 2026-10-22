@@ -110,6 +110,7 @@
       "mcp__Claude_Browser__preview_logs",
       "mcp__Claude_Browser__preview_stop",
       "Read(./trilha/fila.jsonl)",
+      "Read(./trilha/conversas/**)",
       "Read(./praticas/**/criterios)",
       "Read(./praticas/**/persona)",
       "Read(./quiz/**/banco)",

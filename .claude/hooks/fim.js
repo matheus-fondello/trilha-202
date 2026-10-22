@@ -4,10 +4,14 @@ const estadoLib = require('../scripts/lib/estado');
 const { enviar } = require('../scripts/lib/enviar');
 const alteracoes = require('../scripts/lib/alteracoes');
 const turnos = require('../scripts/lib/turnos');
+const conversas = require('../scripts/lib/conversas');
 const { lerStdin } = require('../scripts/lib/util');
 
 async function main() {
   const entrada = await lerStdin();
+  // A última cópia da conversa, antes de qualquer outra coisa: ao fechar o chat pelo X, o aplicativo apaga o
+  // original logo depois deste hook (lib/conversas.js).
+  conversas.guardar(entrada.session_id, entrada.transcript_path);
   const e = estadoLib.carregar();
   const s = e.sessao_atual;
   if (s && (!entrada.session_id || !s.id || s.id === entrada.session_id)) {

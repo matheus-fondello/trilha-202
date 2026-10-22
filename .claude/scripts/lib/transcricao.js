@@ -14,6 +14,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const paths = require('./paths');
+const conversas = require('./conversas');
 
 // ~60 mil tokens. A transcrição vai inteira no prompt do avaliador, e é ela que
 // determina o custo da avaliação; aula de uma hora cabe com folga.
@@ -37,7 +38,8 @@ function localizar(s) {
     const p = path.join(dir, `${s.id}.jsonl`);
     if (fs.existsSync(p)) return p;
   }
-  return null;
+  // O original sumiu (fechar o chat pelo X do aplicativo o apaga): a cópia que a sala guardou (lib/conversas.js).
+  return s.id ? conversas.achar(s.id) : null;
 }
 
 function maisRecente() {
@@ -53,29 +55,8 @@ function maisRecente() {
   }
 }
 
-// Os instantes em que a aula deixou rastro no estado: o início, os marcos, a fluência e a conclusão.
-function marcasDaAula(e, idAula) {
-  const r = (e.aulas || {})[idAula] || {};
-  return [r.iniciada_em, ...Object.values(r.milestones || {}), r.fluencia && r.fluencia.registrada_em, r.concluida_em]
-    .filter((t) => typeof t === 'string')
-    .map(Date.parse)
-    .filter((t) => !Number.isNaN(t));
-}
-
-// De quando a quando a conversa existiu: o primeiro `timestamp` do arquivo e a última escrita nele.
-function janelaDoArquivo(arquivo) {
-  try {
-    const fd = fs.openSync(arquivo, 'r');
-    const buf = Buffer.alloc(64 * 1024);
-    const n = fs.readSync(fd, buf, 0, buf.length, 0);
-    fs.closeSync(fd);
-    const m = buf.toString('utf8', 0, n).match(/"timestamp"\s*:\s*"([^"]+)"/);
-    const inicio = m ? Date.parse(m[1]) : NaN;
-    return Number.isNaN(inicio) ? null : { inicio, fim: fs.statSync(arquivo).mtimeMs };
-  } catch {
-    return null;
-  }
-}
+// Os instantes em que a aula deixou rastro, e de quando a quando uma conversa existiu (lib/horario.js).
+const { marcasDaAula, janelaDoArquivo } = require('./horario');
 
 // A aula sem nenhum chat etiquetado com ela (19/10): o aluno a fez no chat de outra, antes do `emendar`, ou em
 // pasta que o estado não conhece. O "mais recente da pasta" avaliava a conversa errada (um aluno teve a 1.1 lida em
@@ -103,7 +84,9 @@ function porHorario(e, idAula) {
   }
   let daPasta = [];
   try { daPasta = fs.readdirSync(pastaDoProjeto()).filter((f) => f.endsWith('.jsonl')).map((f) => path.join(pastaDoProjeto(), f)); } catch { /* sem pasta */ }
-  for (const f of daPasta) {
+  // As cópias da sala (lib/conversas.js) entram só pelo chat cujo original sumiu: a mesma conversa não entra duas vezes.
+  const ids = new Set([...achados.keys(), ...daPasta].map((f) => path.basename(f, '.jsonl')));
+  for (const f of [...daPasta, ...conversas.todas().filter((c) => !ids.has(path.basename(c, '.jsonl')))]) {
     if (achados.has(f)) continue;
     const j = janelaDoArquivo(f);
     if (cobre(j)) achados.set(f, j.inicio);

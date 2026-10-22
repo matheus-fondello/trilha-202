@@ -8,6 +8,7 @@
 const estadoLib = require('../scripts/lib/estado');
 const fila = require('../scripts/lib/fila');
 const turnos = require('../scripts/lib/turnos');
+const conversas = require('../scripts/lib/conversas');
 const { enviar } = require('../scripts/lib/enviar');
 const { agora, lerStdin } = require('../scripts/lib/util');
 
@@ -31,6 +32,8 @@ async function main() {
   const deveTentar = fila.ler().length > 0 && Date.now() - ultimo > INTERVALO_ENVIO_MS;
   if (deveTentar) e.ultimo_envio_tentado = agora();
   estadoLib.salvar(e);
+  // A cópia da conversa até aqui (lib/conversas.js): fechar o chat pelo X do aplicativo apaga o original.
+  conversas.guardar(entrada.session_id, entrada.transcript_path);
   if (deveTentar) await enviar({ timeoutMs: 2000, estado: estadoLib.carregar() });
 }
 
