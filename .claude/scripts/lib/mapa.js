@@ -50,10 +50,13 @@ function modulo(id) {
 
 // A fluência do módulo se julga pelo conjunto (M4 a M6, 22/10): ali a condição
 // trata da ideia e das decisões do aluno, e um ou dois itens fracos não
-// reprovam. Sem o campo, parte por parte, como sempre foi.
+// reprovam. A aula também pode levar a marca (`"fluencia_regra": "conjunto"`,
+// a 1.2, a 1.3 e a 1.4, 22/10), onde parte por parte reprovava demais. Sem o
+// campo, parte por parte, como sempre foi.
 function fluenciaPeloConjunto(idAula) {
   const a = todas().find((x) => x.id === idAula);
   if (!a || !a.fluencia) return false;
+  if (a.fluencia_regra === 'conjunto') return true;
   const d = (carregar().modulos || []).find((m) => m.id === a.modulo);
   return Boolean(d && d.fluencia === 'conjunto');
 }

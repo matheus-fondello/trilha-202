@@ -14,7 +14,7 @@ const { avaliacaoRodando } = require('./estado');
 // skill (T8, passo 5), mesmo que o tutor esqueça o AGENTS.md.
 const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\`${process.platform === 'win32' ? ' com `Get-Content -Encoding UTF8`' : ''} e siga`;
 
-// A fluência dos módulos de negócio e de produto se julga pelo conjunto (22/10): substitui, só nestas aulas, o "passou
+// A fluência dos módulos de negócio e de produto, e da 1.2, da 1.3 e da 1.4, se julga pelo conjunto (22/10): substitui, só nestas aulas, o "passou
 // é toda parte cumprida" da `tutor`. O texto mora em lib/fluencia-conjunto.js, igual ao que o avaliador ouve.
 const FLUENCIA_PELO_CONJUNTO = require('./fluencia-conjunto').linhaTutor();
 

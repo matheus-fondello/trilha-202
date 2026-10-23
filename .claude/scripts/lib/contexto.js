@@ -17,7 +17,7 @@ const path = require('path');
 const paths = require('./paths');
 const mapa = require('./mapa');
 
-// A fluência dos módulos 4 a 6 se julga pelo conjunto (22/10): a régua manda "passou é toda parte cumprida", e ali isso
+// A fluência dos módulos 4 a 6, e da 1.2, da 1.3 e da 1.4, se julga pelo conjunto (22/10): a régua manda "passou é toda parte cumprida", e ali isso
 // reprovava uma resposta inteira por dois itens de dez. Só estas aulas, e só com a fluência registrada, recebem o bloco;
 // nas outras o contexto é o de antes, letra a letra. O texto mora em lib/fluencia-conjunto.js, igual ao do tutor.
 const FLUENCIA_PELO_CONJUNTO = `#### Esta fluência se julga pelo conjunto

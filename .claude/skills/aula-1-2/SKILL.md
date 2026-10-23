@@ -32,6 +32,6 @@ Confira no estado se a oficina e a P0 estão registradas; se não, resolva antes
 
 ## Fluência
 
-Na oficina: `/init` na pasta da P0 e, em cima do rascunho, um CLAUDE.md (*no Codex:* um `AGENTS.md`) dele com no máximo dez linhas. Passa se as linhas que ele manteve forem coisas que o agente não descobriria sozinho, e se ele souber justificar o que cortou. Registre com `fluencia 1.2 passou|nao-passou <tentativas>`.
+Na oficina: `/init` na pasta da P0 e, em cima do rascunho, um CLAUDE.md (*no Codex:* um `AGENTS.md`) dele com no máximo dez linhas. Passa se a maior parte das linhas que ele manteve forem coisas que o agente não descobriria sozinho, e se ele souber dizer por que cortou o que cortou: uma frase geral com o critério da aula ("o agente vê isso no código") vale. Não reprovam, e você aponta como próximo passo: linhas que só descrevem o que está na pasta, se forem minoria; um corte justificado depois que você cobrou; passar das dez linhas. Registre com `fluencia 1.2 passou|nao-passou <tentativas>`.
 
 Fechamento da `tutor`. Próxima aula: 1.3, Verificar, não ler. Gancho: ele já sabe como o agente funciona e já tem o terminal para olhar o resultado; a próxima é a aula mais importante do módulo, sobre como saber se o que ele fez presta.

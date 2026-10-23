@@ -1,5 +1,6 @@
 'use strict';
-// A fluência pelo conjunto (22/10), nas aulas dos módulos marcados no mapa (`"fluencia": "conjunto"`, o M4 ao M6). A
+// A fluência pelo conjunto (22/10), nas aulas dos módulos marcados no mapa (`"fluencia": "conjunto"`, o M4 ao M6) e nas
+// aulas marcadas (`"fluencia_regra": "conjunto"`, a 1.2, a 1.3 e a 1.4, onde parte por parte reprovava demais). A
 // `tutor` e a régua mandam "passou é toda parte cumprida", e nessas aulas, em que a tarefa é texto e decisão do aluno
 // sobre a ideia dele ou um caso, isso reprovava uma resposta inteira por dois itens de dez. O tutor ouve a regra pelo
 // resumo (lib/resumo.js) e o avaliador pelo contexto (lib/contexto.js), com o mesmo texto: a régua manda o avaliador
