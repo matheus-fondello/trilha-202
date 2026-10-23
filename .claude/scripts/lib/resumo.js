@@ -18,6 +18,19 @@ const lerSkill = (nome) => `leia \`.claude/skills/${nome}/SKILL.md\`${process.pl
 // é toda parte cumprida" da `tutor`. O texto mora em lib/fluencia-conjunto.js, igual ao que o avaliador ouve.
 const FLUENCIA_PELO_CONJUNTO = require('./fluencia-conjunto').linhaTutor();
 
+// O idioma em que o tutor fala com o aluno (23/10): português, o padrão, ou inglês. Quem nunca conectou escolhe antes
+// de tudo, numa pergunta nas duas línguas; quem já tinha aula antes disso segue em português sem ser perguntado, e
+// troca com o /language. O material continua em português: em inglês, o tutor traduz o que mostra.
+function linhaIdioma(e) {
+  if (e.idioma === 'en') return 'Idioma da aula: inglês, escolhido pelo aluno. Fale com ele só em inglês, em todo turno, mesmo com as skills, o material e a saída dos comandos em português: o que mostrar a ele, traduza. Comandos, caminhos e ids de marco ficam como estão, e o que vai para registro (motivo da fluência, nota, feedback) continua em português. Referência que só existe em português se oferece assim mesmo, dizendo que é em português. Se ele pedir para trocar de idioma, rode `node .claude/scripts/trilha.js idioma pt`.';
+  return null;
+}
+
+function perguntaIdioma(e) {
+  if (e.idioma || (e.acesso && e.acesso.conectado_em)) return null;
+  return 'Idioma: ainda não escolhido. Antes de tudo, antes de se apresentar e de pedir nome e token, pergunte em inglês e em português, na mesma mensagem e só isso, se ele quer seguir a trilha em português ou em inglês (por exemplo: "Would you like to continue in English or Portuguese? / Você quer seguir em português ou em inglês?"). Com a resposta, registre com `node .claude/scripts/trilha.js idioma pt` ou `idioma en`, e só então siga o que vem abaixo, já no idioma escolhido.';
+}
+
 // Sala sem acesso à 202 não tem aula. O resumo inteiro vira o pedido do token,
 // e nada da aula aparece: o tutor não tem o que começar antes do `conectar`.
 function portaFechada(e, a, linhas, codex) {
@@ -29,6 +42,8 @@ function portaFechada(e, a, linhas, codex) {
   const comServidor = temServidor ? '' : ' servidor=<url>';
   linhas.push(`${rotuloDe(a)}: ${a.id} ${a.titulo}`);
   linhas.push('');
+  const idioma = perguntaIdioma(e) || linhaIdioma(e);
+  if (idioma) linhas.push(idioma, '');
   if (recusado) {
     linhas.push(`Acesso à 202: RECUSADO. A 202 recusou o token desta máquina ${relativo(e.acesso.recusado_em)}: o acesso foi revogado, trocado por outro, ou a turma foi encerrada. A sala fica fechada até ele conectar um token novo. O progresso está guardado e continua de onde parou.`);
     linhas.push('Diga isso em duas linhas, sem jargão, e peça o token novo que a 202 mandou. Se ele não recebeu, é com a 202, pelo canal por onde entrou na trilha. Registre com:');
@@ -267,6 +282,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
 
   const conferido = e.acesso.verificado_em ? '' : ' (token ainda não conferido pelo servidor; confere sozinho no próximo envio, não comente)';
   linhas.push(`Aluno: ${e.aluno.nome || 'sem nome'}${e.aluno.email ? ` (${e.aluno.email})` : ''}. Conectado à 202${conferido}.`);
+  if (linhaIdioma(e)) linhas.push(linhaIdioma(e));
   semLogin(e, linhas);
   semClaude(e, linhas, codex);
   if (e.sessao_atual && e.sessao_atual.escolha && !e.sessao_atual.escolha.feita) return escolhaDeFrente(e, linhas, codex);
@@ -444,4 +460,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada, avaliacoesPendentes, comandoAvaliar };
+module.exports = { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada, avaliacoesPendentes, comandoAvaliar };

@@ -13,6 +13,7 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 
 ## Regras que não mudam
 
+- A sala fala português ou inglês, o que o estado disser. O primeiro chat pergunta antes de tudo; o aluno troca quando quiser com `/language`, que é dele e não é pedido fora da aula.
 - Sem acesso à 202 não há aula. Se o estado disser que a sala não está conectada, peça o nome e o token e rode `conectar`; o CLI não registra nada antes disso.
 - Progresso é registrado por script (`node .claude/scripts/trilha.js ...`).
 - Uma aula por chat. Ao concluir, a próxima abre em chat novo.
@@ -23,7 +24,7 @@ Se o estado não apareceu, rode `node .claude/scripts/trilha.js status` e siga a
 
 ## Pastas
 
-- `.claude/skills/` tutor, aulas e práticas. Carregadas sob demanda. Algumas aulas trazem um `material.md` ao lado, com o material fixo da fluência, lido junto com a aula.
+- `.claude/skills/` tutor, aulas, práticas e o `/language`. Carregadas sob demanda. Algumas aulas trazem um `material.md` ao lado, com o material fixo da fluência, lido junto com a aula.
 - `.claude/hooks/` início, guarda (bloqueia escrita no harness), atividade e fim de sessão.
 - `.claude/scripts/trilha.js` o CLI do progresso.
 - `.claude/avaliador/` a régua da avaliação de fim de aula, que é lida por um segundo Claude, fora do chat. Não se abre daqui.

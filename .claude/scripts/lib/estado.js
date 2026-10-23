@@ -16,6 +16,7 @@ function padrao() {
     versao: 1,
     criado_em: agora(),
     aluno: { email: null, nome: null, id: null },
+    idioma: null,       // 'pt' | 'en': em que o tutor fala; null até a pergunta do primeiro chat (comando `idioma`)
     aula_atual: mapa.todas()[0].id,
     aulas: {},          // por id: { status, iniciada_em, concluida_em, milestones: {id: ts}, fluencia, avaliada_em, sessoes }
     sessao_atual: null, // { id, inicio, ultima_atividade, aula, aulas?, turnos, n_base, fonte, contada, transcricao, turno_aberto, ultimo_turno_fim, trabalho_ms }

@@ -8,7 +8,7 @@ O manual completo, para Windows, Mac e Linux, está no site da 202 — é ele qu
 
 1. Instale o [Node.js](https://nodejs.org) (versão 20 ou mais nova) e o **aplicativo do [Claude Code](https://code.claude.com)**. A trilha assume o aplicativo de desktop; pelo terminal também funciona, e aí o comando é `claude` dentro da pasta.
 2. Traga este repositório para a sua máquina. O manual mostra como, no seu sistema.
-3. Abra essa pasta no Claude Code. A primeira coisa que o professor pede é o seu nome e o token de acesso que a 202 te mandou — é só colar o valor na conversa. Sem ele a trilha não começa. Daí em diante você não precisa saber nada além de escrever em português. Se você pediu ao próprio Claude para instalar e trazer o repositório, a aula não acontece nesse chat: feche o aplicativo, abra de novo e crie um chat novo nesta pasta.
+3. Abra essa pasta no Claude Code. A primeira coisa que o professor pergunta é se você quer seguir em português ou em inglês (dá para trocar depois, a qualquer momento, com `/language`). Depois ele pede o seu nome e o token de acesso que a 202 te mandou — é só colar o valor na conversa. Sem ele a trilha não começa. Daí em diante você não precisa saber nada além de escrever no idioma que escolheu. Se você pediu ao próprio Claude para instalar e trazer o repositório, a aula não acontece nesse chat: feche o aplicativo, abra de novo e crie um chat novo nesta pasta.
 
 O token é pessoal, como uma senha. Ele fica guardado em `~/.trilha-202/credenciais.json`, na sua pasta pessoal e **fora deste repositório**, que é público. Se ele vazar, peça outro à 202.
 
