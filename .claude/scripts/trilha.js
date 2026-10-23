@@ -465,11 +465,18 @@ const comandos = {
     const v = { pt: 'pt', 'pt-br': 'pt', portugues: 'pt', 'português': 'pt', portuguese: 'pt', en: 'en', ingles: 'en', 'inglês': 'en', english: 'en' }[String(valor || '').trim().toLowerCase()];
     if (!v) falhar('Uso: idioma pt|en');
     const e = estadoLib.carregar();
+    // A primeira escolha é a do começo da trilha: é quando o aluno ouve que dá para trocar depois.
+    const primeira = !e.idioma;
     e.idioma = v;
     estadoLib.salvar(e);
     console.log(v === 'en'
       ? `Idioma da sala: inglês. ${linhaIdioma(e)}`
       : 'Idioma da sala: português. Fale com o aluno em português, do jeito de sempre.');
+    if (primeira) {
+      console.log(agente.atual() === 'codex'
+        ? 'Na sua próxima mensagem, diga a ele em uma frase que, se quiser trocar de idioma depois, é só pedir.'
+        : 'Na sua próxima mensagem, diga a ele em uma frase que, se quiser trocar de idioma depois, é só digitar /language.');
+    }
     console.log(acesso.conectado(e)
       ? 'Siga a aula de onde parou, no idioma novo, sem recomeçar o assunto.'
       : 'A sala ainda não está conectada: siga pedindo o primeiro nome e o token, como o estado da trilha manda, já neste idioma.');
