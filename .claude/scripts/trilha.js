@@ -244,6 +244,26 @@ function pedidoDeAtualizar() {
   return '(Atualização: a sala pode ter material novo: rode `node .claude/scripts/trilha.js atualizar` fora do sandbox, pedindo a aprovação do aluno, no primeiro turno. Se ele não aprovar, siga a aula: o pedido volta amanhã. Não comente além disso.)';
 }
 
+// Os hooks da sala que o aluno ainda não aprovou na tela do Codex (lib/codex/confianca.js), num chat novo e uma vez por
+// dia: o aplicativo mostra o aviso "hooks requerem aprovação" sem dizer o que eles são, e nada nosso aparece antes. Só
+// com a pasta confiada (sem ela o Codex ignora a `.codex/` inteira e não oferece a revisão) e com o config.toml lido;
+// hook que o aluno desligou fica como ele quis. Vazio quando não há o que pedir ou já se pediu hoje.
+function pedidoDeHooks() {
+  let r;
+  try { r = require('./lib/codex/confianca').verificar(); } catch { return ''; }
+  if (!r.config || r.pasta !== 'confiada') return '';
+  const novos = r.hooks.filter((h) => h.estado === 'sem-revisao').length;
+  const mudaram = r.hooks.filter((h) => h.estado === 'mudou').length;
+  if (!novos && !mudaram) return '';
+  const e1 = estadoLib.carregar();
+  const cx = e1.codex || (e1.codex = { chats: {} });
+  if (cx.hooks_avisados === hojeLocal()) return '';
+  cx.hooks_avisados = hojeLocal();
+  estadoLib.salvar(e1);
+  const porque = novos ? '' : ' Eles já tinham sido aprovados e voltaram a pedir aprovação porque a sala foi atualizada; diga isso.';
+  return `(Hooks: ${novos + mudaram} de ${r.hooks.length} hooks da sala esperam a aprovação do aluno no Codex.${porque} No seu primeiro turno, antes da aula, diga em poucas linhas e sem jargão: que na barra de baixo do aplicativo aparece um aviso de hooks que pedem aprovação; que, clicando nele, abre uma tela para revisar os hooks, e é para escolher "Permitir tudo"; que são os scripts da trilha, que carregam a aula no começo do chat, contam o tempo de estudo e impedem que os arquivos da sala sejam alterados por engano; e que, se ele preferir não aprovar, a aula funciona assim mesmo, só sem essa proteção. Não insista nem volte ao assunto neste chat. Se ele contar que a tela é outra, trabalhe a partir do que ele descrever.)`;
+}
+
 // O hook de início do Codex (.claude/hooks/codex/inicio.js) deixa uma marca por chat em `e.codex.inicio_hook`: ele já
 // atualizou a sala (fora do sandbox), limpou trilha/tmp, registrou o harness alterado e injetou o resumo. O `status` do
 // primeiro turno que vem logo depois não refaz nada disso: refazer o `atualizar` dentro do sandbox daria `sem-rede`, e
@@ -269,18 +289,20 @@ async function statusDepoisDoHook(marca, id, { fonte, continuacaoDe }) {
   // O pedido de atualizar fora do sandbox só num chat novo: num retomado, o `atualizar` entraria com a aula andando
   // (atualizarDoCodex, `soCodigo`), e o pedido seria à toa.
   const pedido = ATUALIZAR_FORA.includes(marca.atualizacao) && (marca.fonte === 'startup' || marca.fonte === 'clear') ? pedidoDeAtualizar() : '';
+  const hooks = marca.fonte === 'startup' || marca.fonte === 'clear' ? pedidoDeHooks() : '';
   // O hook que rodou antes de a conversa existir no disco não sincronizou: o resumo dele saiu sem a sessão deste chat,
   // e a escolha de frente e a continuação, que nascem com ela, não chegaram ao tutor. O mesmo se a escolha ficou
   // pendente depois do hook. O resto do que o hook fez (atualizar, limpar trilha/tmp, o harness alterado) vale.
   if (marca.sincronizou !== true || (estadoLib.escolhaPendente(e) && !marca.escolha)) {
     if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
-    console.log(resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) }) + (pedido ? '\n' + pedido : ''));
+    console.log(resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) }) + (pedido ? '\n' + pedido : '') + (hooks ? '\n' + hooks : ''));
     return;
   }
   const linhas = ['(O estado deste chat já veio no início do chat; siga por ele. Não comente com o aluno.)'];
   const vistas = new Set(marca.pendencias || []);
   for (const l of linhasDePendencia(resumo(e, { fonte: 'resume', agente: 'codex' }))) if (!vistas.has(l)) linhas.push(l);
   if (pedido) linhas.push(pedido);
+  if (hooks) linhas.push(hooks);
   console.log(linhas.join('\n'));
 }
 
@@ -342,6 +364,8 @@ async function statusDoCodex(args) {
       avisos.push('(Os comandos da sala acabaram de receber correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.)');
     }
   }
+  // No chat novo, no processo que imprime: o relançado, depois de atualizar, ou este.
+  if (novo) { const hooks = pedidoDeHooks(); if (hooks) avisos.push(hooks); }
   if (relancado) avisos.push(`(A sala acabou de se atualizar com material novo da 202. Os comandos, o mapa e as skills deste chat já são os novos, e este estado saiu deles${args.includes('--agents-md') ? '; só o AGENTS.md novo vale a partir do próximo chat' : ''}. Não comente com o aluno, salvo se ele perguntar.)`);
 
   // Uma vez por mudança, como o hook de início faz em todo chat, retomado ou compactado também. Sem git, o registro
