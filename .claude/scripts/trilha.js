@@ -696,6 +696,7 @@ const comandos = {
       else if (!quizLib.completo(banco, reg)) problemas.push(`perguntas respondidas: ${quizLib.respondidas(reg)} de ${banco.questoes.length}. O quiz fecha com todas (\`quiz ${idAula}\` imprime a da vez).`);
       if (banco && quizLib.completo(banco, reg)) {
         avaliarAbertasPendentes(e, reg, banco, idAula);
+        fecharQuiz(e, reg, banco, idAula);
         if (Object.values(quizLib.registro(reg).respostas).some((r) => r.texto_pendente)) {
           avisos.push('a avaliação de uma resposta aberta ficou pendente; o próximo chat tenta novamente');
         }
@@ -1056,7 +1057,7 @@ const comandos = {
     // Uma leitura interrompida nao perde a resposta: a proxima chamada do quiz
     // tenta novamente, inclusive depois de o quiz ter sido concluido.
     avaliarAbertasPendentes(e, reg, banco, idQuiz);
-    if (reg.status === 'concluida') { console.log(`O ${idQuiz} já foi concluído.`); return; }
+    if (reg.status === 'concluida') { fecharQuiz(e, reg, banco, idQuiz); console.log(`O ${idQuiz} já foi concluído.`); return; }
 
     if (!sub || sub === 'proxima') {
       if (reg.status === 'nao_iniciada') { reg.status = 'em_andamento'; reg.iniciada_em = agora(); }
@@ -1065,6 +1066,7 @@ const comandos = {
       estadoLib.salvar(e);
       if (primeira) fila.enfileirar('quiz.inicio', { aula: idQuiz, questoes: banco.questoes.length }, e);
       const prox = quizLib.proximaPendente(banco, reg);
+      if (!prox) fecharQuiz(e, reg, banco, idQuiz);
       console.log(prox ? quizLib.formatarPergunta(banco, prox) : fimDoQuiz(banco, reg, idQuiz));
       return;
     }
@@ -1109,10 +1111,7 @@ const comandos = {
     if (seguinte) {
       console.log(quizLib.formatarPergunta(banco, seguinte));
     } else {
-      q.completo_em = agora();
-      estadoLib.salvar(e);
-      const r = quizLib.resumoFinal(banco, reg);
-      fila.enfileirar('quiz.completo', { aula: idQuiz, acertos: r.acertos, total_fechadas: r.total_fechadas, erradas: r.erradas, revisitar: r.revisitar }, e);
+      fecharQuiz(e, reg, banco, idQuiz);
       console.log(fimDoQuiz(banco, reg, idQuiz));
     }
   },
@@ -1934,6 +1933,18 @@ function avaliarAbertasPendentes(e, reg, banco, idQuiz) {
         : `A avaliação separada da pergunta ${questao.n} ficou pendente (${resultado.motivo}). A resposta está salva e será tentada novamente no próximo chat.`);
     }
   }
+}
+
+// O `quiz.completo` sai uma vez, quando a última resposta existe. Não só no `responder` que a gravou: a avaliação
+// da aberta vem antes e leva uns vinte segundos, e o aluno que para o chat nesse meio mata o comando com a resposta
+// gravada e sem o evento (o Q1 de um aluno em 21/10). Por isso o `quiz` e o `concluir` seguintes também fecham.
+function fecharQuiz(e, reg, banco, idQuiz) {
+  const q = quizLib.registro(reg);
+  if (q.completo_em || !quizLib.completo(banco, reg)) return;
+  q.completo_em = agora();
+  estadoLib.salvar(e);
+  const r = quizLib.resumoFinal(banco, reg);
+  fila.enfileirar('quiz.completo', { aula: idQuiz, acertos: r.acertos, total_fechadas: r.total_fechadas, erradas: r.erradas, revisitar: r.revisitar }, e);
 }
 
 // O fechamento do quiz, para o tutor: o que ficou para revisitar não é placar.
