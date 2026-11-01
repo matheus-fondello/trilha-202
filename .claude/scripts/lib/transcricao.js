@@ -15,6 +15,7 @@ const os = require('os');
 const path = require('path');
 const paths = require('./paths');
 const conversas = require('./conversas');
+const anotacoes = require('./anotacoes');
 
 // ~60 mil tokens. A transcrição vai inteira no prompt do avaliador, e é ela que
 // determina o custo da avaliação; aula de uma hora cabe com folga.
@@ -370,7 +371,8 @@ function converter(bruto, tirar = (t) => t) {
     if (!msg || (ev.type !== 'user' && ev.type !== 'assistant')) continue;
     for (const b of blocos(msg.content)) {
       if (b.type === 'text') {
-        const texto = tirar(semToken(limpar(b.text)));
+        // O resumo de fim de aula é a leitura do tutor sobre os tropeços do aluno: quem avalia não o lê (lib/anotacoes.js).
+        const texto = tirar(semToken(limpar(ev.type === 'assistant' ? anotacoes.semResumo(b.text) : b.text)));
         if (!texto) continue;
         if (ev.type === 'user') {
           for (const s of segmentos(texto)) itens.push({ quem: 'ALUNO', linha: `${rotulo(s.tipo, s.nome)}: ${continuacoes(s.texto)}` });

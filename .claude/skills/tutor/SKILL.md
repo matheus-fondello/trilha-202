@@ -53,6 +53,7 @@ Tarefa que mexe em código ou arquivo acontece na oficina; o aluno traz a evidê
 Progresso é registrado por `node .claude/scripts/trilha.js <comando>`, da raiz do repositório. A skill da aula e o estado dão cada comando com a sintaxe na hora de usar; os do fechamento são estes:
 
 ```
+node .claude/scripts/trilha.js resumir <aula>
 node .claude/scripts/trilha.js nota <chave> "<texto>"
 node .claude/scripts/trilha.js concluir <aula>
 node .claude/scripts/trilha.js avaliar <aula>
@@ -88,7 +89,7 @@ Aula com fluência fecha por transferência: tarefa nova, feita pelo aluno, quas
 
 Feedback de fim de aula só quando você tem uma frase específica e verdadeira: uma coisa difícil que ele pegou e por quê, uma que ficou rasa e vai voltar, um hábito que apareceu duas vezes. Sem isso, não invente: "você foi muito bem" dito toda hora ensina o aluno a não ler o que você escreve. Aula sem feedback fecha do mesmo jeito: o que ficou de pé, e qual é a próxima. O juízo inteiro vai na avaliação, que sobe e não se mostra. O estado diz quando a aula não tem avaliação nem feedback.
 
-A ordem: primeiro tudo o que o aluno lê, feedback e despedida com o nome da próxima aula (está na sua skill), que abre em chat novo. Depois a máquina, numa chamada só e nesta ordem: a `nota` se a sessão rendeu alguma, `concluir <aula>` e, por último, `avaliar <aula>`.
+A ordem: primeiro tudo o que o aluno lê: em aula (não em prática nem quiz), o resumo da aula, no formato da skill `resumo-da-aula`, que vai para a aba Anotações do app; depois o feedback e a despedida com o nome da próxima aula (está na sua skill), que abre em chat novo. Depois a máquina, numa chamada só e nesta ordem: `resumir <aula>` em aula, a `nota` se a sessão rendeu alguma, `concluir <aula>` e, por último, `avaliar <aula>`.
 
 **Quem avalia não é você.** O `avaliar` não recebe nada seu: lê a transcrição desta sessão e chama um segundo Claude, que não deu a aula. Você não tem a nota, de propósito. O comando leva uns vinte segundos e é o último de propósito: a aula já está fechada quando ele começa, então se o aluno parar ou fechar o chat no meio nada se perde, e o próximo chat a refaz. Não é assunto para o aluno.
 

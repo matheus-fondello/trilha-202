@@ -12,6 +12,7 @@
 //
 // O formato não é contrato: linha que não se entende é pulada, e nada aqui lança.
 const comum = require('../transcricao');
+const anotacoes = require('../anotacoes');
 const rollout = require('./rollout');
 const paths = require('../paths');
 const fs = require('fs');
@@ -94,7 +95,8 @@ function falasDoItem(item, itens, tirar, ancoras) {
     // O comentário entre ferramentas e a resposta final: no Claude, os dois são texto do assistente.
     for (const c of Array.isArray(item.content) ? item.content : []) {
       const parte = objeto(c);
-      const t = parte ? tirar(semTokenJson(comum.semToken(comum.limpar(texto(parte.text))))) : '';
+      // Sem o resumo de fim de aula, como no Claude: é a leitura do tutor sobre os tropeços do aluno (lib/anotacoes.js).
+      const t = parte ? tirar(semTokenJson(comum.semToken(comum.limpar(anotacoes.semResumo(texto(parte.text)))))) : '';
       if (t) itens.push({ quem: 'TUTOR', linha: `TUTOR: ${comum.continuacoes(t)}` });
     }
   } else if (tipo === 'CommandExecution') {

@@ -22,6 +22,7 @@
 //   node .claude/scripts/trilha.js conferir <pratica>
 //   node .claude/scripts/trilha.js corrigir <pratica> conferencia=<arquivo>          (à mão: corrigir <pratica> <arquivo.json>)
 //   node .claude/scripts/trilha.js quiz <Q> | quiz <Q> responder <n> <letra>          (aberta: responder <n> arquivo=<txt> | texto="...")
+//   node .claude/scripts/trilha.js resumir <aula> [arquivo=trilha/tmp/resumo-<aula>.md]   (o resumo de fim de aula, que o tutor acabou de escrever)
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
 //   node .claude/scripts/trilha.js enviar
@@ -40,6 +41,7 @@ const { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio } = require('./lib/e
 const { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
+const anotacoes = require('./lib/anotacoes');
 const transcricao = require('./lib/transcricao');
 const avaliador = require('./lib/avaliador');
 const { contextoDaAula, trechosDaSkill, agenteDaUnidade } = require('./lib/contexto');
@@ -58,7 +60,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'seguir', 'milestone', 'fluencia', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'seguir', 'milestone', 'fluencia', 'resumir', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -1139,6 +1141,60 @@ const comandos = {
     console.log(`Nota "${chave}" ${acao}. ${total} de ${notas.TETO} notas. Ela fica em trilha/aluno.md e não sobe para a 202.`);
   },
 
+  // O resumo de fim de aula (01/11): o tutor o escreve no chat, para o aluno, e este comando o acha no que ele acabou
+  // de escrever, separa as partes, guarda em trilha/anotacoes e manda à 202, de onde ele vai para a aba Anotações do
+  // app (lib/anotacoes.js). Vem antes da `nota`, do `concluir` e do `avaliar`, na mesma chamada: por isso um resumo
+  // que não deu certo nunca sai com erro, senão o `&&` cortaria o fechamento inteiro.
+  resumir([idAula, ...resto]) {
+    if (!idAula) falhar('Uso: resumir <aula> [arquivo=trilha/tmp/resumo-<aula>.md]');
+    exigirAcesso();
+    let a;
+    try { a = mapa.aula(idAula); } catch (err) { return console.log(`Resumo não registrado: ${err.message} Siga o fechamento.`); }
+    if (a.tipo !== 'aula') return console.log(`${idAula} não é aula: prática e quiz não têm resumo. Siga o fechamento.`);
+    const kv = parChaveValor(resto);
+    const e = estadoLib.carregar();
+    const reg = estadoLib.registroAula(e, idAula);
+    const arquivoSugerido = `trilha/tmp/resumo-${idAula}.md`;
+    const semResumo = (motivo) => console.log(`Resumo da aula ${idAula} não registrado: ${motivo}. Se você ainda não o escreveu para o aluno, escreva-o (skill \`resumo-da-aula\`) e rode \`resumir ${idAula}\` de novo. Se ele já está no chat, grave o mesmo texto em ${arquivoSugerido} e rode \`resumir ${idAula} arquivo=${arquivoSugerido}\`, sem mostrá-lo de novo ao aluno. Nada travou: siga o fechamento.`);
+
+    let texto = null;
+    let fonte = 'conversa';
+    if (kv.arquivo) {
+      const abs = path.resolve(kv.arquivo);
+      const rel = path.relative(paths.TMP, abs);
+      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return semResumo(`o arquivo precisa estar em trilha/tmp (recebi ${kv.arquivo})`);
+      try { texto = fs.readFileSync(abs, 'utf8'); } catch { return semResumo(`não consegui ler ${kv.arquivo}`); }
+      fonte = 'arquivo';
+    } else {
+      // O texto que o tutor escreveu antes desta chamada já está gravado na conversa quando o comando roda.
+      try {
+        if (agente.atual() === 'codex') {
+          const id = agente.idDoChat();
+          const arq = id ? require('./lib/codex/rollout').achar(id) : null;
+          if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoCodex(fs.readFileSync(arq, 'utf8')), idAula);
+        } else {
+          const arq = transcricao.localizar(e.sessao_atual);
+          if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoClaude(fs.readFileSync(arq, 'utf8')), idAula);
+        }
+      } catch { texto = null; }
+      if (!texto) return semResumo('não achei o cabeçalho "## Resumo da aula ' + idAula + '" no que você escreveu neste chat');
+    }
+
+    const analise = anotacoes.analisar(transcricao.semToken(texto), { urlOk: anotacoes.urlCurada(anotacoes.urlsCuradas()) });
+    if (analise.erro) return semResumo(analise.erro);
+    // Os nomes de terceiros (a lista de entrevistas da 4.4) ficam na máquina, como no avaliador; o token também sai.
+    const tirar = transcricao.tiradorDeNomes(e);
+    const limpo = anotacoes.limparTudo(analise.resumo, (t) => tirar(transcricao.semToken(t)));
+    const gerado = agora();
+    anotacoes.gravar(idAula, { versao: anotacoes.VERSAO, aula: idAula, titulo: a.titulo, modulo: a.modulo, gerado_em: gerado, fonte, ...limpo, markdown: tirar(analise.markdown) });
+    reg.resumo_em = gerado;
+    estadoLib.salvar(e);
+    fila.enfileirar('aula.resumo', { aula: idAula, versao: anotacoes.VERSAO, titulo: a.titulo, modulo: a.modulo, ...limpo, ...doAgente() }, e);
+    const n = (k, um, varios) => `${limpo[k].length} ${limpo[k].length === 1 ? um : varios}`;
+    console.log(`Resumo da aula ${idAula} registrado: ${n('conceitos', 'conceito', 'conceitos')}, ${n('tropecos', 'tropeço', 'tropeços')}, ${n('revisar', 'item', 'itens')} para revisar. Ele vai para a aba Anotações do app, onde o aluno marca, edita e revisa; se ele perguntar, é lá.`
+      + (analise.avisos.length ? `\n(Ajustes no que foi guardado: ${analise.avisos.join('; ')}. Não comente com o aluno.)` : ''));
+  },
+
   registrar([tipo, ...resto]) {
     if (!tipo) falhar('Uso: registrar <tipo> [chave=valor ...]');
     if (!/^[a-z][a-z0-9_.-]*$/.test(tipo)) falhar('tipo deve ser minúsculo, ex.: suspeita, duvida, nota');
@@ -1226,6 +1282,7 @@ const comandos = {
       const antes = { aluno: e.aluno.email, aula: e.aula_atual, sessoes: e.sessoes.length };
       for (const f of [paths.ESTADO, paths.FILA, paths.ALUNO]) { try { fs.unlinkSync(f); } catch { /* ok */ } }
       fs.rmSync(paths.TMP, { recursive: true, force: true });
+      fs.rmSync(anotacoes.PASTA, { recursive: true, force: true });
       estadoLib.carregar();
       // Depois do apagão, senão o evento morre junto com a fila que ele denuncia.
       anotar = { estado: estadoLib.carregar(), dados: { apagou: antes } };

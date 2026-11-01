@@ -30,3 +30,6 @@ trilha/codex.lock.*
 # A cópia da conversa de cada chat (lib/conversas.js): o fechar pelo X do aplicativo apaga o original, e a avaliação
 # pendente lê daqui. É do aluno e da máquina dele.
 trilha/conversas/
+
+# O resumo de fim de aula (lib/anotacoes.js), guardado como subiu para a 202. É do aluno e da máquina dele.
+trilha/anotacoes/
