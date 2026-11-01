@@ -112,16 +112,18 @@ function localizar(texto) {
 }
 
 // Os rótulos dentro de um item, em negrito ou itálico ou sem nada: "*No seu caso:*", "**O certo:**", "Como corrigir:".
+// O rótulo é o texto inteiro, e não um pedaço dele: "**Por que o modelo chuta.**" é o tópico de um item, não o
+// rótulo "Por quê" (achado na aula de teste de 01/11).
 const ROTULOS = [
-  ['no_seu_caso', /no seu caso|na sua oficina|no seu projeto|in your case|in your project|in your workshop/],
-  ['fala', /voce (?:disse|escreveu|falou|respondeu|pensou|achou)|sua frase|sua resposta|you (?:said|wrote|answered|thought)|your words/],
-  ['certo', /o certo|o correto|na verdade|o que vale|the right (?:way|answer)|^correct|actually/],
-  ['corrigir', /como corrigir|para nao repetir|para corrigir|da proxima vez|como evitar|how to fix|next time|to avoid/],
-  ['porque', /por que|porque|^why/],
+  ['no_seu_caso', /^(?:no seu caso|na sua oficina|no seu projeto|in your case|in your project|in your workshop)$/],
+  ['fala', /^(?:voce (?:disse|escreveu|falou|respondeu|pensou|achou)|sua frase|sua resposta|you (?:said|wrote|answered|thought)|your words)$/],
+  ['certo', /^(?:o certo|o correto|na verdade|o que vale|the right (?:way|answer)|correct|actually)$/],
+  ['corrigir', /^(?:como corrigir|para nao repetir|para corrigir|da proxima vez|como evitar|how to fix|next time|to avoid)$/],
+  ['porque', /^(?:por que|porque|why)$/],
 ];
 function rotuloDe(t) {
-  const k = chave(t).trim();
-  for (const [nome, re] of ROTULOS) if (re.test(k) && k.length <= 30) return nome;
+  const k = chave(t).replace(/[\s:.!?]+$/, '').trim();
+  for (const [nome, re] of ROTULOS) if (re.test(k)) return nome;
   return null;
 }
 
