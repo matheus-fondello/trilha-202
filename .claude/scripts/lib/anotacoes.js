@@ -32,6 +32,13 @@ function cortar(t, max) {
   return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s;
 }
 
+// O texto que vinha depois de um rótulo ("**A ideia:** o modelo...", "**O certo:** ele roda...") começa em minúscula;
+// sozinho no caderno, começa em maiúscula. "iFood" e "eBay" ficam como estão (a segunda letra já é maiúscula).
+function maiuscula(t) {
+  const s = String(t || '');
+  return /^\p{Ll}(?!\p{Lu})/u.test(s) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 // Sem acento e em minúscula, para classificar o título de seção do jeito que o tutor o escrever.
 function chave(t) {
   return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -237,8 +244,8 @@ function analisar(texto, { urlOk = () => true } = {}) {
     conceitos.push({
       id: id('c', termo),
       termo: cortar(termo, TETO.termo),
-      texto: cortar(explic, TETO.texto),
-      no_seu_caso: p.campos.no_seu_caso ? cortar(p.campos.no_seu_caso, TETO.texto) : null,
+      texto: maiuscula(cortar(explic, TETO.texto)),
+      no_seu_caso: p.campos.no_seu_caso ? maiuscula(cortar(p.campos.no_seu_caso, TETO.texto)) : null,
     });
   }
 
@@ -261,9 +268,9 @@ function analisar(texto, { urlOk = () => true } = {}) {
         id: id('t', titulo),
         titulo: cortar(titulo, TETO.titulo),
         fala: p.campos.fala ? cortar(semAspas(p.campos.fala), TETO.fala) : null,
-        texto: resto ? cortar(resto, TETO.texto) : null,
-        certo: p.campos.certo ? cortar(p.campos.certo, TETO.texto) : null,
-        corrigir: p.campos.corrigir ? cortar(p.campos.corrigir, TETO.texto) : null,
+        texto: resto ? maiuscula(cortar(resto, TETO.texto)) : null,
+        certo: p.campos.certo ? maiuscula(cortar(p.campos.certo, TETO.texto)) : null,
+        corrigir: p.campos.corrigir ? maiuscula(cortar(p.campos.corrigir, TETO.texto)) : null,
       });
     }
   }
@@ -289,7 +296,7 @@ function analisar(texto, { urlOk = () => true } = {}) {
     revisar.push({
       id: id('r', topico || (bom && bom.url) || ''),
       topico: cortar(topico || (bom && bom.titulo) || 'Referência', TETO.topico),
-      texto: explic ? cortar(explic, TETO.texto) : null,
+      texto: explic ? maiuscula(cortar(explic, TETO.texto)) : null,
       link: bom ? { titulo: cortar(bom.titulo || topico || bom.url, TETO.topico), url: bom.url } : null,
     });
   }
@@ -313,7 +320,7 @@ function analisar(texto, { urlOk = () => true } = {}) {
 
   return {
     resumo: {
-      ideia: ideia ? cortar(ideia, TETO.ideia) : null,
+      ideia: ideia ? maiuscula(cortar(ideia, TETO.ideia)) : null,
       conceitos: conceitos.slice(0, TETO.conceitos),
       tropecos: tropecos.slice(0, TETO.tropecos),
       revisar: revisar.slice(0, TETO.revisar),
