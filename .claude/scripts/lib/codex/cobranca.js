@@ -92,7 +92,7 @@ function fechamento(e, s, mensagem) {
   const passos = [
     ...marcos.map((m) => `\`node .claude/scripts/trilha.js milestone ${idAula} ${m}\``),
     ...(semFluencia ? ['o `fluencia`, como a skill da aula diz'] : []),
-    ...(a.tipo === 'aula' && !reg.resumo_em ? [``node .claude/scripts/trilha.js resumir ${idAula}`, se o resumo da aula já está na sua resposta`] : []),
+    ...(a.tipo === 'aula' && !reg.resumo_em ? [`\`node .claude/scripts/trilha.js resumir ${idAula}\`, se o resumo da aula já está na sua resposta`] : []),
     'a `nota`, se houver',
     `\`node .claude/scripts/trilha.js concluir ${idAula}\``,
     ...(a.avaliacao === false ? [] : [`por último, \`node .claude/scripts/trilha.js avaliar ${idAula}\``]),
