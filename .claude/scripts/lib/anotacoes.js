@@ -3,7 +3,9 @@
 //
 // Os alunos pediram: muitos anotam tudo, e depois da fluência esquecem um conceito, confundem uma coisa com outra e
 // voltam a perguntar ou a rolar a conversa atrás do trecho. O tutor fecha cada aula com um resumo curto, no próprio
-// chat: a ideia central, os conceitos, onde o aluno tropeçou e como corrigir, e o que revisar (skill `resumo-da-aula`).
+// chat: a ideia central, o que foi explicado (os tópicos da aula, na ordem), os conceitos, onde o aluno tropeçou e como
+// corrigir, e o que revisar (skill `resumo-da-aula`). "O que foi explicado" entrou depois (01/11, pedido do Pedro ao ver
+// a primeira versão: faltava o resumo do conteúdo); resumo sem essa seção continua valendo.
 //
 // Quem escreve é o tutor, que deu a aula e sabe onde o aluno confundiu. Quem guarda é este módulo: o comando
 // `resumir <aula>` acha o resumo no que o tutor acabou de escrever (a conversa já está gravada quando o comando roda:
@@ -26,7 +28,7 @@ const PASTA = path.join(paths.TRILHA, 'anotacoes');
 const CABECALHO = /^[ \t]*#{1,3}[ \t]+(?:Resumo da aula|Lesson summary)(?=[ \t]+[BPQ]?\d|[ \t]*[·:—–-])(.*)$/gim;
 
 // Tetos do que sobe: o resumo é curto, e um texto que passa disso é engano de formato, não conteúdo.
-const TETO = { ideia: 500, termo: 120, texto: 900, titulo: 240, fala: 400, topico: 160, conceitos: 8, tropecos: 5, revisar: 5 };
+const TETO = { ideia: 500, termo: 120, texto: 900, explicacao: 1400, titulo: 240, fala: 400, topico: 160, topicos: 8, conceitos: 8, tropecos: 5, revisar: 5 };
 
 function cortar(t, max) {
   const s = String(t || '').replace(/\s+/g, ' ').trim();
@@ -47,6 +49,8 @@ function chave(t) {
 
 function secaoDe(titulo) {
   const t = chave(titulo);
+  // Antes de "conceitos": "O que foi explicado" não pode cair em outra seção.
+  if (/explicad|o que (?:vimos|a aula|aprendemos|estudamos)|topicos? (?:da aula|principais)|^topicos?$|pontos principais|what (?:we|was) (?:covered|explained)|key points|main topics/.test(t)) return 'topicos';
   if (/conceito|concept/.test(t)) return 'conceitos';
   if (/trope|errou|erros?\b|confus|atencao|escorreg|stumbl|mistake|tripped/.test(t)) return 'tropecos';
   if (/revis|aprofund|estudar|para ler|review|revisit|go deeper/.test(t)) return 'revisar';
@@ -224,7 +228,7 @@ function id(prefixo, ...textos) {
 // recuado ("  - **O certo:** ..."), a linha de rótulo ou de link, e a linha solta colada nele (sem linha em branco).
 function itensPorSecao(bloco) {
   const linhas = normalizar(bloco).split('\n').slice(1);
-  const out = { ideia: [], conceitos: [], tropecos: [], revisar: [], soltos: [] };
+  const out = { ideia: [], topicos: [], conceitos: [], tropecos: [], revisar: [], soltos: [] };
   let secao = null;
   let ultimo = null;
   let branco = false;
@@ -247,7 +251,7 @@ function itensPorSecao(bloco) {
     novo(conteudo);
   }
   const textos = (lista) => lista.map((x) => x.texto.trim()).filter(Boolean);
-  return { ideia: textos(out.ideia), conceitos: textos(out.conceitos), tropecos: textos(out.tropecos), revisar: textos(out.revisar), soltos: textos(out.soltos) };
+  return { ideia: textos(out.ideia), topicos: textos(out.topicos), conceitos: textos(out.conceitos), tropecos: textos(out.tropecos), revisar: textos(out.revisar), soltos: textos(out.soltos) };
 }
 
 // "Nenhum tropeço que valha registrar nesta aula." — e não "**Nenhum critério de pronto.**", que é um tropeço.
@@ -269,6 +273,29 @@ function analisar(texto, { urlOk = () => true } = {}) {
   // Sem a citação, a primeira linha solta antes das seções é a ideia (a seção "### A ideia" já caiu em `it.ideia`).
   if (!ideia && it.soltos.length) ideia = it.soltos.join(' ');
   ideia = f(ideia);
+
+  // O que foi explicado: "**Título.** o parágrafo". Sem negrito, o que vem antes de um travessão ou dois-pontos; sem
+  // nada disso, a primeira frase.
+  const topicos = [];
+  // O parágrafo fica inteiro, com o que tiver de rótulo ("*No seu caso:* ..."): é texto corrido, não campos.
+  for (const bruto of it.topicos) {
+    const t = bruto.trim();
+    const neg = /^\*\*(.+?)\*\*\s*[:.—–-]?\s*/.exec(t);
+    let titulo = neg ? neg[1].replace(/[\s:.—–-]+$/, '').trim() : '';
+    let explic = neg ? t.slice(neg[0].length).trim() : t;
+    if (!titulo) {
+      const div = /^(.{2,100}?)\s*(?:—|–|:| - )\s*(.+)$/.exec(t);
+      const frase = /^(.{8,140}?[.!?])(\s|$)/.exec(t);
+      if (div) { titulo = div[1].replace(/\*+/g, '').trim(); explic = div[2]; } else if (frase) { titulo = frase[1].replace(/[.!?]$/, ''); explic = t.slice(frase[0].length).trim(); } else { titulo = t; explic = ''; }
+    }
+    if (!titulo) continue;
+    if (!explic) avisos.push(`tópico sem explicação: "${cortar(titulo, 60)}"`);
+    topicos.push({
+      id: id('e', titulo),
+      titulo: cortar(f(titulo), TETO.topico),
+      texto: explic ? maiuscula(cortar(f(explic), TETO.explicacao)) : null,
+    });
+  }
 
   const conceitos = [];
   for (const bruto of it.conceitos) {
@@ -341,24 +368,27 @@ function analisar(texto, { urlOk = () => true } = {}) {
 
   // Ids repetidos (dois conceitos com o mesmo termo) ganham sufixo: o app guarda edição e destaque por id.
   const vistos = new Set();
-  for (const lista of [conceitos, tropecos, revisar]) for (const x of lista) {
+  for (const lista of [topicos, conceitos, tropecos, revisar]) for (const x of lista) {
     let n = 2;
     const base = x.id;
     while (vistos.has(x.id)) x.id = `${base}-${n++}`;
     vistos.add(x.id);
   }
 
+  if (topicos.length > TETO.topicos) avisos.push(`${topicos.length} tópicos explicados: ficaram os ${TETO.topicos} primeiros`);
   if (conceitos.length > TETO.conceitos) avisos.push(`${conceitos.length} conceitos: ficaram os ${TETO.conceitos} primeiros`);
   if (tropecos.length > TETO.tropecos) avisos.push(`${tropecos.length} tropeços: ficaram os ${TETO.tropecos} primeiros`);
   if (revisar.length > TETO.revisar) avisos.push(`${revisar.length} itens para revisar: ficaram os ${TETO.revisar} primeiros`);
 
-  if (!ideia && !conceitos.length) return { erro: 'o resumo não tem a ideia central nem conceitos que eu consiga separar' };
+  if (!ideia && !conceitos.length && !topicos.length) return { erro: 'o resumo não tem a ideia central, o que foi explicado nem conceitos que eu consiga separar' };
   if (!ideia) avisos.push('sem a ideia central (a linha "> ..." logo depois do cabeçalho)');
+  if (!topicos.length) avisos.push('sem "O que foi explicado"');
   if (!conceitos.length) avisos.push('sem conceitos');
 
   return {
     resumo: {
       ideia: ideia ? maiuscula(cortar(ideia, TETO.ideia)) : null,
+      topicos: topicos.slice(0, TETO.topicos),
       conceitos: conceitos.slice(0, TETO.conceitos),
       tropecos: tropecos.slice(0, TETO.tropecos),
       revisar: revisar.slice(0, TETO.revisar),
@@ -475,6 +505,7 @@ function limparTudo(resumo, f) {
   const g = (v) => (typeof v === 'string' ? f(v) : v);
   return {
     ideia: g(resumo.ideia),
+    topicos: (resumo.topicos || []).map((x) => ({ ...x, titulo: g(x.titulo), texto: g(x.texto) })),
     conceitos: resumo.conceitos.map((c) => ({ ...c, termo: g(c.termo), texto: g(c.texto), no_seu_caso: g(c.no_seu_caso) })),
     tropecos: resumo.tropecos.map((t) => ({ ...t, titulo: g(t.titulo), fala: g(t.fala), texto: g(t.texto), certo: g(t.certo), corrigir: g(t.corrigir) })),
     revisar: resumo.revisar.map((r) => ({ ...r, topico: g(r.topico), texto: g(r.texto), link: r.link ? { ...r.link, titulo: g(r.link.titulo) } : null })),

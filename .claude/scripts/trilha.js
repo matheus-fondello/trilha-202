@@ -1520,7 +1520,7 @@ function registrarResumo(idAula, resto) {
   estadoLib.salvar(e);
   fila.enfileirar('aula.resumo', { aula: idAula, versao: anotacoes.VERSAO, titulo: a.titulo, modulo: a.modulo, ...limpo, ...doAgente() }, e);
   const n = (k, um, varios) => `${limpo[k].length} ${limpo[k].length === 1 ? um : varios}`;
-  console.log(`Resumo da aula ${idAula} registrado: ${n('conceitos', 'conceito', 'conceitos')}, ${n('tropecos', 'tropeço', 'tropeços')}, ${n('revisar', 'item', 'itens')} para revisar. Ele vai para a aba Anotações do app, onde o aluno marca, edita e revisa; se ele perguntar, é lá.`
+  console.log(`Resumo da aula ${idAula} registrado: ${n('topicos', 'tópico explicado', 'tópicos explicados')}, ${n('conceitos', 'conceito', 'conceitos')}, ${n('tropecos', 'tropeço', 'tropeços')}, ${n('revisar', 'item', 'itens')} para revisar. Ele vai para a aba Anotações do app, onde o aluno marca, edita e revisa; se ele perguntar, é lá.`
     + (analise.avisos.length ? `\n(Ajustes no que foi guardado: ${analise.avisos.join('; ')}. Não comente com o aluno.)` : ''));
 }
 
