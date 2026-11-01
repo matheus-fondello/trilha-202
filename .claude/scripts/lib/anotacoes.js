@@ -15,7 +15,6 @@
 // porque os tropeços que o tutor escreveu são a leitura dele e virariam nota.
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const paths = require('./paths');
 
 const VERSAO = 1;
@@ -171,8 +170,17 @@ function tirarLinks(t) {
   return { sem, links };
 }
 
+// O id de cada parte vem do texto dela, para sobreviver a um resumo reescrito na mesma ordem ou não: o app guarda a
+// edição e o destaque do aluno por id. FNV-1a de 32 bits, e não o módulo crypto: este arquivo é carregado por todo
+// comando da sala (via transcricao.js), e carregar o crypto na partida derruba o Node no Windows com a pasta pessoal
+// travada (0xC0000409, visto no testa-codex-acesso.js).
 function id(prefixo, ...textos) {
-  return prefixo + '-' + crypto.createHash('sha1').update(textos.map(chave).join('|')).digest('hex').slice(0, 8);
+  let h = 0x811c9dc5;
+  for (const c of textos.map(chave).join('|')) {
+    h ^= c.codePointAt(0);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return prefixo + '-' + h.toString(16).padStart(8, '0');
 }
 
 // Os itens de cada seção, já com as linhas de continuação juntas.
