@@ -21,8 +21,9 @@ const VERSAO = 1;
 const PASTA = path.join(paths.TRILHA, 'anotacoes');
 
 // O cabeçalho que a skill manda escrever: "## Resumo da aula 1.4 · Onde o LLM erra". É estreito de propósito: um
-// "resumo do que vimos" no meio da aula não é o resumo, e não pode sumir da leitura do avaliador.
-const CABECALHO = /^[ \t]*#{1,3}[ \t]+(?:Resumo da aula|Lesson summary)\b(.*)$/gim;
+// "resumo do que vimos" ou um "Resumo da aula anterior" no meio da aula não é o resumo, e não pode sumir da leitura
+// do avaliador. Depois de "Resumo da aula" vem o número da aula ou um separador; e o bloco só vale com uma seção.
+const CABECALHO = /^[ \t]*#{1,3}[ \t]+(?:Resumo da aula|Lesson summary)(?=[ \t]+[BPQ]?\d|[ \t]*[·:—–-])(.*)$/gim;
 
 // Tetos do que sobe: o resumo é curto, e um texto que passa disso é engano de formato, não conteúdo.
 const TETO = { ideia: 500, termo: 120, texto: 900, titulo: 240, fala: 400, topico: 160, conceitos: 8, tropecos: 5, revisar: 5 };
@@ -66,9 +67,19 @@ function tituloDe(l) {
 const CITACAO = /^[ \t]*>[ \t]?(.*)$/;
 const REGUA = /^[ \t]*(?:-{3,}|\*{3,}|_{3,})[ \t]*$/;
 
+// Uma linha solta que, mesmo sem marcador e sem recuo, ainda é parte do item de cima: um rótulo ("**O certo:** ...",
+// "Você escreveu: ...") ou um link sozinho na linha.
+function linhaDeItem(l) {
+  const t = l.trim();
+  if (/^\[[^\]]+\]\(https?:\/\//.test(t) || /^<?https?:\/\//.test(t)) return true;
+  const m = /^(?:\*\*|\*|_)?([^*_:\n]{2,30}?)(?:\*\*|\*|_)?\s*:/.exec(t);
+  return Boolean(m && rotuloDe(m[1]));
+}
+
 // O resumo dentro de um texto do tutor: do último cabeçalho "Resumo da aula" até o fim das seções. O que vem depois
-// (a despedida, a próxima aula) não é resumo: uma linha solta, sem marcador e sem recuo, depois dos itens da última
-// seção encerra o bloco, e uma régua (---) ou um título que não é seção também.
+// (a despedida, a próxima aula) não é resumo: uma linha solta, sem marcador e sem recuo, depois de uma linha em branco
+// e dos itens da última seção encerra o bloco, e um título que não é seção também. Uma régua (---) entre seções não
+// encerra; depois da última, encerra. Sem nenhuma seção reconhecida, não é resumo.
 // O texto chega com \n (o CRLF vira \n antes): as posições devolvidas valem sobre o texto normalizado.
 function normalizar(texto) {
   return String(texto || '').replace(/\r\n?/g, '\n');
@@ -83,16 +94,20 @@ function localizar(texto) {
   const inicio = ultimo.index;
   const depois = s.slice(inicio + ultimo.linha.length);
   const linhas = depois.split('\n');
+  const secaoAdiante = (i) => linhas.slice(i + 1).some((x) => { const t = tituloDe(x); return t !== null && secaoDe(t); });
   // linhas[0] é o que sobrou da linha do cabeçalho (vazio).
   let fimRel = depois.length;
   let secao = null;
   let temItem = false;
   let algumaSecao = false;
+  let branco = false;
   let pos = linhas[0].length + 1;
   for (let i = 1; i < linhas.length; pos += linhas[i].length + 1, i++) {
     const l = linhas[i];
-    if (!l.trim()) continue;
-    if (REGUA.test(l)) { fimRel = pos; break; }
+    if (!l.trim()) { branco = true; continue; }
+    const antesBranco = branco;
+    branco = false;
+    if (REGUA.test(l)) { if (algumaSecao && !secaoAdiante(i)) { fimRel = pos; break; } continue; }
     const tit = tituloDe(l);
     if (tit !== null) {
       const qual = secaoDe(tit);
@@ -101,19 +116,17 @@ function localizar(texto) {
       continue;
     }
     if (BULLET.test(l)) { temItem = true; continue; }
-    if (/^[ \t]{2,}\S/.test(l) && temItem) continue; // continuação recuada de um item
     if (CITACAO.test(l)) continue;
-    // Linha solta: dentro de uma seção ainda sem item é o conteúdo dela ("Nenhum tropeço nesta aula."); depois dos
-    // itens, e na última seção, é o texto que vem depois do resumo. Antes de qualquer seção é a abertura do resumo.
-    if (!secao) continue;
+    if (!secao) continue; // antes de qualquer seção: a abertura do resumo (a ideia)
+    if (/^[ \t]{2,}\S/.test(l) || linhaDeItem(l)) { temItem = true; continue; } // continuação recuada, rótulo ou link
+    // Linha solta: numa seção ainda sem item é o conteúdo dela ("Nenhum tropeço nesta aula."); colada no item de cima
+    // é continuação dele. Depois de uma linha em branco e dos itens, só segue se outra seção vem depois.
     if (!temItem) { temItem = true; continue; }
-    // Itens já lidos nesta seção e uma linha solta: se outra seção vem depois, ela é continuação desta; se não, o
-    // resumo acabou aqui.
-    const restante = linhas.slice(i + 1).some((x) => { const t = tituloDe(x); return t !== null && secaoDe(t); });
-    if (restante) continue;
+    if (!antesBranco || secaoAdiante(i)) continue;
     fimRel = pos;
     break;
   }
+  if (!algumaSecao) return null;
   const fim = inicio + ultimo.linha.length + Math.min(fimRel, depois.length);
   return { inicio, fim, bloco: s.slice(inicio, fim).trim(), cabecalho: ultimo.resto };
 }
@@ -170,6 +183,21 @@ function semAspas(t) {
 }
 
 const LINK = /\[([^\]\n]{1,200})\]\((https?:\/\/[^)\s]+)\)/g;
+// Em qualquer campo, link que não está nas referências curadas sai (fica o texto dele); URL solta também.
+function filtrarLinks(t, urlOk, avisos) {
+  if (t == null) return t;
+  return String(t)
+    .replace(LINK, (inteiro, titulo, url) => { if (urlOk(url)) return inteiro; avisos.push(`link fora das referências curadas saiu do resumo: ${url}`); return titulo; })
+    .replace(/(^|[^(\w])<?(https?:\/\/[^\s)>\]]+)>?/g, (inteiro, antes, bruta) => {
+      // A pontuação colada no fim ("veja https://x.com/b.") é da frase, não da URL.
+      const pont = (/[.,;:!?]+$/.exec(bruta) || [''])[0];
+      const url = pont ? bruta.slice(0, -pont.length) : bruta;
+      if (urlOk(url)) return inteiro;
+      avisos.push(`link fora das referências curadas saiu do resumo: ${url}`);
+      return (pont ? antes.replace(/\s+$/, '') : antes) + pont;
+    })
+    .replace(/\s{2,}/g, ' ').trim();
+}
 function tirarLinks(t) {
   const links = [];
   const sem = String(t || '').replace(LINK, (_, titulo, url) => { links.push({ titulo: titulo.trim(), url }); return ''; })
@@ -192,30 +220,39 @@ function id(prefixo, ...textos) {
   return prefixo + '-' + h.toString(16).padStart(8, '0');
 }
 
-// Os itens de cada seção, já com as linhas de continuação juntas.
+// Os itens de cada seção, já com as linhas de continuação juntas. Continuam o item de cima: a linha recuada, o subitem
+// recuado ("  - **O certo:** ..."), a linha de rótulo ou de link, e a linha solta colada nele (sem linha em branco).
 function itensPorSecao(bloco) {
   const linhas = normalizar(bloco).split('\n').slice(1);
   const out = { ideia: [], conceitos: [], tropecos: [], revisar: [], soltos: [] };
   let secao = null;
-  let atual = null;
-  const fechar = () => { if (atual && atual.texto.trim()) out[secao || 'soltos'].push(atual.texto.trim()); atual = null; };
+  let ultimo = null;
+  let branco = false;
+  const novo = (texto) => { ultimo = { texto }; out[secao || 'soltos'].push(ultimo); };
   for (const l of linhas) {
-    if (!l.trim()) { fechar(); continue; }
+    if (!l.trim()) { branco = true; continue; }
+    const antesBranco = branco;
+    branco = false;
+    if (REGUA.test(l)) continue;
     const tit = tituloDe(l);
-    if (tit !== null) { fechar(); secao = secaoDe(tit); continue; }
+    if (tit !== null) { secao = secaoDe(tit); ultimo = null; continue; }
     const cit = CITACAO.exec(l);
-    if (cit && !secao) { out.ideia.push(cit[1]); continue; }
+    if (cit && !secao) { out.ideia.push({ texto: cit[1] }); continue; }
     const b = BULLET.exec(l);
-    if (b) { fechar(); atual = { texto: b[1] }; continue; }
-    if (atual) { atual.texto += ' ' + l.trim(); continue; }
-    if (!secao) { out.soltos.push(l.trim()); continue; }
-    atual = { texto: l.trim() };
+    const recuada = /^[ \t]{2,}\S/.test(l);
+    if (b && !(recuada && ultimo)) { novo(b[1]); continue; }
+    const conteudo = b ? b[1] : l.trim();
+    if (ultimo && (recuada || linhaDeItem(l) || !antesBranco)) { ultimo.texto += ' ' + conteudo; continue; }
+    if (!secao) { out.soltos.push({ texto: conteudo }); continue; }
+    novo(conteudo);
   }
-  fechar();
-  return out;
+  const textos = (lista) => lista.map((x) => x.texto.trim()).filter(Boolean);
+  return { ideia: textos(out.ideia), conceitos: textos(out.conceitos), tropecos: textos(out.tropecos), revisar: textos(out.revisar), soltos: textos(out.soltos) };
 }
 
-const NADA = /^(?:\*\*)?(?:nenhum|nenhuma|nada|sem trope|none|nothing|no stumbl)/i;
+// "Nenhum tropeço que valha registrar nesta aula." — e não "**Nenhum critério de pronto.**", que é um tropeço.
+const NADA = /^(?:\*\*)?(?:nenhum(?:a)?\s+(?:trope|erro|confus|ponto)|nada\s+(?:a|que|para)\s+registrar|sem\s+trope|no\s+(?:stumbl|mistake)|none\b|nothing\s+to)/i;
+const ehNada = (t) => NADA.test(String(t).trim()) && !/certo|corrig|right|fix/i.test(chave(t));
 
 // O resumo em partes. `urlOk(url)` diz se um link pode ficar (só os das referências curadas: o tutor não inventa link
 // para o caderno do aluno). Devolve `{ resumo, avisos }`, ou `{ erro }` quando não há resumo que valha.
@@ -224,12 +261,14 @@ function analisar(texto, { urlOk = () => true } = {}) {
   if (!achado) return { erro: 'não achei o cabeçalho "## Resumo da aula <id>" (em inglês, "## Lesson summary <id>")' };
   const it = itensPorSecao(achado.bloco);
   const avisos = [];
+  const f = (t) => filtrarLinks(t, urlOk, avisos);
 
   let ideia = it.ideia.join(' ')
     .replace(/^\*\*(?:a |the |big |main |key )?(?:ideia|idea)(?: central)?[:.]?\*\*\s*[:.—–-]?\s*/i, '')
     .replace(/^(?:a |the |big |main |key )?(?:ideia|idea)(?: central)?\s*:\s*/i, '').trim();
   // Sem a citação, a primeira linha solta antes das seções é a ideia (a seção "### A ideia" já caiu em `it.ideia`).
   if (!ideia && it.soltos.length) ideia = it.soltos.join(' ');
+  ideia = f(ideia);
 
   const conceitos = [];
   for (const bruto of it.conceitos) {
@@ -244,16 +283,15 @@ function analisar(texto, { urlOk = () => true } = {}) {
     conceitos.push({
       id: id('c', termo),
       termo: cortar(termo, TETO.termo),
-      texto: maiuscula(cortar(explic, TETO.texto)),
-      no_seu_caso: p.campos.no_seu_caso ? maiuscula(cortar(p.campos.no_seu_caso, TETO.texto)) : null,
+      texto: maiuscula(cortar(f(explic), TETO.texto)),
+      no_seu_caso: p.campos.no_seu_caso ? maiuscula(cortar(f(p.campos.no_seu_caso), TETO.texto)) : null,
     });
   }
 
   const tropecos = [];
-  const so = it.tropecos.filter((x) => x.trim());
-  if (!(so.length === 1 && NADA.test(so[0].trim()))) {
-    for (const bruto of so) {
-      if (NADA.test(bruto.trim()) && !/certo|corrig/i.test(chave(bruto))) continue;
+  {
+    for (const bruto of it.tropecos) {
+      if (ehNada(bruto)) continue;
       const p = partes(bruto);
       let titulo = p.lead || '';
       let resto = p.corpo;
@@ -266,11 +304,11 @@ function analisar(texto, { urlOk = () => true } = {}) {
       if (!p.campos.certo && !p.campos.corrigir) avisos.push(`tropeço sem "O certo" nem "Como corrigir": "${cortar(titulo, 60)}"`);
       tropecos.push({
         id: id('t', titulo),
-        titulo: cortar(titulo, TETO.titulo),
-        fala: p.campos.fala ? cortar(semAspas(p.campos.fala), TETO.fala) : null,
-        texto: resto ? maiuscula(cortar(resto, TETO.texto)) : null,
-        certo: p.campos.certo ? maiuscula(cortar(p.campos.certo, TETO.texto)) : null,
-        corrigir: p.campos.corrigir ? maiuscula(cortar(p.campos.corrigir, TETO.texto)) : null,
+        titulo: cortar(f(titulo), TETO.titulo),
+        fala: p.campos.fala ? cortar(semAspas(f(p.campos.fala)), TETO.fala) : null,
+        texto: resto ? maiuscula(cortar(f(resto), TETO.texto)) : null,
+        certo: p.campos.certo ? maiuscula(cortar(f(p.campos.certo), TETO.texto)) : null,
+        corrigir: p.campos.corrigir ? maiuscula(cortar(f(p.campos.corrigir), TETO.texto)) : null,
       });
     }
   }
@@ -341,6 +379,16 @@ function semResumo(texto) {
   const antes = s.slice(0, achado.inicio).trimEnd();
   const depois = s.slice(achado.fim).trimStart();
   return [antes, '[resumo da aula para o aluno omitido]', depois].filter(Boolean).join('\n\n');
+}
+
+// A resposta do comando `resumir` ("Resumo da aula 1.4 registrado: 3 conceitos, 2 tropeços...") diz quantos tropeços
+// o tutor achou, e os avisos citam o título de um: quem avalia a aula não lê isso. Sem a resposta, o texto volta igual.
+function semSaidaDoResumir(texto) {
+  const s = String(texto);
+  if (!/Resumo da aula \S+ (?:registrado|não registrado)|Ajustes no que foi guardado/.test(s)) return s;
+  return s
+    .replace(/Resumo da aula \S+ (?:registrado|não registrado)[^\n]*/g, '[saída do resumo da aula omitida]')
+    .replace(/\(Ajustes no que foi guardado:[^\n]*\)/g, '');
 }
 
 // Todos os textos do tutor de uma conversa do Claude, na ordem (o .jsonl da sessão).
@@ -433,4 +481,4 @@ function limparTudo(resumo, f) {
   };
 }
 
-module.exports = { VERSAO, PASTA, TETO, analisar, localizar, semResumo, textosDoClaude, textosDoCodex, ultimoResumo, urlsCuradas, urlCurada, arquivo, gravar, ler, limparTudo, partes };
+module.exports = { VERSAO, PASTA, TETO, analisar, localizar, semResumo, semSaidaDoResumir, textosDoClaude, textosDoCodex, ultimoResumo, urlsCuradas, urlCurada, arquivo, gravar, ler, limparTudo, partes };

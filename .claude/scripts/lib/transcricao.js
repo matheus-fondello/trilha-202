@@ -295,7 +295,7 @@ function comandoDe(bloco) {
 function resumoDeFerramenta(bloco, tirar = (t) => t) {
   const nome = bloco.name || 'ferramenta';
   const entrada = bloco.input || {};
-  if (entrada.command) return umaLinha(tirar(semVeredito(semToken(semNota(entrada.command)))), 200);
+  if (entrada.command) return umaLinha(tirar(semVeredito(semToken(semNota(anotacoes.semResumo(entrada.command))))), 200);
   if (entrada.file_path) return `${nome} ${entrada.file_path}`;
   return nome;
 }
@@ -399,7 +399,7 @@ function converter(bruto, tirar = (t) => t) {
         }
       } else if (b.type === 'tool_result') {
         const c = typeof b.content === 'string' ? b.content : blocos(b.content).map((x) => x.text || '').join(' ');
-        const texto = tirar(semVeredito(semToken(limpar(c))));
+        const texto = tirar(semVeredito(semToken(limpar(anotacoes.semSaidaDoResumir(c)))));
         if (texto) itens.push({ quem: 'resp', linha: `  [resposta: ${umaLinha(texto, 200)}]` });
       }
       // thinking fica de fora: é raciocínio do tutor, não evidência sobre o aluno.

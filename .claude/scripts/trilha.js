@@ -1148,51 +1148,10 @@ const comandos = {
   resumir([idAula, ...resto]) {
     if (!idAula) falhar('Uso: resumir <aula> [arquivo=trilha/tmp/resumo-<aula>.md]');
     exigirAcesso();
-    let a;
-    try { a = mapa.aula(idAula); } catch (err) { return console.log(`Resumo não registrado: ${err.message} Siga o fechamento.`); }
-    if (a.tipo !== 'aula') return console.log(`${idAula} não é aula: prática e quiz não têm resumo. Siga o fechamento.`);
-    const kv = parChaveValor(resto);
-    const e = estadoLib.carregar();
-    const reg = estadoLib.registroAula(e, idAula);
-    const arquivoSugerido = `trilha/tmp/resumo-${idAula}.md`;
-    const semResumo = (motivo) => console.log(`Resumo da aula ${idAula} não registrado: ${motivo}. Se você ainda não o escreveu para o aluno, escreva-o (skill \`resumo-da-aula\`) e rode \`resumir ${idAula}\` de novo. Se ele já está no chat, grave o mesmo texto em ${arquivoSugerido} e rode \`resumir ${idAula} arquivo=${arquivoSugerido}\`, sem mostrá-lo de novo ao aluno. Nada travou: siga o fechamento.`);
-
-    let texto = null;
-    let fonte = 'conversa';
-    if (kv.arquivo) {
-      const abs = path.resolve(kv.arquivo);
-      const rel = path.relative(paths.TMP, abs);
-      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return semResumo(`o arquivo precisa estar em trilha/tmp (recebi ${kv.arquivo})`);
-      try { texto = fs.readFileSync(abs, 'utf8'); } catch { return semResumo(`não consegui ler ${kv.arquivo}`); }
-      fonte = 'arquivo';
-    } else {
-      // O texto que o tutor escreveu antes desta chamada já está gravado na conversa quando o comando roda.
-      try {
-        if (agente.atual() === 'codex') {
-          const id = agente.idDoChat();
-          const arq = id ? require('./lib/codex/rollout').achar(id) : null;
-          if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoCodex(fs.readFileSync(arq, 'utf8')), idAula);
-        } else {
-          const arq = transcricao.localizar(e.sessao_atual);
-          if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoClaude(fs.readFileSync(arq, 'utf8')), idAula);
-        }
-      } catch { texto = null; }
-      if (!texto) return semResumo('não achei o cabeçalho "## Resumo da aula ' + idAula + '" no que você escreveu neste chat');
-    }
-
-    const analise = anotacoes.analisar(transcricao.semToken(texto), { urlOk: anotacoes.urlCurada(anotacoes.urlsCuradas()) });
-    if (analise.erro) return semResumo(analise.erro);
-    // Os nomes de terceiros (a lista de entrevistas da 4.4) ficam na máquina, como no avaliador; o token também sai.
-    const tirar = transcricao.tiradorDeNomes(e);
-    const limpo = anotacoes.limparTudo(analise.resumo, (t) => tirar(transcricao.semToken(t)));
-    const gerado = agora();
-    anotacoes.gravar(idAula, { versao: anotacoes.VERSAO, aula: idAula, titulo: a.titulo, modulo: a.modulo, gerado_em: gerado, fonte, ...limpo, markdown: tirar(analise.markdown) });
-    reg.resumo_em = gerado;
-    estadoLib.salvar(e);
-    fila.enfileirar('aula.resumo', { aula: idAula, versao: anotacoes.VERSAO, titulo: a.titulo, modulo: a.modulo, ...limpo, ...doAgente() }, e);
-    const n = (k, um, varios) => `${limpo[k].length} ${limpo[k].length === 1 ? um : varios}`;
-    console.log(`Resumo da aula ${idAula} registrado: ${n('conceitos', 'conceito', 'conceitos')}, ${n('tropecos', 'tropeço', 'tropeços')}, ${n('revisar', 'item', 'itens')} para revisar. Ele vai para a aba Anotações do app, onde o aluno marca, edita e revisa; se ele perguntar, é lá.`
-      + (analise.avisos.length ? `\n(Ajustes no que foi guardado: ${analise.avisos.join('; ')}. Não comente com o aluno.)` : ''));
+    // Qualquer falha daqui em diante (o disco que não grava, um antivírus segurando o arquivo no Windows) vira recado,
+    // e não erro: o `&&` do fechamento não pode perder o `concluir` e o `avaliar` por causa de um resumo.
+    try { registrarResumo(idAula, resto); }
+    catch (err) { console.log(`Resumo da aula ${idAula} não registrado: ${err && err.message ? err.message : err}. Rode \`resumir ${idAula}\` de novo depois do fechamento, se quiser tentar. Nada travou: siga o fechamento.`); }
   },
 
   registrar([tipo, ...resto]) {
@@ -1512,6 +1471,59 @@ function pendenteDoCodex(e, reg, idAula, motivo, causa, longo) {
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: Math.max(1, vezes), causa, avaliador: null }, e);
   return `\`avaliar ${idAula}${longo ? ' --longo' : ''}\``;
 }
+// O resumo de fim de aula (o comando `resumir`): acha, separa, grava e enfileira. Erro de conteúdo vira recado; o
+// que lançar daqui é pego pelo comando e também vira recado.
+function registrarResumo(idAula, resto) {
+  let a;
+  try { a = mapa.aula(idAula); } catch (err) { return console.log(`Resumo não registrado: ${err.message} Siga o fechamento.`); }
+  if (a.tipo !== 'aula') return console.log(`${idAula} não é aula: prática e quiz não têm resumo. Siga o fechamento.`);
+  const kv = parChaveValor(resto);
+  const e = estadoLib.carregar();
+  const reg = estadoLib.registroAula(e, idAula);
+  const arquivoSugerido = `trilha/tmp/resumo-${idAula}.md`;
+  const semResumo = (motivo) => console.log(`Resumo da aula ${idAula} não registrado: ${motivo}. Se você ainda não o escreveu para o aluno, escreva-o (skill \`resumo-da-aula\`) e rode \`resumir ${idAula}\` de novo. Se ele já está no chat, grave o mesmo texto em ${arquivoSugerido} e rode \`resumir ${idAula} arquivo=${arquivoSugerido}\`, sem mostrá-lo de novo ao aluno. Nada travou: siga o fechamento.`);
+
+  let texto = null;
+  let fonte = 'conversa';
+  if (kv.arquivo) {
+    const abs = path.resolve(kv.arquivo);
+    const rel = path.relative(paths.TMP, abs);
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return semResumo(`o arquivo precisa estar em trilha/tmp (recebi ${kv.arquivo})`);
+    try { texto = fs.readFileSync(abs, 'utf8'); } catch { return semResumo(`não consegui ler ${kv.arquivo}`); }
+    fonte = 'arquivo';
+  } else {
+    // O texto que o tutor escreveu antes desta chamada já está gravado na conversa quando o comando roda.
+    try {
+      if (agente.atual() === 'codex') {
+        const id = agente.idDoChat();
+        const arq = id ? require('./lib/codex/rollout').achar(id) : null;
+        if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoCodex(fs.readFileSync(arq, 'utf8')), idAula);
+      } else {
+        const arq = transcricao.localizar(e.sessao_atual);
+        if (arq) texto = anotacoes.ultimoResumo(anotacoes.textosDoClaude(fs.readFileSync(arq, 'utf8')), idAula);
+      }
+    } catch (err) {
+      if (err && (err.code === 'EPERM' || err.code === 'EACCES')) return semResumo(`não consegui ler a conversa deste chat (${err.code})`);
+      texto = null;
+    }
+    if (!texto) return semResumo('não achei o cabeçalho "## Resumo da aula ' + idAula + '" no que você escreveu neste chat');
+  }
+
+  const analise = anotacoes.analisar(transcricao.semToken(texto), { urlOk: anotacoes.urlCurada(anotacoes.urlsCuradas()) });
+  if (analise.erro) return semResumo(analise.erro);
+  // Os nomes de terceiros (a lista de entrevistas da 4.4) ficam na máquina, como no avaliador; o token também sai.
+  const tirar = transcricao.tiradorDeNomes(e);
+  const limpo = anotacoes.limparTudo(analise.resumo, (t) => tirar(transcricao.semToken(t)));
+  const gerado = agora();
+  anotacoes.gravar(idAula, { versao: anotacoes.VERSAO, aula: idAula, titulo: a.titulo, modulo: a.modulo, gerado_em: gerado, fonte, ...limpo, markdown: tirar(analise.markdown) });
+  reg.resumo_em = gerado;
+  estadoLib.salvar(e);
+  fila.enfileirar('aula.resumo', { aula: idAula, versao: anotacoes.VERSAO, titulo: a.titulo, modulo: a.modulo, ...limpo, ...doAgente() }, e);
+  const n = (k, um, varios) => `${limpo[k].length} ${limpo[k].length === 1 ? um : varios}`;
+  console.log(`Resumo da aula ${idAula} registrado: ${n('conceitos', 'conceito', 'conceitos')}, ${n('tropecos', 'tropeço', 'tropeços')}, ${n('revisar', 'item', 'itens')} para revisar. Ele vai para a aba Anotações do app, onde o aluno marca, edita e revisa; se ele perguntar, é lá.`
+    + (analise.avisos.length ? `\n(Ajustes no que foi guardado: ${analise.avisos.join('; ')}. Não comente com o aluno.)` : ''));
+}
+
 // O agente que avaliou, nos eventos de nota (especificação, seção 7): só no modo Codex, e o evento do Claude não muda.
 const doAgente = () => (agente.atual() === 'codex' ? { agente: 'codex' } : {});
 function noSandbox(e, reg, idAula, motivo, { longo = false } = {}) {

@@ -100,7 +100,7 @@ function falasDoItem(item, itens, tirar, ancoras) {
       if (t) itens.push({ quem: 'TUTOR', linha: `TUTOR: ${comum.continuacoes(t)}` });
     }
   } else if (tipo === 'CommandExecution') {
-    const cmd = comandoDe(item);
+    const cmd = anotacoes.semResumo(comandoDe(item));
     const comumCmd = formaComum(cmd);
     // A forma comum só aparece quando havia juízo a tirar; senão o comando sai como o tutor o escreveu.
     const semJuizo = comum.semVeredito(comum.semNota(comumCmd));
@@ -110,7 +110,7 @@ function falasDoItem(item, itens, tirar, ancoras) {
       linha: `  [tutor rodou: ${comum.umaLinha(tirar(semTokenJson(comum.semToken(base))), 200)}]`,
     });
     const saida = typeof item.aggregated_output === 'string' ? item.aggregated_output : texto(item.stdout) + texto(item.stderr);
-    const t = tirar(comum.semVeredito(semTokenJson(comum.semToken(comum.limpar(saida)))));
+    const t = tirar(comum.semVeredito(semTokenJson(comum.semToken(comum.limpar(anotacoes.semSaidaDoResumir(saida))))));
     if (t) itens.push({ quem: 'resp', linha: `  [resposta: ${comum.umaLinha(t, 200)}]` });
   } else if (tipo === 'FileChange') {
     // O `apply_patch`: o que importa é que arquivo mudou, não o diff.
