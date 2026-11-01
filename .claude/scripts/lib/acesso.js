@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { CREDENCIAIS, CONFIG } = require('./paths');
-const { lerJson, gravarJson, agora } = require('./util');
+const { lerJson, gravarJson, criarPasta, agora } = require('./util');
 
 // O token da 202 é base64url. A conferência de formato não substitui a do
 // servidor: ela só pega o que foi colado torto (espaço, aspas, a linha inteira).
@@ -71,7 +71,8 @@ function guardar({ token: t, servidor: url, email, turma }) {
 
 // No modo Codex (branch codex), antes de o `conectar` fazer qualquer efeito: a pasta das credenciais é gravável? O
 // sandbox do Codex lê `~` mas não grava nele, em modo nenhum. Cria e apaga um arquivo de sonda com o pid no nome, que
-// nunca é o `credenciais.json`. Devolve o código do erro de bloqueio (EPERM, EACCES, EROFS) ou null; outro erro (disco
+// nunca é o `credenciais.json`. A pasta nasce pelo `criarPasta`: no Linux, o `recursive` sozinho dava ENOENT e o
+// `conectar` quebrava depois do envio (01/11). Devolve o código do erro de bloqueio (EPERM, EACCES, EROFS) ou null; outro erro (disco
 // cheio) não é sandbox, e o `conectar` que siga e diga o que for. A variável é só dos testes: força o código do erro, e
 // só vale junto com TRILHA_202_TESTE=1, para uma variável esquecida no ambiente do aluno não travar o `conectar`.
 function pastaTravada() {
@@ -80,7 +81,7 @@ function pastaTravada() {
   const pasta = path.dirname(CREDENCIAIS);
   const arq = path.join(pasta, `.sonda-conectar-${process.pid}`);
   try {
-    fs.mkdirSync(pasta, { recursive: true });
+    criarPasta(pasta);
     fs.writeFileSync(arq, '');
     fs.unlinkSync(arq);
   } catch (err) {

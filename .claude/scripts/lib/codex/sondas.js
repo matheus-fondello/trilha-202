@@ -19,6 +19,7 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { criarPasta } = require('../util');
 
 const MOTIVOS = {
   processo: 'o sandbox do Codex não deixa este comando abrir outro programa, e quem avalia é um programa à parte',
@@ -51,7 +52,8 @@ function pessoal() {
   const pasta = path.join(os.homedir(), '.trilha-202');
   const arq = path.join(pasta, `.sonda-${process.pid}`);
   try {
-    fs.mkdirSync(pasta, { recursive: true });
+    // `criarPasta`, e não o `recursive` sozinho: no Linux ele dava ENOENT, e o sandbox passava por liberado (01/11).
+    criarPasta(pasta);
     fs.writeFileSync(arq, '');
     fs.unlinkSync(arq);
   } catch (err) {

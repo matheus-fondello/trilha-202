@@ -29,6 +29,18 @@ function gravarJson(arquivo, dados) {
   fs.renameSync(tmp, arquivo);
 }
 
+// Cria a pasta como o `mkdirSync` com `recursive`, mas devolve o erro verdadeiro. Numa pasta só para leitura (o sandbox
+// do Codex no Linux monta `~` assim), o Node troca o EROFS por ENOENT quando a pasta ainda não existe. Sem `recursive`,
+// o código certo volta; se a pasta-mãe também não existe, o ENOENT é de verdade e sobe como antes.
+function criarPasta(pasta) {
+  try {
+    fs.mkdirSync(pasta, { recursive: true });
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    fs.mkdirSync(pasta);
+  }
+}
+
 function minutosEntre(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 60000);
 }
@@ -72,4 +84,4 @@ function lerStdin(timeoutMs = 500) {
   });
 }
 
-module.exports = { agora, id, lerJson, gravarJson, minutosEntre, relativo, lerStdin };
+module.exports = { agora, id, lerJson, gravarJson, criarPasta, minutosEntre, relativo, lerStdin };
