@@ -34,12 +34,23 @@ function token() {
   return String(process.env.TRILHA_202_TOKEN || credenciais().token || '').trim();
 }
 
+// Endereços que a 202 aposentou. Quem colou o token antes da troca guardou um deles no credenciais.json, que vale mais
+// que o config.json: sem esta lista, o aluno ficaria no endereço velho para sempre. Em 02/11/2026 o CRM saiu da Vercel
+// (crm-202.vercel.app, que segue repassando para o novo) para o Railway (crm.202lab.com.br).
+const APOSENTADOS = new Set(['https://crm-202.vercel.app/api/trilha']);
+
+function aposentado(url) {
+  return APOSENTADOS.has(String(url || '').trim().replace(/\/+$/, ''));
+}
+
 // A URL que a 202 mandou junto com o token vale mais que a do config.json: é a
-// que emitiu aquele token. A variável ganha das duas, para testar contra o mock.
+// que emitiu aquele token, a menos que tenha sido aposentada. A variável ganha
+// de todas, para testar contra o mock.
 function servidor() {
   let doConfig = null;
   try { doConfig = (lerJson(CONFIG, {}).servidor || {}).url; } catch { /* sem config */ }
-  const url = String(process.env.TRILHA_202_SERVIDOR || credenciais().servidor || doConfig || '').trim();
+  const guardado = credenciais().servidor;
+  const url = String(process.env.TRILHA_202_SERVIDOR || (aposentado(guardado) ? '' : guardado) || doConfig || '').trim();
   return url ? url.replace(/\/+$/, '') : null;
 }
 
@@ -118,4 +129,4 @@ async function quemE(t, url, timeoutMs = 4000) {
   }
 }
 
-module.exports = { pastaTravada, leituraBloqueada, credenciais, token, servidor, tokenValido, servidorValido, guardar, apagar, conectado, quemE };
+module.exports = { pastaTravada, leituraBloqueada, credenciais, token, servidor, aposentado, tokenValido, servidorValido, guardar, apagar, conectado, quemE };

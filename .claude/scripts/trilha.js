@@ -500,7 +500,9 @@ const comandos = {
     const limpar = (v) => String(v || '').trim().replace(/^["']+|["']+$/g, '').trim();
     const soltos = args.filter((a) => !a.includes('=')).map(limpar).filter(Boolean);
     const novoToken = limpar(kv.token || kv.TRILHA_202_TOKEN) || soltos.find(acesso.tokenValido) || soltos[0] || '';
-    const novoServidor = limpar(kv.servidor || kv.TRILHA_202_SERVIDOR).replace(/\/+$/, '');
+    // O endereço aposentado que vier colado (de um e-mail de token antigo) é ignorado: vale o do config.json.
+    const colado = limpar(kv.servidor || kv.TRILHA_202_SERVIDOR).replace(/\/+$/, '');
+    const novoServidor = acesso.aposentado(colado) ? '' : colado;
     if (!nome) falhar(`falta o primeiro nome do aluno. ${uso}`);
     const chave = novoToken || acesso.token();
     if (!chave) falhar(`falta o token. Ele vem na linha TRILHA_202_TOKEN=... que a 202 mandou ao aluno. ${uso}`);
