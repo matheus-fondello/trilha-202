@@ -337,7 +337,7 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
       }
     } else {
       if (a.fluencia) {
-        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, nota, concluir e, por último, avaliar)' : `não passou em 1 tentativa, o que faltou já foi explicado, e ele ainda não escolheu: pergunte se quer tentar de novo ou seguir (\`fluencia ${a.id} seguir\`)`)) : 'não feita'}.`);
+        linhas.push(`Fluência: ${reg.fluencia ? (reg.fluencia.passou ? `passou em ${reg.fluencia.tentativas} tentativa(s)` : (reg.fluencia.tentativas >= 2 ? `não passou em ${reg.fluencia.tentativas} tentativas; não refaça: feche a aula com o que falta (marcos, o resumo da aula e o \`resumir\`, nota, concluir e, por último, avaliar)` : reg.fluencia.seguiu_em ? 'não passou em 1 tentativa e ele escolheu seguir; não refaça: feche a aula com o que falta (marcos, o resumo da aula e o `resumir`, nota, concluir e, por último, avaliar)' : `não passou em 1 tentativa, o que faltou já foi explicado, e ele ainda não escolheu: pergunte se quer tentar de novo ou seguir (\`fluencia ${a.id} seguir\`)`)) : 'não feita'}.`);
         if (mapa.fluenciaPeloConjunto(a.id) && (!reg.fluencia || (!reg.fluencia.passou && reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em))) linhas.push(FLUENCIA_PELO_CONJUNTO);
       } else {
         linhas.push('Fluência: esta aula não tem.');

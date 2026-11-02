@@ -716,6 +716,16 @@ const comandos = {
       if (reg.fluencia.tentativas < 2 && !reg.fluencia.seguiu_em) problemas.push(`fluência não passou na primeira e ele ainda não escolheu: explique o que faltou, se ainda não explicou, e pergunte se quer tentar de novo ou seguir (\`fluencia ${idAula} seguir\`)`);
       else avisos.push('a fluência não passou: a aula fecha assim mesmo e o resultado fica registrado para a 202');
     }
+    // O resumo de fim de aula em toda aula (02/11): no primeiro dia, o tutor fechou várias aulas sem ele. Com o resto
+    // pronto, a aula sem resumo recusa uma vez, se a conversa dela está neste chat; na segunda fecha assim mesmo, porque
+    // um `resumir` que não conseguiu registrar não pode trancar a trilha. A marca é gravada antes de recusar, e nada
+    // mais do estado mudou até aqui.
+    if (a.tipo === 'aula' && !problemas.length && !reg.resumo_em && !reg.resumo_cobrado_em
+      && process.env.TRILHA_202_RESUMO_LIVRE !== '1' && aulaNesteChat(e, reg)) {
+      reg.resumo_cobrado_em = agora();
+      estadoLib.salvar(e);
+      falhar(`não dá para concluir a aula ${idAula}: falta o resumo da aula. Escreva-o agora para o aluno, no formato da skill \`resumo-da-aula\`, depois do que ele fez na fluência e antes da despedida, e rode na mesma chamada \`resumir ${idAula}\`, a \`nota\` se houver, \`concluir ${idAula}\` e, por último, \`avaliar ${idAula}\`. Se o resumo já está nesta conversa e o \`resumir\` não conseguiu registrá-lo, rode \`concluir ${idAula}\` de novo: a aula fecha sem ele. Não comente esta recusa com o aluno.`);
+    }
     if (a.tipo === 'pratica') {
       // Prática não tem avaliação: ela fecha com o artefato registrado, que é o que
       // as fluências das aulas seguintes vão usar.
@@ -1471,6 +1481,17 @@ function pendenteDoCodex(e, reg, idAula, motivo, causa, longo) {
   fila.enfileirar('avaliacao.adiada', { aula: idAula, motivo, vezes: Math.max(1, vezes), causa, avaliador: null }, e);
   return `\`avaliar ${idAula}${longo ? ' --longo' : ''}\``;
 }
+// A conversa da aula está neste chat (o `concluir` só cobra o resumo assim): algo da aula, um marco ou a fluência, foi
+// registrado depois que o chat começou. O chat que só veio fechar uma aula feita em outro (a retomada no fechamento) não
+// tem com que escrever o resumo; sem chat aberto (o comando rodado de fora), também não se cobra.
+function aulaNesteChat(e, reg) {
+  const inicio = e.sessao_atual ? Date.parse(e.sessao_atual.inicio) : NaN;
+  if (!Number.isFinite(inicio)) return false;
+  const marcas = [...Object.values(reg.milestones || {}), reg.fluencia && reg.fluencia.registrada_em]
+    .map((t) => Date.parse(t)).filter(Number.isFinite);
+  return marcas.some((t) => t >= inicio);
+}
+
 // O resumo de fim de aula (o comando `resumir`): acha, separa, grava e enfileira. Erro de conteúdo vira recado; o
 // que lançar daqui é pego pelo comando e também vira recado.
 function registrarResumo(idAula, resto) {
