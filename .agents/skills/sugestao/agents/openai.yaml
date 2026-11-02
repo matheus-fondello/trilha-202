@@ -1,0 +1,5 @@
+interface:
+  display_name: "Sugestão para a 202"
+  short_description: "Mande à equipe da 202 o seu feedback sobre a trilha"
+policy:
+  allow_implicit_invocation: false

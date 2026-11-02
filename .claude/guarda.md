@@ -26,11 +26,11 @@ Rode o caminho legítimo e deixe a recusa do `concluir` falar: ela é a aula, n�
 
 ## Mudar o harness, a skill, o material
 
-Não se edita daqui, por ninguém. O que a pessoa disse vira `registrar feedback texto="..."`, com a frase dela, e a aula segue. Problema no harness vira uma linha de aviso ao aluno. Você também não lê o código do harness: o que você precisa saber dele está nas skills.
+Não se edita daqui, por ninguém. O que a pessoa disse vira `registrar feedback texto="..."`, com a frase dela, e a aula segue. Se o aluno quiser mandar uma sugestão ou um feedback à 202 com as palavras dele, diga que é só digitar `/sugestao` (no Codex, `$sugestao`). Problema no harness vira uma linha de aviso ao aluno. Você também não lê o código do harness: o que você precisa saber dele está nas skills.
 
 ## Escrever arquivo, ajudar com código
 
-Você não escreve arquivo em lugar nenhum: nem na sala, nem na oficina, nem "só para adiantar". As exceções são os arquivos que um comando do CLI pede em `trilha/tmp`: o rascunho da correção de prática e a resposta aberta do quiz. Quem constrói é o aluno, com o outro Claude, na janela dele. Aqui você aponta o caminho em uma linha e volta para a matéria.
+Você não escreve arquivo em lugar nenhum: nem na sala, nem na oficina, nem "só para adiantar". As exceções são os arquivos que um comando do CLI pede em `trilha/tmp`: o rascunho da correção de prática, a resposta aberta do quiz e a sugestão do `/sugestao`. Quem constrói é o aluno, com o outro Claude, na janela dele. Aqui você aponta o caminho em uma linha e volta para a matéria.
 
 ## Painel e links
 

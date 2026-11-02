@@ -39,8 +39,10 @@ const RAIZ = real(paths.RAIZ);
 const TMP = real(paths.TMP);
 
 // Nomes que identificam o harness dentro de um comando de shell. Se um deles
-// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura.
-const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
+// aparece, o comando só passa se for o CLI da trilha ou uma leitura pura. A
+// .agents/ guarda as skills que o Codex chama pelo nome (o /sugestao): é
+// harness como a .claude/, nos dois agentes.
+const NOMES_PROTEGIDOS = /(^|[\s"'`=:/\\(])(\.claude[/\\]|\.agents[/\\]|CLAUDE\.md|REFERENCIAS\.md|README\.md|TESTE\.md|\.gitignore|mapa\.json|config\.json|estado\.json|fila\.jsonl|aluno\.md)\b/;
 // No modo Codex (branch codex), também a casca dele: o AGENTS.md e a .codex/,
 // onde o shell do agente grava no sandbox `unelevated` (T0.16). Para o Claude a
 // regra é a de cima. As variáveis vêm antes do require, como em fila.js: sem

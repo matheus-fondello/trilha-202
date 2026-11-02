@@ -25,6 +25,7 @@
 //   node .claude/scripts/trilha.js resumir <aula> [arquivo=trilha/tmp/resumo-<aula>.md]   (o resumo de fim de aula, que o tutor acabou de escrever)
 //   node .claude/scripts/trilha.js nota <chave> "<texto>" | nota <chave> --apagar | nota --listar
 //   node .claude/scripts/trilha.js registrar <tipo> [chave=valor ...]
+//   node .claude/scripts/trilha.js sugestao arquivo=trilha/tmp/sugestao.md | sugestao texto="..."   (o /sugestao: o feedback do aluno para a 202, com as palavras dele)
 //   node .claude/scripts/trilha.js enviar
 //   node .claude/scripts/trilha.js atualizar                                         (só no modo Codex, fora do sandbox)
 //   node .claude/scripts/trilha.js preparar                                          (se o Codex confia na pasta e nos hooks; só lê)
@@ -60,7 +61,7 @@ const { MINUTOS_VIVA } = estadoLib;
 
 // Comandos que enfileiram progresso. Ao terminarem, a fila sobe para a 202 na
 // hora, sem depender dos hooks.
-const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'seguir', 'milestone', 'fluencia', 'resumir', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar']);
+const SOBEM_NA_HORA = new Set(['identificar', 'oficina', 'seguir', 'milestone', 'fluencia', 'resumir', 'avaliar', 'concluir', 'pratica', 'criterios', 'conferir', 'persona', 'conversa', 'ideia', 'corrigir', 'quiz', 'registrar', 'sugestao']);
 
 function falhar(msg) {
   console.error('ERRO: ' + msg);
@@ -204,6 +205,41 @@ function parChaveValor(lista) {
     if (i > 0) obj[item.slice(0, i)] = item.slice(i + 1);
   }
   return obj;
+}
+
+// O que registra sem exigir acesso nem chat da sala (`registrar`, `sugestao`). No Codex, sincroniza antes, senão o
+// evento sai com a sessão de outro chat. Sem recusa, porque o feedback vale de qualquer chat; mas um chat de fora da
+// sala não sincroniza por aqui, senão o comando faria dele a sessão da sala, fecharia a do aluno e o poria no registro,
+// onde ele nunca mais seria recusado. Devolve true quando o evento deve sair sem sessão: o desse chat, e o de um chat
+// que achou a sala ocupada com a sessão de outro. O feedback não se perde nem vai para a sessão errada.
+function sincronizarSemRecusa() {
+  if (agente.atual() !== 'codex') return false;
+  let semSessao = false;
+  const sessao = require('./lib/codex/sessao');
+  try {
+    const id = agente.idDoChat();
+    const arquivo = id ? require('./lib/codex/rollout').achar(id) : null;
+    const conhecido = Boolean(((estadoLib.carregar().codex || {}).chats || {})[id]);
+    if (arquivo && !conhecido && sessao.pasta(arquivo) === 'fora') semSessao = true;
+    else if (arquivo) {
+      const r = sessao.sincronizar(id);
+      if (r && r.pedirStatus) pedirStatus = true;
+      const atual = estadoLib.carregar().sessao_atual;
+      if (r && r.ocupada && (!atual || atual.id !== id)) semSessao = true;
+    }
+  } catch (err) { sessao.avisarErro(err); }
+  return semSessao;
+}
+
+// A sugestão do aluno sobe com as palavras dele, menos o que não é dele mandar: o token da 202 (pelo valor guardado
+// nesta sala, onde quer que apareça, e pelos prefixos) e os nomes da lista de entrevistas, como no resumo da aula.
+const MAX_SUGESTAO = 4000;
+function semTokenNemNomes(texto, e) {
+  let t = String(texto);
+  let guardado = '';
+  try { guardado = acesso.token(); } catch { /* sem acesso legível */ }
+  if (guardado.length >= 16) t = t.split(guardado).join('[token omitido]');
+  return transcricao.tiradorDeNomes(e)(transcricao.semToken(t));
 }
 
 // O agente que o resumo recebe (branch codex). `undefined` fora do Codex, e nunca `null`: com `null` o padrão da
@@ -1170,30 +1206,66 @@ const comandos = {
   registrar([tipo, ...resto]) {
     if (!tipo) falhar('Uso: registrar <tipo> [chave=valor ...]');
     if (!/^[a-z][a-z0-9_.-]*$/.test(tipo)) falhar('tipo deve ser minúsculo, ex.: suspeita, duvida, nota');
-    // No Codex, sincroniza antes, senão o evento sai com a sessão de outro chat. Sem recusa, porque o feedback vale de
-    // qualquer chat; mas um chat de fora da sala não sincroniza por aqui, senão o `registrar` faria dele a sessão da
-    // sala, fecharia a do aluno e o poria no registro, onde ele nunca mais seria recusado. O evento dele, e o de um
-    // chat que achou a sala ocupada com a sessão de outro, sai sem sessão: o feedback não se perde nem vai para a
-    // sessão errada.
-    let semSessao = false;
-    if (agente.atual() === 'codex') {
-      const sessao = require('./lib/codex/sessao');
-      try {
-        const id = agente.idDoChat();
-        const arquivo = id ? require('./lib/codex/rollout').achar(id) : null;
-        const conhecido = Boolean(((estadoLib.carregar().codex || {}).chats || {})[id]);
-        if (arquivo && !conhecido && sessao.pasta(arquivo) === 'fora') semSessao = true;
-        else if (arquivo) {
-          const r = sessao.sincronizar(id);
-          if (r && r.pedirStatus) pedirStatus = true;
-          const atual = estadoLib.carregar().sessao_atual;
-          if (r && r.ocupada && (!atual || atual.id !== id)) semSessao = true;
-        }
-      } catch (err) { sessao.avisarErro(err); }
-    }
+    const semSessao = sincronizarSemRecusa();
     const e = estadoLib.carregar();
     fila.enfileirar(tipo, parChaveValor(resto), e, semSessao ? { sessao: null } : undefined);
     console.log(`Evento "${tipo}" enfileirado.`);
+  },
+
+  // O /sugestao (02/11): o aluno manda à 202, a qualquer hora, o feedback dele sobre a trilha, com as palavras dele, e
+  // a equipe lê numa aba do app (sugestoes/CONTRATO.md, no planejamento). Como o `registrar`, vale sem acesso (o
+  // evento espera na fila) e de qualquer chat. O caminho normal é o arquivo em trilha/tmp, que leva aspas, quebras de
+  // linha e acentos sem depender do shell.
+  sugestao(resto) {
+    const uso = 'Uso: sugestao arquivo=trilha/tmp/sugestao.md | sugestao texto="..."';
+    const kv = parChaveValor(resto);
+    let texto;
+    let arquivo = null;
+    if (kv.arquivo) {
+      // Relativo à sala, e não à pasta de onde o comando rodou: é onde o tutor gravou.
+      arquivo = path.resolve(paths.RAIZ, kv.arquivo);
+      const rel = path.relative(paths.TMP, arquivo);
+      if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) falhar(`o arquivo da sugestão precisa estar em trilha/tmp (recebi ${kv.arquivo}). Grave a frase do aluno em trilha/tmp/sugestao.md e rode \`sugestao arquivo=trilha/tmp/sugestao.md\`.`);
+      try { texto = fs.readFileSync(arquivo, 'utf8'); } catch (err) { falhar(`não consegui ler ${kv.arquivo} (${err.code || err.message}). Grave a frase do aluno em trilha/tmp/sugestao.md e rode de novo.`); }
+    } else {
+      // Sem aspas, o shell parte o texto em pedaços: o que veio depois do `texto=` é dele também.
+      const i = resto.findIndex((a) => String(a).startsWith('texto='));
+      if (i === -1) falhar(uso);
+      texto = [resto[i].slice('texto='.length), ...resto.slice(i + 1)].join(' ');
+    }
+    const apagar = () => { if (arquivo) { try { fs.unlinkSync(arquivo); } catch { /* já foi */ } } };
+
+    const semSessao = sincronizarSemRecusa();
+    const e = estadoLib.carregar();
+    const limpo = semTokenNemNomes(String(texto || ''), e).trim();
+    if (!limpo) {
+      apagar();
+      falhar('a sugestão veio vazia, e nada foi registrado. Se o aluno ainda quer mandar, pergunte o que é, grave a resposta dele em trilha/tmp/sugestao.md e rode de novo; se ele desistiu, volte à aula.');
+    }
+    const letras = Array.from(limpo);
+    const cortada = letras.length > MAX_SUGESTAO;
+    const final = cortada ? letras.slice(0, MAX_SUGESTAO).join('').trimEnd() : limpo;
+
+    // O mesmo texto da mesma pessoa em 24 horas não sobe duas vezes. O estado guarda só um resumo dele e a hora, e só
+    // das últimas 24 horas: o texto da sugestão não fica na máquina.
+    const pessoa = (e.aluno && (e.aluno.email || e.aluno.id)) || '';
+    const marca = require('crypto').createHash('sha256').update(`${pessoa}\n${final.toLowerCase().replace(/\s+/g, ' ').trim()}`).digest('hex').slice(0, 16);
+    const desde = Date.now() - 24 * 60 * 60 * 1000;
+    const recentes = (Array.isArray(e.sugestoes_recentes) ? e.sugestoes_recentes : []).filter((s) => s && Date.parse(s.em) > desde);
+    if (recentes.some((s) => s.marca === marca)) {
+      e.sugestoes_recentes = recentes;
+      estadoLib.salvar(e);
+      apagar();
+      console.log('Esta sugestão já tinha sido registrada nas últimas 24 horas, com o mesmo texto, e não foi de novo. Diga ao aluno, em uma frase, que ela já chegou à 202, e volte à aula do ponto em que parou.');
+      return;
+    }
+    const aula = (e.sessao_atual && e.sessao_atual.aula) || e.aula_atual || null;
+    fila.enfileirar('aluno.sugestao', { texto: final, versao: 1, aula, ...doAgente() }, e, semSessao ? { sessao: null } : undefined);
+    e.sugestoes_recentes = [...recentes, { marca, em: agora() }];
+    estadoLib.salvar(e);
+    apagar();
+    console.log('Sugestão registrada: ela vai para a equipe da 202. Agradeça ao aluno em uma frase, sem prometer prazo nem resposta, e volte à aula do ponto em que parou.'
+      + (cortada ? `\n(O texto passava de ${MAX_SUGESTAO} caracteres e subiu só até aí. Diga isso ao aluno junto do agradecimento: se quiser mandar o resto, é só mandar outra sugestão.)` : ''));
   },
 
   async enviar() {

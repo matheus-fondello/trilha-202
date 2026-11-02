@@ -118,6 +118,7 @@
       "Read(./.claude/hooks/**)",
       "Read(./.claude/avaliador/**)",
       "Edit(./.claude/**)",
+      "Edit(./.agents/**)",
       "Edit(./CLAUDE.md)",
       "Edit(./REFERENCIAS.md)",
       "Edit(./README.md)",
