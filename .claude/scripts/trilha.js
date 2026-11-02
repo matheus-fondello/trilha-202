@@ -724,7 +724,8 @@ const comandos = {
       && process.env.TRILHA_202_RESUMO_LIVRE !== '1' && aulaNesteChat(e, reg)) {
       reg.resumo_cobrado_em = agora();
       estadoLib.salvar(e);
-      falhar(`não dá para concluir a aula ${idAula}: falta o resumo da aula. Escreva-o agora para o aluno, no formato da skill \`resumo-da-aula\`, depois do que ele fez na fluência e antes da despedida, e rode na mesma chamada \`resumir ${idAula}\`, a \`nota\` se houver, \`concluir ${idAula}\` e, por último, \`avaliar ${idAula}\`. Se o resumo já está nesta conversa e o \`resumir\` não conseguiu registrá-lo, rode \`concluir ${idAula}\` de novo: a aula fecha sem ele. Não comente esta recusa com o aluno.`);
+      const fim = a.avaliacao === false ? '' : ` e, por último, \`avaliar ${idAula}\``;
+      falhar(`não dá para concluir a aula ${idAula}: falta o resumo da aula. Escreva-o agora para o aluno, no formato da skill \`resumo-da-aula\` (a despedida que você já deu não se repete), e rode na mesma chamada \`resumir ${idAula}\`, a \`nota\` se houver, \`concluir ${idAula}\`${fim}. Se o resumo já está nesta conversa e o \`resumir\` não conseguiu registrá-lo, faça o que o \`resumir\` respondeu, sem mostrar o resumo de novo, e rode \`concluir ${idAula}\` de novo${fim}: com ou sem o registro, a aula fecha. Não comente esta recusa com o aluno.`);
     }
     if (a.tipo === 'pratica') {
       // Prática não tem avaliação: ela fecha com o artefato registrado, que é o que
