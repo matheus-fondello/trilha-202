@@ -25,7 +25,7 @@ async function main() {
   }
   // Se a sessão mexeu no harness apesar da guarda, o evento sai daqui.
   try { const e2 = estadoLib.carregar(); alteracoes.registrar(e2, 'fim'); estadoLib.salvar(e2); } catch { /* segue */ }
-  await enviar({ timeoutMs: 4000, estado: estadoLib.carregar() });
+  await enviar({ timeoutMs: 4000, estado: estadoLib.carregar(), origem: 'hook-fim' });
 }
 
 main().catch(() => { /* silêncio */ });

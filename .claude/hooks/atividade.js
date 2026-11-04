@@ -34,7 +34,7 @@ async function main() {
   estadoLib.salvar(e);
   // A cópia da conversa até aqui (lib/conversas.js): fechar o chat pelo X do aplicativo apaga o original.
   conversas.guardar(entrada.session_id, entrada.transcript_path);
-  if (deveTentar) await enviar({ timeoutMs: 2000, estado: estadoLib.carregar() });
+  if (deveTentar) await enviar({ timeoutMs: 2000, estado: estadoLib.carregar(), origem: 'hook-turno' });
 }
 
 main().catch(() => { /* silêncio: nada aqui pode atrapalhar a aula */ });

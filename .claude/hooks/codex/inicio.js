@@ -16,6 +16,7 @@ function responder(texto) {
 }
 
 async function main() {
+  const comeco = Date.now();
   // Dentro do main: uma lib quebrada vira a linha de aviso do catch, e não um hook que sai com erro.
   const { lerStdin } = require('../../scripts/lib/util');
   const { atualizar } = require('../../scripts/lib/atualizar');
@@ -41,9 +42,8 @@ async function main() {
   const estadoLib = require('../../scripts/lib/estado');
   const fila = require('../../scripts/lib/fila');
   const { enviar } = require('../../scripts/lib/enviar');
-  const { resumo } = require('../../scripts/lib/resumo');
+  const { resumo, avisoDaFila } = require('../../scripts/lib/resumo');
   const alteracoes = require('../../scripts/lib/alteracoes');
-  const acesso = require('../../scripts/lib/acesso');
   const sessao = require('../../scripts/lib/codex/sessao');
 
   // A sessão nasce (ou volta) pela conversa, com a origem do hook: a escolha de frente só se oferece ao chat novo.
@@ -69,15 +69,18 @@ async function main() {
     try { const e = estadoLib.carregar(); sujo = alteracoes.registrar(e, 'inicio'); estadoLib.salvar(e); } catch { /* sem git: segue */ }
   });
 
-  // O envio antes do resumo: um 401 aqui fecha a sala, e o resumo já diz isso ao tutor neste chat.
-  const envio = await enviar({ timeoutMs: 2500 });
+  // O envio antes do resumo: um 401 aqui fecha a sala, e o resumo já diz isso ao tutor neste chat. O prazo vai até
+  // 8 s, em vez dos 2,5 s de antes, que podiam não bastar numa conexão lenta (03/11), e encolhe para o hook terminar
+  // até 16 s depois de começar, com folga nos 20 s do hooks.json para o resumo. A espera só pesa quando o CRM demora;
+  // sem rede, a falha é na hora.
+  const envio = await enviar({ timeoutMs: 8000, limiteEm: comeco + 16000, origem: 'hook-inicio' });
   const e = estadoLib.carregar();
   if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
   // A aula que começou no Claude e segue aqui: a sessão do Claude que esta sincronização fechou, ou a última do
   // histórico, que o aplicativo do Claude já fechou quando o aluno saiu do chat (D2, 20/10).
   const continuacaoDe = sessao.continuacaoDe(sinc);
   const texto = resumo(e, { fonte: fonte === 'compact' ? 'compact' : fonte === 'startup' || fonte === 'clear' ? 'startup' : 'resume', agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) });
-  const aviso = envio.ok || !acesso.conectado(e) ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const aviso = avisoDaFila(e, envio, { agente: 'codex', chatNovo: fonte === 'startup' || fonte === 'clear' });
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
   // O AGENTS.md e a configuração da sala foram lidos pelo Codex antes deste hook; skills, mapa e comandos já são os novos.
   const avisoAtualizacao = !atualizacao.atualizada ? ''

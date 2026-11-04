@@ -17,6 +17,7 @@ process.env.TRILHA_202_AGENTE = 'codex';
 const INTERVALO_ENVIO_MS = 2 * 60 * 1000;
 
 async function main() {
+  const comeco = Date.now();
   const { lerStdin, agora } = require('../../scripts/lib/util');
   const entrada = await lerStdin();
   // A chave de desligar (T13): com `codex.ativo: false` no config da sala, ou TRILHA_202_CODEX=0, o hook confiado não
@@ -73,7 +74,10 @@ async function main() {
     estadoLib.salvar(e);
     return true;
   });
-  if (deveTentar) await require('../../scripts/lib/enviar').enviar({ timeoutMs: 2000, estado: estadoLib.carregar() });
+  // Até 4 s, como o fim de sessão do Claude, em vez dos 2 s de antes, que podiam não bastar numa conexão lenta (03/11);
+  // encolhe para o hook terminar até 7,5 s depois de começar, dentro dos 10 s do Stop (hooks.json). Só pesa quando o
+  // CRM demora, e no máximo uma vez a cada dois minutos.
+  if (deveTentar) await require('../../scripts/lib/enviar').enviar({ timeoutMs: 4000, limiteEm: comeco + 7500, estado: estadoLib.carregar(), origem: 'hook-turno' });
 }
 
 main().catch(() => { /* silêncio: nada aqui pode atrapalhar a aula */ }).finally(() => { process.exitCode = 0; });

@@ -51,9 +51,8 @@ async function main() {
   const estadoLib = require('../scripts/lib/estado');
   const fila = require('../scripts/lib/fila');
   const { enviar } = require('../scripts/lib/enviar');
-  const { resumo } = require('../scripts/lib/resumo');
+  const { resumo, avisoDaFila } = require('../scripts/lib/resumo');
   const alteracoes = require('../scripts/lib/alteracoes');
-  const acesso = require('../scripts/lib/acesso');
   const turnos = require('../scripts/lib/turnos');
   const { agora } = require('../scripts/lib/util');
 
@@ -107,9 +106,9 @@ async function main() {
 
   // O envio vem antes do resumo: um 401 aqui fecha a sala, e o resumo precisa
   // já dizer isso ao tutor nesta sessão, não na próxima.
-  const envio = await enviar({ timeoutMs: 2500, estado: e });
+  const envio = await enviar({ timeoutMs: 2500, estado: e, origem: 'hook-inicio' });
   const texto = continuacaoDe ? resumo(e, { fonte, continuacaoDe }) : resumo(e, { fonte });
-  const aviso = envio.ok || !acesso.conectado(e) ? '' :`\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const aviso = avisoDaFila(e, envio, { chatNovo: fonte === 'startup' || fonte === 'clear' });
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
 
   // O CLAUDE.md e o settings.json da sala podem ter sido lidos antes do pull;

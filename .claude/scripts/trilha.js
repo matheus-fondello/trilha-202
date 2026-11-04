@@ -39,7 +39,7 @@ const estadoLib = require('./lib/estado');
 const mapa = require('./lib/mapa');
 const fila = require('./lib/fila');
 const { enviar, enviarAgora, enviarInsistindo, prazoDeEnvio } = require('./lib/enviar');
-const { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo } = require('./lib/resumo');
+const { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo, avisoDaFila } = require('./lib/resumo');
 const referencias = require('./lib/referencias');
 const notas = require('./lib/notas');
 const anotacoes = require('./lib/anotacoes');
@@ -321,7 +321,7 @@ async function statusDepoisDoHook(marca, id, { fonte, continuacaoDe }) {
     const e = estadoLib.carregar();
     if (e.codex && e.codex.inicio_hook && e.codex.inicio_hook[id]) { delete e.codex.inicio_hook[id]; estadoLib.salvar(e); }
   });
-  await enviar({ timeoutMs: 2500 });
+  await enviar({ timeoutMs: 2500, origem: 'status' });
   const e = estadoLib.carregar();
   // A sala fechou desde o hook (o envio deu 401): o resumo inteiro, que agora é o pedido do token.
   if (!acesso.conectado(e)) { console.log(resumo(e, { fonte: 'startup', agente: 'codex' })); return; }
@@ -421,11 +421,11 @@ async function statusDoCodex(args) {
 
   // O envio antes do resumo: um 401 aqui fecha a sala, e o resumo já diz isso ao tutor neste chat. Sem rede (o sandbox
   // sem a rede liberada), falha calado e a fila espera o primeiro comando com rede.
-  const envio = await enviar({ timeoutMs: 2500 });
+  const envio = await enviar({ timeoutMs: 2500, origem: 'status' });
   const e = estadoLib.carregar();
   if (estadoLib.avancarSeConcluida(e)) estadoLib.salvar(e);
   const texto = resumo(e, { fonte, agente: 'codex', ...(continuacaoDe ? { continuacaoDe } : {}) });
-  const aviso = envio.ok || !acesso.conectado(e) ? '' : `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  const aviso = avisoDaFila(e, envio, { agente: 'codex', chatNovo: novo });
   const avisoHarness = sujo.length ? `\n(Harness com alteração local fora do commit: ${sujo.join(', ')}. Isso já foi registrado. Não edite nada do harness a partir daqui e não comente com o aluno.)` : '';
   console.log(texto + aviso + avisoHarness + avisos.map((x) => '\n' + x).join(''));
   console.log(`\nFila: ${fila.ler().length} evento(s) pendente(s) de envio.`);
@@ -462,7 +462,7 @@ async function atualizarDoCodex() {
       ? 'Os comandos da sala receberam correções da 202. A aula não muda. Não comente com o aluno, salvo se ele perguntar.'
       : `Sala atualizada com material novo da 202 (${r.commits || 'alguns'} commit(s)). Os comandos, o mapa e as skills no disco já são os novos; o que você já leu neste chat é da versão de antes. Rode \`node .claude/scripts/trilha.js status\` de novo e siga dali, lendo de novo as skills que ele indicar.${agentsMdMudou(r) ? ' Só o AGENTS.md novo vale a partir do próximo chat.' : ''} Não comente com o aluno, salvo se ele perguntar.`);
     // Fora do sandbox há rede: o `harness.atualizado` sobe agora.
-    await enviarAgora({ timeoutMs: prazoDeEnvio('atualizar') });
+    await enviarAgora({ timeoutMs: prazoDeEnvio('atualizar'), origem: 'atualizar' });
     return;
   }
   // O material que muda a aula ficou para o próximo chat: o pedido de lá não espera o dia seguinte.
@@ -1268,9 +1268,30 @@ const comandos = {
       + (cortada ? `\n(O texto passava de ${MAX_SUGESTAO} caracteres e subiu só até aí. Diga isso ao aluno junto do agradecimento: se quiser mandar o resto, é só mandar outra sugestão.)` : ''));
   },
 
+  // O envio pedido: a fila inteira, página por página, até esvaziar ou a primeira falha. Quem roda é o tutor (o
+  // aviso de fila parada, no resumo) ou o aluno num terminal, e uma fila de dias tem mais de uma página. O prazo é
+  // maior que o dos hooks, porque ninguém está esperando a aula andar, e o todo cabe em 105 s: o Claude Code corta um
+  // comando aos dois minutos. Segue enquanto houver fila, porque o registro de um atraso entra nela no meio do caminho.
+  // A resposta só começa com "Enviado" quando a fila saiu inteira, que é o que o aviso do resumo manda o tutor ler.
   async enviar() {
-    const r = await enviar({ timeoutMs: 5000 });
-    console.log(r.ok ? `Enviado: ${r.enviados} evento(s). ${r.motivo}.` : `Não enviado (${r.motivo}). Pendentes: ${r.pendentes}.`);
+    const limite = Date.now() + 105000;
+    let enviados = 0;
+    let r = null;
+    for (let i = 0; i < 20; i += 1) {
+      r = await enviar({ timeoutMs: 15000, origem: 'enviar', limiteEm: limite });
+      enviados += r.enviados || 0;
+      // O 413 trocou um evento grande demais pelo registro dele: a fila andou, e a próxima página sai.
+      if (!(r.ok || r.status === 413) || !fila.ler().length || Date.now() > limite - 5000) break;
+    }
+    const restam = fila.ler().length;
+    if (r.ok && !restam) { console.log(`Enviado: ${enviados} evento(s). ${enviados ? 'enviado.' : 'fila vazia.'}`); return; }
+    if (r.ok || r.status === 413) { console.log(`Ainda não saiu tudo: ${enviados} evento(s) enviados, ${restam} esperam. Rode o comando de novo.`); return; }
+    const antes = enviados ? ` Antes de parar, ${enviados} evento(s) saíram.` : '';
+    const dica = /recusado|sem token|não configurado|ocupada/.test(r.motivo || '') ? ''
+      : r.status ? '\nA 202 respondeu com erro. O progresso continua guardado no computador e sobe no próximo envio que der certo.'
+        : agente.atual() === 'codex' ? '\nSe este comando rodou dentro do sandbox do Codex, que não tem internet, rode-o de novo fora do sandbox, com a aprovação do aluno. Se já rodou fora, o computador não conseguiu falar com a 202; o progresso continua guardado nele.'
+          : '\nO computador não conseguiu falar com a 202. O progresso continua guardado nele e sobe no próximo envio que der certo.';
+    console.log(`Não enviado (${r.motivo}). Pendentes: ${r.pendentes}.${antes}${dica}`);
   },
 
   // A atualização pedida (branch codex): no sandbox do Codex o git não grava no .git (T0.16), e o `status` do chat
@@ -2304,8 +2325,8 @@ function validarAvaliacao(av, idAula, texto, semTarefa = false) {
     // fora porque não sobe (a memória do aluno é local), e `dev` é de quem testa.
     // O que o `avaliar` enfileirou é a nota, e ele é o último comando da aula: tenta duas vezes, e sem a espera de dois
     // minutos que um envio falho de pouco antes imporia ao envio comum (lib/enviar.js).
-    if (comando === 'avaliar') await enviarInsistindo({ timeoutMs: prazoDeEnvio(comando), esperas: [0, 2000] });
-    else if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando) });
+    if (comando === 'avaliar') await enviarInsistindo({ timeoutMs: prazoDeEnvio(comando), esperas: [0, 2000], origem: comando });
+    else if (SOBEM_NA_HORA.has(comando)) await enviarAgora({ timeoutMs: prazoDeEnvio(comando), origem: comando });
   } catch (err) {
     falhar(err.message);
   }

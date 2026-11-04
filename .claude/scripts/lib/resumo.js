@@ -248,6 +248,41 @@ function continuacaoRecente(fim) {
   return Number.isFinite(t) && Date.now() - t < CONTINUACAO_MS;
 }
 
+// O aviso da fila que não sobe, para o tutor, no começo do chat (os dois hooks de início e o `status` do Codex). Até
+// um dia parada é o CRM fora ou a rede do momento, e o tutor só fica sabendo, calado: não afeta a aula. Passado um
+// dia, o progresso do aluno não chega à 202 há tempo demais para esperar calado: o tutor tenta mandar com o `enviar`,
+// que espera mais que os hooks, e se não der o aluno fica sabendo e avisa a 202 (03/11: um aluno no Codex ficou cinco
+// dias sem nada chegar, e só se soube porque ele contou). O "desde" é o da primeira falha depois do último envio que
+// deu certo (lib/enviar.js); o aviso só sai quando a tentativa deste começo de chat também falhou. Uma vez por dia e
+// só em chat novo: retomar e compactar são meio de aula, e pedir de novo a cada chat a quem tem a rede da escola
+// bloqueando a 202 só atrapalharia. Nas outras vezes, o aviso calado de sempre. Quem mostra marca o dia no estado.
+const FILA_PARADA_MS = 24 * 60 * 60 * 1000;
+const diaLocal = (ms) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+function marcarAvisoDaFila(e, dia) {
+  try { e.envio_falhas.avisado_dia = dia; } catch { /* segue */ }
+  try {
+    const estadoLib = require('./estado');
+    const x = estadoLib.carregar();
+    if (x.envio_falhas) { x.envio_falhas.avisado_dia = dia; estadoLib.salvar(x); }
+  } catch { /* sem gravar, o aviso pode voltar no próximo chat novo de hoje */ }
+}
+function avisoDaFila(e, envio, { agente = 'claude', chatNovo = true } = {}) {
+  if (!envio || envio.ok || !acesso.conectado(e)) return '';
+  const f = e.envio_falhas;
+  const desde = f ? Date.parse(f.desde) : NaN;
+  const hoje = diaLocal(Date.now());
+  if (!chatNovo || !Number.isFinite(desde) || Date.now() - desde < FILA_PARADA_MS || f.avisado_dia === hoje) {
+    return `\n(Fila local: ${envio.pendentes} evento(s) aguardando envio; ${envio.motivo}. Isso não afeta a aula, não comente com o aluno.)`;
+  }
+  marcarAvisoDaFila(e, hoje);
+  const data = new Date(desde).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
+  const comando = '`node .claude/scripts/trilha.js enviar`';
+  const como = agente === 'codex'
+    ? `rode ${comando} fora do sandbox, pedindo ao aluno, em uma linha, que aprove: é para mandar o progresso dele à 202`
+    : `rode ${comando}`;
+  return `\n(O progresso do aluno não chega à 202 desde ${data}: ${envio.pendentes} evento(s) esperando no computador dele (${envio.motivo}). Nada se perdeu. Antes da aula, ${como}. Se ele responder "Enviado", siga sem comentar. Se não, diga ao aluno em duas linhas, sem jargão, que o computador dele não está conseguindo mandar o progresso para a 202 desde ${data}, que nada se perdeu, e peça que ele avise a 202 pelo canal da turma, com um print do que o comando respondeu. Depois siga a aula.)`;
+}
+
 // O chat retomado de uma aula que já fechou, em outro chat ou no outro agente (21/10). Na retomada o aplicativo só
 // roda o hook de envio, e o tutor desse chat vê a conversa antiga com a aula aberta: sem esta linha ele seguia nela,
 // e disse ao aluno que a aula não tinha terminado. Null quando não há o que avisar. O texto não nomeia o outro agente:
@@ -460,4 +495,4 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
   return linhas.join('\n');
 }
 
-module.exports = { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada, avaliacoesPendentes, comandoAvaliar };
+module.exports = { resumo, linhaIdioma, passosLogin, passosInstalar, ehDoAplicativo, continuacaoRecente, avisoAulaFechada, avisoDaFila, avaliacoesPendentes, comandoAvaliar };
