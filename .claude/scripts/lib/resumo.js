@@ -7,6 +7,7 @@ const acesso = require('./acesso');
 const quiz = require('./quiz');
 const { relativo } = require('./util');
 const { avaliacaoRodando } = require('./estado');
+const listaDeNomes = require('./lista-de-nomes');
 
 // O Codex não tem a ferramenta de skill do Claude Code (branch codex): para ele a skill é um arquivo que se lê e se
 // segue. Todo texto do modo Codex que manda carregar skill passa por aqui; o do Claude fica como era, letra a letra.
@@ -439,7 +440,18 @@ function resumo(e, { fonte = 'startup', agente = 'claude', continuacaoDe = null 
       // é o chat dela que confere. Na P4 e em qualquer correção, não se pergunta.
       if (a.id === 'P5' && !emCorrecao) linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas.${feitas < 3 ? ' A P5 só começa com as três: registre a que ele trouxer (`ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`); se com ela ainda não chegar a três, este chat espera, sem escrever plano.' : ''}`);
       else if (a.tipo === 'pratica') linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas. Neste chat não se pergunta por elas.`);
-      else linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}`);
+      else {
+        // A lista da 4.4 pede cinco nomes e não segura a aula com menos (lib/lista-de-nomes.js): nas aulas e nos
+        // quizzes seguintes do M4 e do M5, o tutor volta a pedir o resto. Na própria 4.4 quem conduz é a aula.
+        const pedirNomes = nomes < listaDeNomes.MINIMO && a.id !== listaDeNomes.AULA;
+        const pedido = pedirNomes ? ` A lista da 4.4 pede ${listaDeNomes.MINIMO} nomes e tem ${nomes}: ${feitas < 3 ? 'na mesma linha' : 'na abertura desta sessão, em uma linha'}, pergunte se ele já tem mais alguém para ela, gente que ele alcança e que vive a dor; quando trouxer, regrave \`ideia nomes="<a lista inteira>"\`. Não é portão: sem nome novo, a aula segue.` : '';
+        linhas.push(`  Entrevistas reais para a P5: ${feitas} de 3 feitas, ${nomes} nome(s) na lista (\`ideia\` mostra quem).${feitas < 3 ? ' Na abertura desta sessão, pergunte como vai a próxima, em uma linha, sem cobrar; quando ele contar uma, registre com `ideia entrevista="<o que aprendeu, sem o nome da pessoa>"`.' : ''}${pedido}`);
+      }
+    }
+    // Quem ficou na 4.4 pela regra antiga (dez nomes, e a fluência sem registro até trazer o resto) volta com a ideia
+    // gravada e talvez uma nota pedindo o resto. A regra agora é outra, e esta linha diz isso ao tutor.
+    if (a.id === listaDeNomes.AULA && !reg.fluencia && reg.status !== 'concluida') {
+      linhas.push(`  A ideia já está gravada, com ${listaDeNomes.contar(e)} nome(s) na lista. A lista pede ${listaDeNomes.MINIMO}, e menos não segura a aula: se o resto da fluência está de pé, julgue e registre agora, sem esperar nomes. Se a memória dele tiver uma nota pedindo dez nomes, ela é da regra antiga: apague com \`nota <chave> --apagar\`.`);
     }
   } else if (a.modulo === 4 && a.id !== '4.1' && a.id !== '4.2' && a.id !== '4.3') {
     linhas.push('Ideia do aluno: ainda não registrada. Ela nasce na 4.4, com `ideia texto="..." hipoteses="..." nomes="..."`.');

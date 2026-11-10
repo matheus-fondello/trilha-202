@@ -53,6 +53,7 @@ const acesso = require('./lib/acesso');
 const quizLib = require('./lib/quiz');
 const quizAvaliador = require('./lib/quiz-avaliador');
 const agente = require('./lib/agente');
+const listaDeNomes = require('./lib/lista-de-nomes');
 const { agora, minutosEntre, relativo } = require('./lib/util');
 
 const [, , comando, ...args] = process.argv;
@@ -803,6 +804,8 @@ const comandos = {
 
     reg.status = 'concluida';
     reg.concluida_em = agora();
+    // A 4.4 guarda quantos nomes a lista tinha ao fechar: é essa contagem que a avaliação desconta (lib/lista-de-nomes.js).
+    listaDeNomes.congelar(e, reg, idAula);
     // A próxima respeita as frentes: a seguinte do módulo, a do mesmo trilho
     // quando o módulo fecha, ou a outra frente quando esta acabou.
     const prox = mapa.seguinte(e, idAula);
@@ -1478,6 +1481,9 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
     if (!r.ok && r.ausente) return semClaude(e, reg, idAula, r.motivo);
     if (!r.ok) return desistir(e, reg, idAula, r.motivo, r.uso);
 
+    // A 4.4 com menos de cinco nomes na lista: o domínio sai com o desconto, e o registro dele sobe ao lado das notas.
+    const descontoNomes = listaDeNomes.descontar(r.avaliacao, e, idAula, reg);
+
     // Versão 3 do contrato (07/10, crm202/docs/BRIEFING-TRILHA-HARNESS.md 2.4):
     // a fluência que vale é a do avaliador, e o registro do tutor vai ao lado,
     // escrito aqui e não pelo modelo, para o CRM calcular a divergência em vez
@@ -1487,6 +1493,7 @@ function avaliarAgora(idAula, aulaAv, reler, e, reg, { longo = false } = {}) {
       versao: 3,
       rubrica_sha: avaliador.reguaSha(),
       fluencia_tutor: aulaAv.fluencia && reg.fluencia ? { passou: reg.fluencia.passou, tentativas: reg.fluencia.tentativas, ...(reg.fluencia.motivo ? { motivo: reg.fluencia.motivo } : {}), ...(reg.fluencia.seguiu_em ? { seguiu: true } : {}) } : null,
+      ...(descontoNomes ? { desconto_nomes: descontoNomes } : {}),
     };
     // O payload vai codificado. Não é segredo, é atrito: o aluno vê feedback, não nota.
     const b64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');

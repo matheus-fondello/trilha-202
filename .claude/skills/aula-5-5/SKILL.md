@@ -24,7 +24,7 @@ Sala; a oficina só para guardar no plano. Canal é da 5.4: não reensine. Fica 
 - `coisas-que-nao-escalam`: os dez à mão, o concierge, e onde vira consultoria. *Aplicação, depois do concierge e antes de falar do limite:* a terceira marmitaria propõe pagar por hora para ele cuidar também da escala dos entregadores e do Instagram; ele aceita? Caça quem toma todo pagamento por validação e não vê o produto virar ele.
 - `outbound`: lista, mensagem e follow-up.
 - `entrevista-ou-venda`: o que muda no pedido. *Conceito:* quem contou a dor com número na entrevista ouve a proposta e diz "eu usaria, me avisa quando tiver"; quanto isso vale agora que a dor está provada? Caça quem acha que dor provada transforma opinião sobre o futuro em compromisso.
-- `os-dez-da-lista`: um canal, o da lista; os dez relidos pelo ICP: quem é cliente possível, quem segue só como entrevistado.
+- `os-dez-da-lista`: um canal, o da lista; os nomes da lista da 4.4 relidos pelo ICP: quem é cliente possível, quem segue só como entrevistado.
 
 ## Fluência
 
