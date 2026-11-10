@@ -1666,7 +1666,8 @@ function semRede(e, reg, idAula, motivo, { longo = false } = {}) {
 // falhou" de uma aula que ia ser avaliada no chat seguinte. `avaliacao.falhou` é só a desistência, na terceira.
 // As tentativas contam por chat (16/10): rodar o `avaliar` de novo no mesmo chat não gasta tentativa, senão um tutor
 // que repete o comando duas vezes desiste em sete minutos, como na 1.2 de um aluno em 16/10.
-// A falha que vinha de defeito do harness (o Claude Code não achado; o EOF do cmd.exe, ver lib/avaliador.js) não é
+// A falha que vinha de defeito do harness (o Claude Code não achado; o EOF do cmd.exe; o `claude` que o sistema não
+// deixava abrir, "spawnSync claude EACCES", ver lib/avaliador.js) não é
 // desistência: ela volta a tentar no chat seguinte. A que não achou a transcrição volta uma vez a cada versão nova da
 // sala (22/10). A regra mora em lib/falhas.js, e o resumo usa a mesma.
 const { MAX_FALHAS, VOLTA_A_TENTAR, definitiva: falhaDefinitiva, reincidente, versao: versaoDaSala } = require('./lib/falhas');

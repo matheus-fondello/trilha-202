@@ -199,11 +199,18 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
   // de dentro do aplicativo) não é o sandbox: o pedido de aprovação se repetiria a cada chat, e o erro também. Ele fica
   // de fora como se não existisse, e sem outro a avaliação espera como no `semClaude`, com o caminho no motivo.
   let bloqueado = null;
+  // No Claude, o `claude` que o sistema acha e não deixa abrir (10/11, um aluno no Mac: "spawnSync claude EACCES" em
+  // três chats). O sistema responde EACCES, e não ENOENT, quando nenhum `claude` executável está no PATH mas há nele
+  // uma entrada `claude` sem permissão de execução (arquivo sem +x, pasta, ou entrada vazia no PATH com uma pasta
+  // `claude` no diretório de trabalho). A procura parava nele, sem tentar o executável da sessão nem os lugares dos
+  // instaladores; agora ele fica de fora como se não existisse, e sem outro a avaliação espera como no `semClaude`.
+  let semPermissao = null;
   for (const { bin, shell } of candidatos()) {
     // Com shell, um caminho com espaço precisa de aspas, e o argumento vazio também.
     r = spawnSync(shell && /\s/.test(bin) ? `"${bin}"` : bin, shell ? args.map((a) => (a === '' ? '""' : a)) : args, { ...opcoes, shell });
     if (r.error && r.error.code === 'ENOENT') continue;
     if (agente.atual() === 'codex' && naoAbre(r) && sondas.verificar().ok) { bloqueado = bin; continue; }
+    if (agente.atual() !== 'codex' && naoAbre(r)) { semPermissao = semPermissao || bin; continue; }
     if (shell && !r.error && r.status !== 0 && !String(r.stdout || '').trim() && NAO_ACHOU.test(String(r.stderr || ''))) continue;
     // O mesmo "não é reconhecido", com o prompt grande (16/10): o cmd.exe sai antes de o Node acabar de escrever a
     // entrada, e o spawnSync devolve o erro EOF (ou EPIPE) em vez do status. Com prompt pequeno, o pipe engolia tudo e
@@ -215,6 +222,8 @@ function chamarClaude(prompt, timeoutMs = TIMEOUT_MS) {
   }
   if (!achou) {
     if (bloqueado) return { ok: false, ausente: true, bloqueado, motivo: `não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam; o de ${bloqueado} não abre fora do aplicativo)` };
+    // Sem o caminho no motivo: ele sobe à 202 e carrega o nome de usuário.
+    if (semPermissao) return { ok: false, ausente: true, motivo: `não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam; ${path.isAbsolute(semPermissao) ? 'o `claude` que esta máquina tem' : 'o que a procura do sistema achou como `claude`'} não abre, o sistema negou a execução)` };
     return { ok: false, ausente: true, motivo: 'não encontrei o Claude Code da linha de comando nesta máquina (nem no PATH, nem onde os instaladores o deixam)' };
   }
   // O Claude Code desta máquina não conhece `--effort`: roda de novo sem ela, e não tenta mais nesta execução.

@@ -98,7 +98,8 @@ function avaliacoesPendentes(e, codex) {
       && !avaliacaoRodando(r)
       // A que já falhou duas vezes por login fica com o bloco de login (semLogin); a que falhou três vezes, acabou.
       && !(r.avaliacao_login && r.avaliacao_login.vezes >= 2)
-      // (Menos a que desistiu por não achar o Claude Code, ou pelo EOF/EPIPE do cmd.exe, que volta a tentar sempre, e a que
+      // (Menos a que desistiu por não achar o Claude Code, pelo EOF/EPIPE do cmd.exe, ou pelo `claude` que o sistema não
+      // deixava abrir (EACCES), que volta a tentar sempre, e a que
       // não achou a transcrição, que volta uma vez a cada versão nova da sala. A regra mora em lib/falhas.js.)
       && !falhas.definitiva(r, versao)
       // No Claude, a que espera o Claude Code ser instalado fica com o bloco dela (semClaude), antes de tudo.

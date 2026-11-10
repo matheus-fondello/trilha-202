@@ -5,7 +5,8 @@
 //
 // Três falhas em chats diferentes (11/10) são desistência: o chat seguinte para de tentar, e uma avaliação que não tem
 // como dar certo não gasta a cota do aluno em todo chat. Duas exceções:
-// - a falha que vinha de defeito da procura do Claude Code (não achado; o EOF/EPIPE do cmd.exe) volta a tentar sempre;
+// - a falha que vinha de defeito da procura do Claude Code (não achado; o EOF/EPIPE do cmd.exe; o `claude` que o
+//   sistema não deixava abrir, "spawnSync claude EACCES", que a procura passou a pular em 10/11) volta a tentar sempre;
 // - a que não achou a transcrição volta a tentar uma vez a cada versão nova da sala (22/10). Quem não achava era, às
 //   vezes, a própria sala (a busca por horário do Codex não olhava as conversas arquivadas), e consertar a sala não
 //   fazia a avaliação voltar sozinha. A falha guarda o commit em que aconteceu; numa versão nova, a aula volta à lista
@@ -13,7 +14,7 @@
 const git = require('./git');
 
 const MAX_FALHAS = 3;
-const VOLTA_A_TENTAR = /não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)/;
+const VOLTA_A_TENTAR = /não encontrei o (Claude Code|comando `claude`)|cmd\.exe (EOF|EPIPE)|spawnSync .*\bclaude(\.exe|\.cmd)? (EACCES|EPERM)\b/;
 const NA_VERSAO_NOVA = /não encontrei a transcrição/;
 
 function versao() {
